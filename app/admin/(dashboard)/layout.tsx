@@ -1,0 +1,25 @@
+import Link from "next/link";
+import LogoutButton from "@/components/admin/LogoutButton";
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className="border-b border-line">
+        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+          <Link
+            href="/admin"
+            className="font-display font-semibold text-paper"
+          >
+            Kortlagret — Admin
+          </Link>
+          <LogoutButton />
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}

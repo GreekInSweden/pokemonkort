@@ -22,19 +22,36 @@ bekräftar).
    - `anon public` key → blir `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `service_role` key → blir `SUPABASE_SERVICE_ROLE_KEY` (håll hemlig!)
 
-## 2. Lägg in lager (vilka kort som finns att köpa)
+## 2. Sätt upp admin-inloggningen
 
-Öppna **Table Editor → card_variants** i Supabase. Varje kort har två rader
-(normal + holo). Sätt `stock` till hur många ni faktiskt har, och justera
-`price_sek` om ni vill ändra priset. Kort med `stock = 0` visas gråa och
-går inte att klicka på i butiken — så fort ni sätter ett stock-tal >0 dyker
-kortet upp som köpbart, helt automatiskt.
+Adminpanelen (`/admin`) är den snabbaste vägen att fylla i lager — sökbar
+lista med +/− knappar och ett fält per kort/variant, mycket smidigare än att
+klicka runt i Supabase när ni just öppnat en hög paket.
 
-Det finns ingen admin-sida i den här första versionen — Supabase Table
-Editor *är* admin-panelen. Enklast sättet att jobba: filtrera tabellen på
-kort ni vill uppdatera, ändra `stock` direkt i cellen.
+1. Kör `supabase/admin_policies.sql` i Supabase SQL Editor (efter
+   `schema.sql` och `seed_pitch_black.sql`). Det ger inloggade användare
+   rätt att uppdatera lagersaldo — utan den här filen går det inte att
+   spara ändringar i adminpanelen.
+2. Gå till **Authentication → Users** i Supabase, klicka **Add user**,
+   fyll i din e-post och ett lösenord. Bocka gärna i "Auto Confirm User"
+   så slipper du bekräfta via mejl. Det här kontot är ditt admin-login —
+   det finns inget separat registreringsformulär i appen, med flit.
+3. Gå till `dinsida.vercel.app/admin`, logga in med kontot du skapade.
 
-## 3. Kör lokalt
+## 3. Lägg in lager (vilka kort som finns att köpa)
+
+**Snabbast — adminpanelen:** Logga in på `/admin`, välj ett set, sök fram
+kortet, klicka +/− eller skriv siffran direkt i rutan för Vanligt/Holo,
+klicka **Spara ändringar**. Perfekt när du suttit och sorterat en hög
+nyöppnade paket och ska mata in allt på en gång.
+
+**Alternativet — direkt i Supabase:** Table Editor → `card_variants`. Varje
+kort har två rader (normal + holo). Sätt `stock` till hur många ni har.
+
+Oavsett metod: kort med `stock = 0` visas gråa och går inte att klicka på i
+butiken — så fort saldot är över 0 dyker kortet upp som köpbart, automatiskt.
+
+## 4. Kör lokalt
 
 ```bash
 npm install
@@ -45,7 +62,7 @@ npm run dev
 
 Öppna http://localhost:3000
 
-## 4. Lägg upp på GitHub
+## 5. Lägg upp på GitHub
 
 ```bash
 git init
@@ -56,7 +73,7 @@ git remote add origin https://github.com/DITT-ANVÄNDARNAMN/kortlagret.git
 git push -u origin main
 ```
 
-## 5. Deploya på Vercel
+## 6. Deploya på Vercel
 
 1. Gå till [vercel.com/new](https://vercel.com/new), importera GitHub-repot.
 2. Under **Environment Variables**, lägg in samma fyra variabler som i
@@ -100,14 +117,23 @@ app/
   kassa/page.tsx               Varukorg + kundformulär
   order-confirmed/page.tsx     Swish-instruktioner
   api/checkout/route.ts        Skapar order + drar av lager (server-side)
+  admin/login/page.tsx          Adminlogin
+  admin/(dashboard)/page.tsx    Adminstartsida — välj set
+  admin/(dashboard)/[setSlug]/page.tsx   Lagerredigering för ett set
 components/
   CardGrid.tsx / CardModal.tsx  Interaktivt kortval
   SiteHeader.tsx                Header med varukorgsindikator
+  admin/StockEditor.tsx          Sökbar lagerredigerare med snabbknappar
+  admin/LogoutButton.tsx         Loggar ut ur adminpanelen
 lib/
   CartContext.tsx               Varukorg (localStorage)
-  supabaseClient.ts              Publik klient (läsning)
+  supabaseClient.ts              Publik klient (läsning, butik)
   supabaseAdmin.ts                Service-role-klient (endast i API-routes)
+  supabase/server.ts              Inloggad admin-klient (Server Components)
+  supabase/browser.ts             Inloggad admin-klient (webbläsaren)
+middleware.ts                    Skyddar /admin — kräver inloggning
 supabase/
   schema.sql                     Databastabeller + policys
   seed_pitch_black.sql           Pitch Black, alla 120 kort
+  admin_policies.sql              Ger inloggad admin rätt att spara lager
 ```
