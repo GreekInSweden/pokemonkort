@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CardRow } from "@/lib/types";
 import { rarityAccent } from "@/lib/rarity";
 import CardModal from "@/components/CardModal";
+import CardImage from "@/components/CardImage";
 
 export default function CardGrid({
   cards,
@@ -26,24 +27,33 @@ export default function CardGrid({
               key={card.id}
               disabled={!inStock}
               onClick={() => setActiveCard(card)}
-              className={`focus-ring text-left border-l-4 ${rarityAccent[card.rarity]} border-y border-r border-line rounded-sm p-3 transition-colors ${
+              className={`focus-ring text-left border-l-4 ${rarityAccent[card.rarity]} border-y border-r border-line rounded-sm overflow-hidden transition-colors ${
                 inStock
                   ? "bg-panel hover:bg-panelLight cursor-pointer"
                   : "bg-ink/60 opacity-40 cursor-not-allowed grayscale"
               }`}
             >
-              <div className="font-mono text-xs text-mute mb-1">
-                #{String(card.number).padStart(3, "0")}
-              </div>
-              <div className="font-display text-sm font-medium text-paper leading-snug">
-                {card.name}
-              </div>
-              <div className="mt-2 text-xs font-mono">
-                {inStock ? (
-                  <span className="text-gold">I lager</span>
-                ) : (
-                  <span className="text-mute">Slut i lager</span>
-                )}
+              <CardImage
+                src={card.image_url}
+                alt={card.name}
+                number={card.number}
+                rarity={card.rarity}
+                className="w-full aspect-[3/4]"
+              />
+              <div className="p-3">
+                <div className="font-mono text-xs text-mute mb-1">
+                  #{String(card.number).padStart(3, "0")}
+                </div>
+                <div className="font-display text-sm font-medium text-paper leading-snug">
+                  {card.name}
+                </div>
+                <div className="mt-2 text-xs font-mono">
+                  {inStock ? (
+                    <span className="text-gold">I lager</span>
+                  ) : (
+                    <span className="text-mute">Slut i lager</span>
+                  )}
+                </div>
               </div>
             </button>
           );

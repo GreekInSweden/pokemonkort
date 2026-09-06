@@ -29,6 +29,7 @@ export interface CardRow {
   number: number;
   name: string;
   rarity: Rarity;
+  image_url: string | null;
   variants: CardVariantRow[];
 }
 

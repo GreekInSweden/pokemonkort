@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { CardRow, Variant } from "@/lib/types";
 import { rarityLabel } from "@/lib/rarity";
 import { useCart } from "@/lib/CartContext";
+import CardImage from "@/components/CardImage";
 
 export default function CardModal({
   card,
@@ -61,9 +62,17 @@ export default function CardModal({
       onClick={onClose}
     >
       <div
-        className="bg-panel border border-line rounded-md max-w-sm w-full p-6"
+        className="bg-panel border border-line rounded-md max-w-sm w-full overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
+        <CardImage
+          src={card.image_url}
+          alt={card.name}
+          number={card.number}
+          rarity={card.rarity}
+          className="w-full aspect-[3/4]"
+        />
+        <div className="p-6">
         <div className="font-mono text-xs text-mute mb-1">
           #{String(card.number).padStart(3, "0")} · {rarityLabel[card.rarity]}
         </div>
@@ -143,6 +152,7 @@ export default function CardModal({
         >
           Stäng
         </button>
+        </div>
       </div>
     </div>
   );

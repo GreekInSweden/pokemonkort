@@ -24,29 +24,44 @@ bekräftar).
 
 ## 2. Sätt upp admin-inloggningen
 
-Adminpanelen (`/admin`) är den snabbaste vägen att fylla i lager — sökbar
-lista med +/− knappar och ett fält per kort/variant, mycket smidigare än att
-klicka runt i Supabase när ni just öppnat en hög paket.
+Adminpanelen (`/admin`) är den snabbaste vägen att fylla i lager och lägga
+upp bilder — sökbar lista med +/− knappar och ett fält per kort/variant,
+mycket smidigare än att klicka runt i Supabase när ni just öppnat en hög
+paket.
 
 1. Kör `supabase/admin_policies.sql` i Supabase SQL Editor (efter
    `schema.sql` och `seed_pitch_black.sql`). Det ger inloggade användare
    rätt att uppdatera lagersaldo — utan den här filen går det inte att
    spara ändringar i adminpanelen.
-2. Gå till **Authentication → Users** i Supabase, klicka **Add user**,
+2. Kör därefter `supabase/image_support.sql` — den lägger till bildstöd
+   (kolumnen `image_url` samt en publik lagringsplats för foton).
+3. Gå till **Authentication → Users** i Supabase, klicka **Add user**,
    fyll i din e-post och ett lösenord. Bocka gärna i "Auto Confirm User"
    så slipper du bekräfta via mejl. Det här kontot är ditt admin-login —
    det finns inget separat registreringsformulär i appen, med flit.
-3. Gå till `dinsida.vercel.app/admin`, logga in med kontot du skapade.
+4. Gå till `dinsida.vercel.app/admin`, logga in med kontot du skapade.
 
-## 3. Lägg in lager (vilka kort som finns att köpa)
+## 3. Lägg in lager och bilder
 
 **Snabbast — adminpanelen:** Logga in på `/admin`, välj ett set, sök fram
 kortet, klicka +/− eller skriv siffran direkt i rutan för Vanligt/Holo,
 klicka **Spara ändringar**. Perfekt när du suttit och sorterat en hög
 nyöppnade paket och ska mata in allt på en gång.
 
-**Alternativet — direkt i Supabase:** Table Editor → `card_variants`. Varje
-kort har två rader (normal + holo). Sätt `stock` till hur många ni har.
+**Bilder:** Klicka på den lilla bildrutan längst till vänster på ett kort i
+adminlistan för att ladda upp ett foto av det faktiska kortet — det ersätter
+platshållaren (kortnumret på en färgad ruta) både i adminlistan och ute i
+butiken. En bild per kort räcker (inte en per exemplar), eftersom flera
+likadana kort ser identiska ut.
+
+Ni behöver **inte** fotografera alla 120 kort på en gång — lägg bara upp
+bilder efter hand, i den takt ni ändå går igenom korten för att fylla i
+lager. Kort utan bild visar en enkel färgad platshållare istället, helt
+fungerande men mindre snyggt.
+
+**Alternativet — direkt i Supabase:** Table Editor → `card_variants` för
+lager, eller `cards` för att klistra in en bild-URL direkt i kolumnen
+`image_url` om ni redan har bilder liggande någon annanstans.
 
 Oavsett metod: kort med `stock = 0` visas gråa och går inte att klicka på i
 butiken — så fort saldot är över 0 dyker kortet upp som köpbart, automatiskt.
@@ -136,4 +151,5 @@ supabase/
   schema.sql                     Databastabeller + policys
   seed_pitch_black.sql           Pitch Black, alla 120 kort
   admin_policies.sql              Ger inloggad admin rätt att spara lager
+  image_support.sql               Bildkolumn + lagringsplats för kortfoton
 ```

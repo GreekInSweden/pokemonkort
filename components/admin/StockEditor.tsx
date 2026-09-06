@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { rarityLabel } from "@/lib/rarity";
 import { Rarity } from "@/lib/types";
+import CardImage from "@/components/CardImage";
 
 interface VariantRow {
   id: string;
@@ -17,6 +18,7 @@ interface CardRow {
   number: number;
   name: string;
   rarity: Rarity;
+  image_url: string | null;
   card_variants: VariantRow[];
 }
 
@@ -31,6 +33,13 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
   }, [cards]);
 
   const [values, setValues] = useState<Record<string, number>>(initial);
+  const [images, setImages] = useState<Record<string, string | null>>(() => {
+    const map: Record<string, string | null> = {};
+    for (const card of cards) map[card.id] = card.image_url;
+    return map;
+  });
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
@@ -90,6 +99,46 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
     setSavedAt(Date.now());
   }
 
+  async function handleImageUpload(cardId: string, file: File) {
+    setUploadError(null);
+    setUploadingId(cardId);
+    const supabase = createBrowserSupabase();
+
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${cardId}.${ext}`;
+
+    const { error: uploadErr } = await supabase.storage
+      .from("card-images")
+      .upload(path, file, { upsert: true, cacheControl: "3600" });
+
+    if (uploadErr) {
+      setUploadError(
+        `Kunde inte ladda upp bilden: ${uploadErr.message}. Har du kört supabase/image_support.sql?`
+      );
+      setUploadingId(null);
+      return;
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from("card-images")
+      .getPublicUrl(path);
+    // Cache-bust so a replaced photo shows immediately instead of the old
+    // cached version.
+    const freshUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
+
+    const { error: updateErr } = await supabase
+      .from("cards")
+      .update({ image_url: freshUrl })
+      .eq("id", cardId);
+
+    setUploadingId(null);
+    if (updateErr) {
+      setUploadError(`Bilden laddades upp men kunde inte sparas: ${updateErr.message}`);
+      return;
+    }
+    setImages((prev) => ({ ...prev, [cardId]: freshUrl }));
+  }
+
   return (
     <div>
       <div className="sticky top-0 z-10 bg-ink py-3 -mx-4 px-4 mb-4 border-b border-line flex items-center gap-3">
@@ -117,6 +166,7 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
         <p className="text-sm text-gold mb-4">Sparat ✓</p>
       )}
       {errorMsg && <p className="text-sm text-red-400 mb-4">{errorMsg}</p>}
+      {uploadError && <p className="text-sm text-red-400 mb-4">{uploadError}</p>}
 
       <div className="space-y-2">
         {filteredCards.map((card) => (
@@ -124,6 +174,31 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
             key={card.id}
             className="border border-line rounded-md p-3 bg-panel flex items-center gap-4"
           >
+            <label className="shrink-0 cursor-pointer group relative">
+              <CardImage
+                src={images[card.id] ?? null}
+                alt={card.name}
+                number={card.number}
+                rarity={card.rarity}
+                className="w-12 h-16 rounded-sm"
+              />
+              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-sm">
+                <span className="text-[10px] text-paper text-center leading-tight px-1">
+                  {uploadingId === card.id ? "Laddar…" : "Byt bild"}
+                </span>
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={uploadingId === card.id}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageUpload(card.id, file);
+                  e.target.value = "";
+                }}
+              />
+            </label>
             <div className="w-16 shrink-0 font-mono text-xs text-mute">
               #{String(card.number).padStart(3, "0")}
             </div>

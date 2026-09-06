@@ -22,7 +22,7 @@ export default async function AdminSetPage({
 
   const { data: cards } = await supabase
     .from("cards")
-    .select("id, number, name, rarity, card_variants(id, variant, price_sek, stock)")
+    .select("id, number, name, rarity, image_url, card_variants(id, variant, price_sek, stock)")
     .eq("set_id", set.id)
     .order("number", { ascending: true });
 
