@@ -1,0 +1,47 @@
+import Link from "next/link";
+
+export default function OrderConfirmedPage({
+  searchParams,
+}: {
+  searchParams: { order?: string; total?: string };
+}) {
+  const orderNumber = searchParams.order ?? "—";
+  const total = searchParams.total ?? "0";
+  const swishNumber = process.env.NEXT_PUBLIC_SWISH_NUMBER || "[fyll i ditt Swish-nummer]";
+
+  return (
+    <div className="max-w-xl mx-auto px-4 py-20">
+      <h1 className="font-display text-3xl font-bold text-paper mb-2">
+        Tack för din beställning!
+      </h1>
+      <p className="text-mute mb-8">
+        Ordernummer <span className="font-mono text-paper">{orderNumber}</span>{" "}
+        är registrerad. Sista steget är att betala via Swish.
+      </p>
+
+      <div className="border border-gold rounded-md p-6 bg-gold/5 mb-8">
+        <div className="text-sm text-mute mb-1">Swisha</div>
+        <div className="font-mono text-3xl font-bold text-gold mb-4">
+          {total} kr
+        </div>
+        <div className="text-sm text-mute mb-1">Till</div>
+        <div className="font-mono text-xl text-paper mb-4">{swishNumber}</div>
+        <div className="text-sm text-mute mb-1">Meddelande (viktigt!)</div>
+        <div className="font-mono text-xl text-paper">{orderNumber}</div>
+      </div>
+
+      <p className="text-sm text-mute mb-8">
+        Skriv ordernumret som meddelande i Swish-appen så vi kan matcha
+        betalningen mot din order. Vi packar och skickar så snart betalningen
+        kommit in, och hör av oss via e-post med spårningsinfo.
+      </p>
+
+      <Link
+        href="/"
+        className="focus-ring inline-block rounded-sm border border-line px-6 py-3 text-paper hover:border-gold"
+      >
+        Tillbaka till startsidan
+      </Link>
+    </div>
+  );
+}
