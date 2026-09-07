@@ -168,17 +168,40 @@ Samma **"+ Nytt kort"**-knapp funkar för att lägga till fler kort i vilket
 set som helst, inte bara promo-setet — praktiskt om ni t.ex. vill komplettera
 Pitch Black med ett kort som saknades i ursprungslistan.
 
-## Bygga på med fler set
+## 9. Dölja/visa set (förbered i bakgrunden)
 
-Två sätt att lägga till ett helt nytt set:
+Nya set du lägger till via `/admin/nytt-set` startar automatiskt **dolda**
+— de syns i `/admin` som vanligt så du kan fylla i lager och bilder, men
+dyker inte upp i butiken förrän du är redo.
+
+1. Kör `supabase/set_visibility.sql` i Supabase SQL Editor.
+2. På `/admin`-startsidan har varje set nu en knapp — **"Synlig — dölj"**
+   eller **"Dold — visa"** — klicka för att växla när du vill.
+
+## 10. Färdiga seed-filer för fler Mega Evolution-set
+
+Utöver Pitch Black finns nu färdiga seed-filer för:
+
+- **Chaos Rising (ME04)** — `supabase/seed_chaos_rising.sql`, 122 kort
+- **Phantasmal Flames (ME02)** — `supabase/seed_phantasmal_flames.sql`, 130 kort
+
+Kör valfri fil i Supabase SQL Editor (efter `set_visibility.sql`) för att
+lägga till hela setet med korrekt namn, nummer och sällsynthet på en gång —
+precis som med Pitch Black. Båda seten läggs in **dolda** automatiskt (se
+punkt 9 ovan), så de stör inte butiken förrän ni faktiskt har kort i lager.
+
+Kvar i Mega Evolution-serien: **ME01 (Mega Evolution, grundset — 188 kort)**,
+**ME2.5 (Ascended Heroes)** och **ME03 (Perfect Order)**. Hör av er så
+genererar vi seed-filer för de också.
+
+## 11. Sammanfattning — sätt att lägga till ett nytt set
 
 - **Ett fåtal kort (t.ex. en promo-samling):** använd `/admin/nytt-set` +
   `/admin/[setSlug]/nytt-kort` som beskrivs ovan — helt utan att röra
   Supabase direkt.
-- **Ett helt nytt huvudset med massor av kort (t.ex. Chaos Rising, alla
-  ~120 kort på en gång):** snabbast är fortfarande en seed-fil likt
-  `seed_pitch_black.sql`. Hör av er så genererar vi en för det specifika
-  setet ni vill lägga till.
+- **Ett helt nytt huvudset med massor av kort:** snabbast är en seed-fil
+  likt `seed_pitch_black.sql`, `seed_chaos_rising.sql` eller
+  `seed_phantasmal_flames.sql`. Hör av er så genererar vi en för nästa set.
 
 Sidan plockar upp nya kategorier/set automatiskt oavsett metod — ingen
 kodändring behövs.
@@ -214,6 +237,7 @@ components/
   admin/CloseAuctionButton.tsx    Markera auktion som avslutad
   admin/NewSetForm.tsx             Formulär för att skapa nytt set/kategori
   admin/NewCardForm.tsx            Formulär för att lägga till ett kort
+  admin/ToggleSetVisibilityButton.tsx  Visa/dölj-knapp för ett set
   admin/LogoutButton.tsx         Loggar ut ur adminpanelen
 lib/
   CartContext.tsx               Varukorg (localStorage)
@@ -230,4 +254,7 @@ supabase/
   auctions.sql                    Auktioner + bud, med skyddad budgivarinfo
   reserve_price.sql                Dolt reservationspris (minimipris)
   promo_rarity.sql                  Lägger till "Promo" som korttyp
+  set_visibility.sql                 Dölj/visa-funktion för set
+  seed_chaos_rising.sql              Chaos Rising, alla 122 kort
+  seed_phantasmal_flames.sql         Phantasmal Flames, alla 130 kort
 ```

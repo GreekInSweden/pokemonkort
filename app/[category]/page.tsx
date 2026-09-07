@@ -17,7 +17,8 @@ async function getSetsForCategory(categorySlug: string): Promise<SetSummary[] | 
   const { data: sets, error } = await supabase
     .from("sets")
     .select("id, slug, name, category_name")
-    .eq("category_slug", categorySlug);
+    .eq("category_slug", categorySlug)
+    .eq("is_visible", true);
 
   if (error || !sets || sets.length === 0) return null;
 

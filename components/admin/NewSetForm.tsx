@@ -56,6 +56,7 @@ export default function NewSetForm({
       category_name: categoryName,
       slug: slugify(setName),
       name: setName.trim(),
+      is_visible: false,
     });
     setSubmitting(false);
 
@@ -119,7 +120,12 @@ export default function NewSetForm({
       </label>
 
       {error && <p className="text-sm text-red-400">{error}</p>}
-      {success && <p className="text-sm text-gold">Set skapat ✓</p>}
+      {success && (
+        <p className="text-sm text-gold">
+          Set skapat ✓ (dolt tills vidare — visa det från startsidan i admin
+          när ni har kort att sälja)
+        </p>
+      )}
 
       <button
         type="submit"

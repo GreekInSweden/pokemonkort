@@ -13,7 +13,8 @@ interface CategoryGroup {
 async function getCategories(): Promise<CategoryGroup[]> {
   const { data, error } = await supabase
     .from("sets")
-    .select("category_slug, category_name");
+    .select("category_slug, category_name")
+    .eq("is_visible", true);
 
   if (error || !data) return [];
 

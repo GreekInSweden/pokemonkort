@@ -13,6 +13,7 @@ async function getSetWithCards(categorySlug: string, setSlug: string) {
     .select("id, slug, name, category_name, category_slug")
     .eq("category_slug", categorySlug)
     .eq("slug", setSlug)
+    .eq("is_visible", true)
     .single();
 
   if (setError || !set) return null;
