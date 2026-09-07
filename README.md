@@ -227,6 +227,28 @@ set i listan för att hoppa direkt till dess lagerredigerare.
 Ingen ny SQL-fil behövs för det här — det är bara en ny sida som räknar
 ihop siffror ni redan har i databasen (`stock × pris` för varje kort).
 
+## 13. Hantera obetalda beställningar (undvik att lagret "försvinner")
+
+Lagersaldot dras av **direkt när en order skapas**, innan betalning är
+bekräftad — annars skulle två kunder kunna "köpa" samma sista exemplar
+samtidigt. Det betyder att en påbörjad men aldrig betald beställning binder
+upp korten tills du gör något åt det.
+
+1. Kör `supabase/order_admin_policies.sql` i Supabase SQL Editor.
+2. Gå till `/admin/bestallningar` (länk i admin-menyn) för att se alla
+   beställningar — obetalda högst upp, med tidsstämpel så du ser hur
+   gamla de är.
+3. För varje obetald order: klicka **"Markera betald"** när Swish-pengarna
+   kommit in, eller **"Avbryt & lägg tillbaka i lager"** om kunden aldrig
+   betalade — det återställer automatiskt lagersaldot för alla kort i den
+   ordern.
+
+**Ingen automatisk "loop"-risk finns** — varje klick på "Beställ" i kassan
+skapar exakt en order, och varukorgen töms direkt efteråt. Risken är
+istället att flera *olika* övergivna försök över tid binder upp lager utan
+att synas någonstans — därför är den nya sidan tänkt att kollas igenom med
+jämna mellanrum (t.ex. någon gång per dag), inte bara vid problem.
+
 ## Struktur
 
 ```
@@ -250,6 +272,7 @@ app/
   admin/(dashboard)/nytt-set/page.tsx       Skapa ny kategori/set
   admin/(dashboard)/[setSlug]/nytt-kort/page.tsx  Lägg till enskilt kort/promo
   admin/(dashboard)/lagervarde/page.tsx      Totalt lagervärde, per set
+  admin/(dashboard)/bestallningar/page.tsx    Alla ordrar, markera betald/avbryt
 components/
   CardGrid.tsx / CardModal.tsx  Interaktivt kortval + sök/filter
   CardImage.tsx                  Bild med platshållare
@@ -261,6 +284,7 @@ components/
   admin/NewSetForm.tsx             Formulär för att skapa nytt set/kategori
   admin/NewCardForm.tsx            Formulär för att lägga till ett kort
   admin/ToggleSetVisibilityButton.tsx  Visa/dölj-knapp för ett set
+  admin/OrderActions.tsx           Markera betald / avbryt & återställ lager
   admin/LogoutButton.tsx         Loggar ut ur adminpanelen
 lib/
   CartContext.tsx               Varukorg (localStorage)
@@ -277,6 +301,7 @@ supabase/
   auctions.sql                    Auktioner + bud, med skyddad budgivarinfo
   reserve_price.sql                Dolt reservationspris (minimipris)
   promo_rarity.sql                  Lägger till "Promo" som korttyp
+  order_admin_policies.sql           Ger admin läs/skrivrätt på beställningar
   set_visibility.sql                 Dölj/visa-funktion för set
   seed_chaos_rising.sql              Chaos Rising, alla 122 kort
   seed_phantasmal_flames.sql         Phantasmal Flames, alla 130 kort
