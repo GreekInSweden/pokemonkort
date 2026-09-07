@@ -139,21 +139,23 @@ och antal bud visas publikt.
 1. Kund lägger kort i varukorgen och fyller i sina uppgifter i kassan.
 2. En order skapas i Supabase (`orders`-tabellen) med status
    `pending_payment`, och lagersaldot för de köpta korten minskas direkt.
-3. Kunden ser en **QR-kod** (belopp och ordernummer redan ifyllda — bara
-   att skanna och godkänna i Swish-appen) samt ditt Swish-nummer och
-   ordernumret i text, som reservlösning om kameran krånglar.
+3. Kunden ser din **Swish QR-kod** (från er uppladdade bild
+   `public/swish-qr.png`) samt Swish-nummer och ordernummer i text.
+   Kunden scannar koden för att öppna Swish med numret ifyllt, och skriver
+   själv in belopp och ordernummer som meddelande.
 4. Du kollar Swish-appen, matchar betalningen mot ordernumret, och ändrar
    ordern till `status = 'paid'` i Supabase Table Editor (tabell `orders`).
 5. Du packar och skickar.
 
-QR-koden genereras helt på er egen server (ingen extern tjänst, inget
-Swish-avtal krävs) via `/api/swish-qr` — samma länkformat som Swish-appens
-egen "skapa Swish-kod"-funktion använder, bara med belopp och meddelande
-förifyllda per order istället för tomma.
+Vill ni byta QR-bild senare (nytt Swish-nummer, ny design) — ersätt bara
+filen `public/swish-qr.png` med en ny och ladda upp den till GitHub, ingen
+kodändring behövs.
 
-Vill ni längre fram automatisera steg 4 (att markera som betald) också
-krävs ett Swish-handelsavtal via en betalväxel (t.ex. Swedbank Pay eller
-Trustly) — hör av er så bygger vi på med det när ni är redo för det steget.
+Vill ni längre fram automatisera steg 3 (så belopp och meddelande fylls i
+automatiskt när kunden scannar) eller steg 4 (markera som betald)
+automatiskt, krävs ett Swish-handelsavtal via en betalväxel (t.ex.
+Swedbank Pay eller Trustly) — hör av er så bygger vi på med det när ni är
+redo för det steget.
 
 ## 8. Lägga till bonus- och promokort (utan officiell numrering)
 
