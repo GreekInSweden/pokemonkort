@@ -17,6 +17,9 @@ export default function AdminLayout({
             Kortlagret — Admin
           </Link>
           <nav className="flex items-center gap-4">
+            <Link href="/admin/lagervarde" className="focus-ring text-sm text-paper hover:text-gold">
+              Lagervärde
+            </Link>
             <Link href="/admin/auktioner" className="focus-ring text-sm text-paper hover:text-gold">
               Auktioner
             </Link>

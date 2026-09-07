@@ -217,6 +217,16 @@ Hela Mega Evolution-serien är nu representerad, från ME01 till ME05
 Sidan plockar upp nya kategorier/set automatiskt oavsett metod — ingen
 kodändring behövs.
 
+## 12. Se totalt lagervärde
+
+Gå till `/admin/lagervarde` (länk i admin-menyn) för att se vad ni skulle
+få in om allt som just nu finns i lager såldes till satta priser — totalt,
+och uppdelat per set. Kort med 0 i lager räknas inte med. Klicka på ett
+set i listan för att hoppa direkt till dess lagerredigerare.
+
+Ingen ny SQL-fil behövs för det här — det är bara en ny sida som räknar
+ihop siffror ni redan har i databasen (`stock × pris` för varje kort).
+
 ## Struktur
 
 ```
@@ -239,6 +249,7 @@ app/
   admin/(dashboard)/auktioner/ny/page.tsx  Skapa ny auktion
   admin/(dashboard)/nytt-set/page.tsx       Skapa ny kategori/set
   admin/(dashboard)/[setSlug]/nytt-kort/page.tsx  Lägg till enskilt kort/promo
+  admin/(dashboard)/lagervarde/page.tsx      Totalt lagervärde, per set
 components/
   CardGrid.tsx / CardModal.tsx  Interaktivt kortval + sök/filter
   CardImage.tsx                  Bild med platshållare
