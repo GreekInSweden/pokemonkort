@@ -33,6 +33,14 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
   }, [cards]);
 
   const [values, setValues] = useState<Record<string, number>>(initial);
+  const initialPrices = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const card of cards) {
+      for (const v of card.card_variants) map[v.id] = v.price_sek;
+    }
+    return map;
+  }, [cards]);
+  const [prices, setPrices] = useState<Record<string, number>>(initialPrices);
   const [images, setImages] = useState<Record<string, string | null>>(() => {
     const map: Record<string, string | null> = {};
     for (const card of cards) map[card.id] = card.image_url;
@@ -45,13 +53,16 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const dirtyIds = useMemo(
-    () =>
-      Object.keys(values).filter(
-        (id) => values[id] !== (initial[id] ?? 0)
-      ),
-    [values, initial]
-  );
+  const dirtyIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const id of Object.keys(values)) {
+      if (values[id] !== (initial[id] ?? 0)) ids.add(id);
+    }
+    for (const id of Object.keys(prices)) {
+      if (prices[id] !== (initialPrices[id] ?? 0)) ids.add(id);
+    }
+    return Array.from(ids);
+  }, [values, initial, prices, initialPrices]);
 
   const filteredCards = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -65,6 +76,10 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
 
   function setValue(variantId: string, value: number) {
     setValues((v) => ({ ...v, [variantId]: Math.max(0, value) }));
+  }
+
+  function setPrice(variantId: string, value: number) {
+    setPrices((p) => ({ ...p, [variantId]: Math.max(0, value) }));
   }
 
   function bump(variantId: string, delta: number) {
@@ -82,7 +97,10 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
 
     const results = await Promise.all(
       dirtyIds.map((id) =>
-        supabase.from("card_variants").update({ stock: values[id] }).eq("id", id)
+        supabase
+          .from("card_variants")
+          .update({ stock: values[id] ?? 0, price_sek: prices[id] ?? 0 })
+          .eq("id", id)
       )
     );
     const failed = results.find((r) => r.error);
@@ -96,6 +114,7 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
     }
     // Treat the saved values as the new baseline.
     Object.assign(initial, values);
+    Object.assign(initialPrices, prices);
     setSavedAt(Date.now());
   }
 
@@ -172,7 +191,7 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
         {filteredCards.map((card) => (
           <div
             key={card.id}
-            className="border border-line rounded-md p-3 bg-panel flex items-center gap-4"
+            className="border border-line rounded-md p-3 bg-panel flex flex-wrap items-center gap-4"
           >
             <label className="shrink-0 cursor-pointer group relative">
               <CardImage
@@ -213,12 +232,26 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
                 (v) => v.variant === variantType
               );
               if (!variant) return null;
-              const isDirty = values[variant.id] !== (initial[variant.id] ?? 0);
+              const isStockDirty = values[variant.id] !== (initial[variant.id] ?? 0);
+              const isPriceDirty = prices[variant.id] !== (initialPrices[variant.id] ?? 0);
               return (
                 <div key={variant.id} className="flex items-center gap-1 shrink-0">
                   <span className="text-xs text-mute w-10">
                     {variantType === "holo" ? "Holo" : "Van."}
                   </span>
+                  <div className="flex items-center gap-0.5">
+                    <input
+                      type="number"
+                      min={0}
+                      value={prices[variant.id] ?? 0}
+                      onChange={(e) => setPrice(variant.id, Number(e.target.value))}
+                      title="Pris (kr)"
+                      className={`focus-ring w-14 bg-ink border rounded-sm px-1 py-1 text-center font-mono text-sm text-paper ${
+                        isPriceDirty ? "border-gold" : "border-line"
+                      }`}
+                    />
+                    <span className="text-xs text-mute">kr</span>
+                  </div>
                   <button
                     onClick={() => bump(variant.id, -1)}
                     className="focus-ring w-7 h-7 rounded-sm border border-line text-paper hover:border-gold text-sm"
@@ -233,8 +266,9 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
                     onChange={(e) =>
                       setValue(variant.id, Number(e.target.value))
                     }
+                    title="Antal i lager"
                     className={`focus-ring w-14 bg-ink border rounded-sm px-1 py-1 text-center font-mono text-sm text-paper ${
-                      isDirty ? "border-gold" : "border-line"
+                      isStockDirty ? "border-gold" : "border-line"
                     }`}
                   />
                   <button
