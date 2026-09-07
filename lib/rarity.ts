@@ -6,6 +6,7 @@ export const rarityLabel: Record<Rarity, string> = {
   ultra_rare: "Ultra Rare",
   special_illustration_rare: "Special Illustration Rare",
   mega_hyper_rare: "Mega Hyper Rare",
+  promo: "Promo",
 };
 
 // Tailwind classes for the thin rarity edge on each card tile.
@@ -15,4 +16,5 @@ export const rarityAccent: Record<Rarity, string> = {
   ultra_rare: "border-l-rare-ultra",
   special_illustration_rare: "border-l-rare-special",
   mega_hyper_rare: "border-l-rare-gold",
+  promo: "border-l-rare-promo",
 };

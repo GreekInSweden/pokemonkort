@@ -6,6 +6,7 @@ const placeholderTint: Record<Rarity, string> = {
   ultra_rare: "bg-rare-ultra/20",
   special_illustration_rare: "bg-rare-special/20",
   mega_hyper_rare: "bg-rare-gold/20",
+  promo: "bg-rare-promo/20",
 };
 
 export default function CardImage({

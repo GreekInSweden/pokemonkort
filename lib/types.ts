@@ -3,7 +3,8 @@ export type Rarity =
   | "illustration_rare"
   | "ultra_rare"
   | "special_illustration_rare"
-  | "mega_hyper_rare";
+  | "mega_hyper_rare"
+  | "promo";
 
 export type Variant = "normal" | "holo";
 
@@ -58,4 +59,5 @@ export interface AuctionListing {
   bidCount: number;
   endsAt: string;
   status: "open" | "closed";
+  reserveMet: boolean;
 }

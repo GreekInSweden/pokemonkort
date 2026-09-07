@@ -19,6 +19,7 @@ const config: Config = {
           ultra: "#B26FD1",
           special: "#E8B33D",
           gold: "#F2C94C",
+          promo: "#4FBF9F",
         },
       },
       fontFamily: {

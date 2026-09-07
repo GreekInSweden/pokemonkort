@@ -10,7 +10,7 @@ export default async function AdminAuktionerPage() {
   const { data: auctions } = await supabase
     .from("auctions")
     .select(
-      "id, starting_price_sek, min_increment_sek, ends_at, status, card_variants(variant, cards(number, name))"
+      "id, starting_price_sek, min_increment_sek, reserve_price_sek, ends_at, status, card_variants(variant, cards(number, name))"
     )
     .order("created_at", { ascending: false });
 
@@ -79,9 +79,30 @@ export default async function AdminAuktionerPage() {
                 </div>
 
                 <p className="text-xs text-mute mb-3">
-                  Utrop: {a.starting_price_sek} kr · Slutar:{" "}
-                  {new Date(a.ends_at).toLocaleString("sv-SE")}
+                  Utrop: {a.starting_price_sek} kr
+                  {a.reserve_price_sek !== null && (
+                    <>
+                      {" "}
+                      · Reservationspris:{" "}
+                      <span className="text-paper">{a.reserve_price_sek} kr</span>
+                    </>
+                  )}
+                  {" "}· Slutar: {new Date(a.ends_at).toLocaleString("sv-SE")}
                 </p>
+
+                {a.reserve_price_sek !== null && a.bids.length > 0 && (
+                  <p
+                    className={`text-xs mb-2 ${
+                      Number(a.bids[0].amount_sek) >= Number(a.reserve_price_sek)
+                        ? "text-gold"
+                        : "text-amber-400/90"
+                    }`}
+                  >
+                    {Number(a.bids[0].amount_sek) >= Number(a.reserve_price_sek)
+                      ? "✓ Reservationspris uppnått — okej att sälja"
+                      : "⚠ Reservationspris ej uppnått ännu"}
+                  </p>
+                )}
 
                 {a.bids.length === 0 ? (
                   <p className="text-sm text-mute">Inga bud ännu.</p>

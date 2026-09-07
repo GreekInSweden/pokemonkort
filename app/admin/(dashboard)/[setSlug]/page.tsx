@@ -38,12 +38,20 @@ export default async function AdminSetPage({
         <h1 className="font-display text-2xl font-bold text-paper">
           {set.name}
         </h1>
-        <Link
-          href={`/admin/${set.slug}/bilder`}
-          className="focus-ring text-sm rounded-sm border border-line px-3 py-1.5 text-paper hover:border-gold"
-        >
-          Massuppladdning av bilder →
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href={`/admin/${set.slug}/nytt-kort`}
+            className="focus-ring text-sm rounded-sm border border-line px-3 py-1.5 text-paper hover:border-gold"
+          >
+            + Nytt kort
+          </Link>
+          <Link
+            href={`/admin/${set.slug}/bilder`}
+            className="focus-ring text-sm rounded-sm border border-line px-3 py-1.5 text-paper hover:border-gold"
+          >
+            Massuppladdning av bilder →
+          </Link>
+        </div>
       </div>
       <p className="text-mute mb-8">
         Fyll i hur många du har av varje kort och variant. Klicka i en ruta

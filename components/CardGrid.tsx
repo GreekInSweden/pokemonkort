@@ -12,6 +12,7 @@ const rarityOptions: Rarity[] = [
   "ultra_rare",
   "special_illustration_rare",
   "mega_hyper_rare",
+  "promo",
 ];
 
 export default function CardGrid({

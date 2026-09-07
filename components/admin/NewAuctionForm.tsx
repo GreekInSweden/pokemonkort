@@ -30,6 +30,7 @@ export default function NewAuctionForm({ sets }: { sets: SetOption[] }) {
   const [cardId, setCardId] = useState("");
   const [variantId, setVariantId] = useState("");
   const [startingPrice, setStartingPrice] = useState(100);
+  const [reservePrice, setReservePrice] = useState<number | "">("");
   const [minIncrement, setMinIncrement] = useState(10);
   const [endsAt, setEndsAt] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -74,6 +75,7 @@ export default function NewAuctionForm({ sets }: { sets: SetOption[] }) {
     const { error: insertError } = await supabase.from("auctions").insert({
       card_variant_id: variantId,
       starting_price_sek: startingPrice,
+      reserve_price_sek: reservePrice === "" ? null : reservePrice,
       min_increment_sek: minIncrement,
       ends_at: new Date(endsAt).toISOString(),
       status: "open",
@@ -156,6 +158,30 @@ export default function NewAuctionForm({ sets }: { sets: SetOption[] }) {
           onChange={(e) => setStartingPrice(Number(e.target.value))}
           className="focus-ring w-full bg-panel border border-line rounded-sm px-3 py-2 text-paper"
         />
+        <span className="text-xs text-mute mt-1 block">
+          Visas publikt — det budgivningen börjar från.
+        </span>
+      </label>
+
+      <label className="block">
+        <span className="text-sm text-mute mb-1 block">
+          Reservationspris / dolt minimipris (kr) — valfritt
+        </span>
+        <input
+          type="number"
+          min={1}
+          value={reservePrice}
+          onChange={(e) =>
+            setReservePrice(e.target.value === "" ? "" : Number(e.target.value))
+          }
+          placeholder="Lämna tomt om du säljer till högsta bud oavsett"
+          className="focus-ring w-full bg-panel border border-line rounded-sm px-3 py-2 text-paper"
+        />
+        <span className="text-xs text-mute mt-1 block">
+          Syns aldrig för kunder — bara du ser exakt siffra. Om högsta budet
+          hamnar under den här gränsen visas bara "minimipris ej uppnått"
+          publikt, och du väljer själv om du ändå vill sälja.
+        </span>
       </label>
 
       <label className="block">

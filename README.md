@@ -114,18 +114,23 @@ Utöver fastprisbutiken kan riktigt värdefulla enskilda kort (t.ex. en
 Special Illustration Rare) säljas via bud istället.
 
 1. Kör `supabase/auctions.sql` i Supabase SQL Editor (efter alla tidigare
-   migrationer).
+   migrationer), och därefter `supabase/reserve_price.sql`.
 2. Gå till `/admin/auktioner` → **+ Ny auktion**. Välj set, kort och
-   variant (Vanligt/Holo), sätt ett utropspris, minsta höjning per bud, och
-   när auktionen ska sluta.
+   variant (Vanligt/Holo), sätt ett utropspris (det budgivningen börjar
+   från, syns publikt), ett valfritt **reservationspris** (ditt dolda
+   verkliga minimipris — syns aldrig för kunder), minsta höjning per bud,
+   och när auktionen ska sluta.
 3. Kunder ser och budar på öppna auktioner på `/auktioner` — ingen inloggning
    krävs för att buda, bara namn, e-post, telefon och belopp.
 4. Sidan uppdaterar högsta bud automatiskt var 20:e sekund, så det känns
    nästan live utan att vara en fullständig realtidslösning.
 5. När auktionen är slut, gå till `/admin/auktioner` för att se alla bud
-   med namn, e-post och telefon — högst upp markerat med 🏆. Kontakta
-   vinnaren för Swish-betalning precis som med vanliga beställningar, och
-   klicka **"Markera som avslutad"** när det är klart.
+   med namn, e-post och telefon — högst upp markerat med 🏆, samt om ditt
+   reservationspris är uppnått eller inte. Om det inte är uppnått är du
+   inte skyldig att sälja — hör av dig till budgivaren och fråga om de vill
+   höja, eller låt auktionen bara avslutas utan affär. Kontakta vinnaren
+   för Swish-betalning precis som med vanliga beställningar när du bestämt
+   dig, och klicka **"Markera som avslutad"** när det är klart.
 
 Budgivares kontaktuppgifter syns bara för dig som inloggad admin, aldrig
 för andra besökare på auktionssidan — bara det aktuella högsta beloppet
@@ -144,17 +149,39 @@ Vill ni längre fram automatisera steg 3–4 med riktig Swish-integration krävs
 ett Swish-handelsavtal via en betalväxel (t.ex. Swedbank Pay eller Trustly)
 — hör av er så bygger vi på med det när ni är redo för det steget.
 
+## 8. Lägga till bonus- och promokort (utan officiell numrering)
+
+ETB:er, blisters och tenn-boxar innehåller ofta ett extra promo-kort som
+inte hör till setets vanliga 1-120-numrering (t.ex. ett Zarude- eller
+Binacle-kort som såg annorlunda ut). Så lägger ni in dem:
+
+1. Kör `supabase/promo_rarity.sql` i Supabase SQL Editor (lägger till
+   "Promo" som en giltig korttyp).
+2. Gå till `/admin/nytt-set`, skapa en kategori (t.ex. "Bonuskort & Promos")
+   och ett set (t.ex. "Black Star Promos") en gång — dit går sedan alla
+   framtida lösa promokort, oavsett vilken produkt de kom från.
+3. Gå till det nya setet i `/admin`, klicka **"+ Nytt kort"**, fyll i namn,
+   typ (välj "Promo"), pris och antal i lager. Bocka i "holo-variant" bara
+   om kortet faktiskt finns i två utföranden.
+
+Samma **"+ Nytt kort"**-knapp funkar för att lägga till fler kort i vilket
+set som helst, inte bara promo-setet — praktiskt om ni t.ex. vill komplettera
+Pitch Black med ett kort som saknades i ursprungslistan.
+
 ## Bygga på med fler set
 
-Varje nytt set är bara nya rader i Supabase:
+Två sätt att lägga till ett helt nytt set:
 
-1. Lägg till en rad i `sets` (category_slug, category_name, slug, name).
-2. Lägg till kortens rader i `cards` (kopplade till setets `id`).
-3. Lägg till en `normal`- och `holo`-rad per kort i `card_variants`.
+- **Ett fåtal kort (t.ex. en promo-samling):** använd `/admin/nytt-set` +
+  `/admin/[setSlug]/nytt-kort` som beskrivs ovan — helt utan att röra
+  Supabase direkt.
+- **Ett helt nytt huvudset med massor av kort (t.ex. Chaos Rising, alla
+  ~120 kort på en gång):** snabbast är fortfarande en seed-fil likt
+  `seed_pitch_black.sql`. Hör av er så genererar vi en för det specifika
+  setet ni vill lägga till.
 
-Sidan plockar upp nya kategorier/set automatiskt — ingen kodändring behövs.
-Vill ni ha ett skript liknande `seed_pitch_black.sql` för ett annat set,
-hör bara av er så genererar vi ett.
+Sidan plockar upp nya kategorier/set automatiskt oavsett metod — ingen
+kodändring behövs.
 
 ## Struktur
 
@@ -175,6 +202,8 @@ app/
   admin/(dashboard)/[setSlug]/bilder/page.tsx  Massuppladdning av bilder
   admin/(dashboard)/auktioner/page.tsx   Alla auktioner + budgivarkontakt
   admin/(dashboard)/auktioner/ny/page.tsx  Skapa ny auktion
+  admin/(dashboard)/nytt-set/page.tsx       Skapa ny kategori/set
+  admin/(dashboard)/[setSlug]/nytt-kort/page.tsx  Lägg till enskilt kort/promo
 components/
   CardGrid.tsx / CardModal.tsx  Interaktivt kortval + sök/filter
   CardImage.tsx                  Bild med platshållare
@@ -183,6 +212,8 @@ components/
   admin/BulkImageUploader.tsx    Massuppladdning, auto-matchning av filnamn
   admin/NewAuctionForm.tsx        Formulär för att skapa en auktion
   admin/CloseAuctionButton.tsx    Markera auktion som avslutad
+  admin/NewSetForm.tsx             Formulär för att skapa nytt set/kategori
+  admin/NewCardForm.tsx            Formulär för att lägga till ett kort
   admin/LogoutButton.tsx         Loggar ut ur adminpanelen
 lib/
   CartContext.tsx               Varukorg (localStorage)
@@ -197,4 +228,6 @@ supabase/
   admin_policies.sql              Ger inloggad admin rätt att spara lager
   image_support.sql               Bildkolumn + lagringsplats för kortfoton
   auctions.sql                    Auktioner + bud, med skyddad budgivarinfo
+  reserve_price.sql                Dolt reservationspris (minimipris)
+  promo_rarity.sql                  Lägger till "Promo" som korttyp
 ```

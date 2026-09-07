@@ -13,9 +13,15 @@ export default async function AdminHomePage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
-      <h1 className="font-display text-2xl font-bold text-paper mb-1">
-        Lager
-      </h1>
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="font-display text-2xl font-bold text-paper">Lager</h1>
+        <Link
+          href="/admin/nytt-set"
+          className="focus-ring text-sm rounded-sm border border-line px-3 py-1.5 text-paper hover:border-gold"
+        >
+          + Nytt set
+        </Link>
+      </div>
       <p className="text-mute mb-8">Välj ett set för att fylla i antal.</p>
 
       {!sets || sets.length === 0 ? (

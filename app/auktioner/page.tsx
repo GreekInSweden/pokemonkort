@@ -84,6 +84,11 @@ export default function AuktionerPage() {
                     {a.bidCount} bud
                   </span>
                 </div>
+                {!a.reserveMet && a.bidCount > 0 && (
+                  <div className="text-xs text-amber-400/90 mt-1">
+                    Minimipris ej uppnått ännu
+                  </div>
+                )}
                 <div className="text-xs text-mute mt-1 font-mono">
                   {timeLeftLabel(a.endsAt)}
                 </div>
@@ -167,6 +172,12 @@ function BidModal({
           Högsta bud just nu: <span className="text-gold">{auction.currentHighSek} kr</span>{" "}
           · Minsta bud: {minBid} kr
         </p>
+        {!auction.reserveMet && auction.bidCount > 0 && (
+          <p className="text-xs text-amber-400/90 mb-4">
+            Minimipris ej uppnått ännu — säljaren kan välja att inte sälja
+            om inget högre bud kommer in innan sluttid.
+          </p>
+        )}
 
         {success ? (
           <p className="text-gold">Bud lagt! Vi hör av oss om du vinner.</p>
