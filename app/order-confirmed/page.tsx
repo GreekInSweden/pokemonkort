@@ -21,14 +21,15 @@ export default function OrderConfirmedPage({
 
       <div className="border border-gold rounded-md p-6 bg-gold/5 mb-8">
         <div className="flex justify-center mb-6">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/swish-qr.png"
-            alt="Swish QR-kod"
-            width={220}
-            height={220}
-            className="rounded-md bg-white p-3"
-          />
+          <div className="bg-white p-3 rounded-md">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/swish-qr.png"
+              alt="Swish QR-kod"
+              width={220}
+              height={220}
+            />
+          </div>
         </div>
         <div className="text-sm text-mute mb-1">Swisha</div>
         <div className="font-mono text-3xl font-bold text-gold mb-4">
