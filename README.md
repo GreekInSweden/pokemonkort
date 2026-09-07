@@ -249,6 +249,27 @@ istället att flera *olika* övergivna försök över tid binder upp lager utan
 att synas någonstans — därför är den nya sidan tänkt att kollas igenom med
 jämna mellanrum (t.ex. någon gång per dag), inte bara vid problem.
 
+## 14. MEP Black Star Promos (löpande promoserie)
+
+Till skillnad från huvudseten är det här **inte** en stängd, färdig lista —
+Pokémon Company lägger till fler promokort varje gång en ny Mega Evolution-
+produkt släpps, så den växer kontinuerligt.
+
+1. Kör `supabase/delete_old_promo_set.sql` först (tar bort det gamla
+   manuellt ihopsatta setet "MEP Black Star Promos Singles" — kort och
+   lager för Zarude/Binacle försvinner, fylls i på nytt i steg 3).
+2. Kör därefter `supabase/seed_mep_promos.sql` — lägger in 88 kort
+   (MEP 001–088, alla hittills existerande promos t.o.m. Zarude från
+   Pitch Black-ETB:n). Setet läggs in dolt som vanligt.
+3. Fyll i lager/pris för de kort ni faktiskt har, precis som med övriga
+   set. Ett kort saknas medvetet — en onumrerad "Pikachu at the Museum"-
+   promo som inte passar det vanliga sifferschemat. Lägg till den för
+   hand via **"+ Nytt kort"** om ni råkar få tag i den.
+4. Nästa gång ett nytt promo-kort dyker upp (t.ex. med Delta Reign i
+   november) — lägg bara till det enskilt via **"+ Nytt kort"** i det här
+   setet, precis som ni redan gjorde med Zarude och Binacle. Ingen ny
+   seed-fil behövs för enstaka tillskott.
+
 ## Struktur
 
 ```
@@ -302,6 +323,8 @@ supabase/
   reserve_price.sql                Dolt reservationspris (minimipris)
   promo_rarity.sql                  Lägger till "Promo" som korttyp
   order_admin_policies.sql           Ger admin läs/skrivrätt på beställningar
+  delete_old_promo_set.sql            Tar bort gamla manuella promo-setet
+  seed_mep_promos.sql                 MEP Black Star Promos, 88 kort (MEP 001-088)
   set_visibility.sql                 Dölj/visa-funktion för set
   seed_chaos_rising.sql              Chaos Rising, alla 122 kort
   seed_phantasmal_flames.sql         Phantasmal Flames, alla 130 kort
