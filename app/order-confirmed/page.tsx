@@ -20,6 +20,16 @@ export default function OrderConfirmedPage({
       </p>
 
       <div className="border border-gold rounded-md p-6 bg-gold/5 mb-8">
+        <div className="flex justify-center mb-6">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`/api/swish-qr?amount=${encodeURIComponent(total)}&message=${encodeURIComponent(orderNumber)}`}
+            alt="Swish QR-kod, redan ifylld med belopp och ordernummer"
+            width={220}
+            height={220}
+            className="rounded-md bg-white p-3"
+          />
+        </div>
         <div className="text-sm text-mute mb-1">Swisha</div>
         <div className="font-mono text-3xl font-bold text-gold mb-4">
           {total} kr
@@ -31,9 +41,12 @@ export default function OrderConfirmedPage({
       </div>
 
       <p className="text-sm text-mute mb-8">
-        Skriv ordernumret som meddelande i Swish-appen så vi kan matcha
-        betalningen mot din order. Vi packar och skickar så snart betalningen
-        kommit in, och hör av oss via e-post med spårningsinfo.
+        Scanna QR-koden ovan med Swish-appens kamera — belopp och
+        ordernummer fylls i automatiskt, du behöver bara godkänna
+        betalningen. Fungerar inte kameran läser du av koden? Skriv in
+        beloppet och ordernumret som meddelande manuellt istället. Vi
+        packar och skickar så snart betalningen kommit in, och hör av oss
+        via e-post med spårningsinfo.
       </p>
 
       <Link
