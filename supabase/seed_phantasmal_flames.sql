@@ -150,12 +150,13 @@ inserted_cards as (
 )
 insert into card_variants (card_id, variant, price_sek, stock)
 select ic.id, x.variant,
-  case ic.rarity
-      when 'common' then 2
-      when 'illustration_rare' then 15
-      when 'ultra_rare' then 20
-      when 'special_illustration_rare' then 0
-      when 'mega_hyper_rare' then 0
+  case
+      when ic.rarity = 'common' and x.variant = 'holo' then 4
+      when ic.rarity = 'common' then 2
+      when ic.rarity = 'illustration_rare' then 15
+      when ic.rarity = 'ultra_rare' then 20
+      when ic.rarity = 'special_illustration_rare' then 0
+      when ic.rarity = 'mega_hyper_rare' then 0
     else 0
   end as price_sek,
   0 as stock
