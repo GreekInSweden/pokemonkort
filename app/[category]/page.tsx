@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 interface SetSummary {
   slug: string;

@@ -5,6 +5,7 @@ import { CardRow } from "@/lib/types";
 import CardGrid from "@/components/CardGrid";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 async function getSetWithCards(categorySlug: string, setSlug: string) {
   const { data: set, error: setError } = await supabase
