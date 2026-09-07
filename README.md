@@ -54,6 +54,19 @@ platshållaren (kortnumret på en färgad ruta) både i adminlistan och ute i
 butiken. En bild per kort räcker (inte en per exemplar), eftersom flera
 likadana kort ser identiska ut.
 
+**Massuppladdning (för många kort på en gång):** Klicka **"Massuppladdning
+av bilder"** uppe i lagerredigeraren för ett set. Där kan du släppa in eller
+välja hur många bilder som helst samtidigt:
+- Bilder vars filnamn innehåller ett kortnummer (t.ex. `004.jpg` eller
+  `IMG_20260906_017.jpg`) paras automatiskt ihop med rätt kort (grön kant).
+- Resten (röd, streckad kant) klickar du på en i taget, söker fram rätt
+  kort i listan som dyker upp, och klickar — sidan hoppar automatiskt
+  vidare till nästa otilldelade bild så det går snabbt.
+- Manuellt hopparade bilder får blå kant, så du ser skillnad på vad
+  sidan gissade och vad du bestämt själv.
+- Klicka **"Ladda upp X bilder"** när alla (eller så många du orkat para
+  ihop just nu) är klara — resten kan du spara till nästa gång.
+
 Ni behöver **inte** fotografera alla 120 kort på en gång — lägg bara upp
 bilder efter hand, i den takt ni ändå går igenom korten för att fylla i
 lager. Kort utan bild visar en enkel färgad platshållare istället, helt
@@ -95,7 +108,28 @@ git push -u origin main
    `.env.local` (URL, anon key, service role key, Swish-nummer).
 3. Klicka **Deploy**. Klart — sidan är live.
 
-## Hur beställningar hanteras just nu (Swish manuellt)
+## 7. Sätt upp auktioner (för de mest värdefulla korten)
+
+Utöver fastprisbutiken kan riktigt värdefulla enskilda kort (t.ex. en
+Special Illustration Rare) säljas via bud istället.
+
+1. Kör `supabase/auctions.sql` i Supabase SQL Editor (efter alla tidigare
+   migrationer).
+2. Gå till `/admin/auktioner` → **+ Ny auktion**. Välj set, kort och
+   variant (Vanligt/Holo), sätt ett utropspris, minsta höjning per bud, och
+   när auktionen ska sluta.
+3. Kunder ser och budar på öppna auktioner på `/auktioner` — ingen inloggning
+   krävs för att buda, bara namn, e-post, telefon och belopp.
+4. Sidan uppdaterar högsta bud automatiskt var 20:e sekund, så det känns
+   nästan live utan att vara en fullständig realtidslösning.
+5. När auktionen är slut, gå till `/admin/auktioner` för att se alla bud
+   med namn, e-post och telefon — högst upp markerat med 🏆. Kontakta
+   vinnaren för Swish-betalning precis som med vanliga beställningar, och
+   klicka **"Markera som avslutad"** när det är klart.
+
+Budgivares kontaktuppgifter syns bara för dig som inloggad admin, aldrig
+för andra besökare på auktionssidan — bara det aktuella högsta beloppet
+och antal bud visas publikt.
 
 1. Kund lägger kort i varukorgen och fyller i sina uppgifter i kassan.
 2. En order skapas i Supabase (`orders`-tabellen) med status
@@ -131,14 +165,24 @@ app/
   [category]/[setSlug]/page.tsx   Kortgrid (5 per rad) för ett set
   kassa/page.tsx               Varukorg + kundformulär
   order-confirmed/page.tsx     Swish-instruktioner
+  auktioner/page.tsx            Publik auktionssida med budformulär
   api/checkout/route.ts        Skapar order + drar av lager (server-side)
+  api/auctions/route.ts         Listar öppna auktioner (utan budgivar-info)
+  api/bid/route.ts               Tar emot och validerar bud (server-side)
   admin/login/page.tsx          Adminlogin
   admin/(dashboard)/page.tsx    Adminstartsida — välj set
   admin/(dashboard)/[setSlug]/page.tsx   Lagerredigering för ett set
+  admin/(dashboard)/[setSlug]/bilder/page.tsx  Massuppladdning av bilder
+  admin/(dashboard)/auktioner/page.tsx   Alla auktioner + budgivarkontakt
+  admin/(dashboard)/auktioner/ny/page.tsx  Skapa ny auktion
 components/
-  CardGrid.tsx / CardModal.tsx  Interaktivt kortval
-  SiteHeader.tsx                Header med varukorgsindikator
+  CardGrid.tsx / CardModal.tsx  Interaktivt kortval + sök/filter
+  CardImage.tsx                  Bild med platshållare
+  SiteHeader.tsx                Header med varukorg + auktionslänk
   admin/StockEditor.tsx          Sökbar lagerredigerare med snabbknappar
+  admin/BulkImageUploader.tsx    Massuppladdning, auto-matchning av filnamn
+  admin/NewAuctionForm.tsx        Formulär för att skapa en auktion
+  admin/CloseAuctionButton.tsx    Markera auktion som avslutad
   admin/LogoutButton.tsx         Loggar ut ur adminpanelen
 lib/
   CartContext.tsx               Varukorg (localStorage)
@@ -152,4 +196,5 @@ supabase/
   seed_pitch_black.sql           Pitch Black, alla 120 kort
   admin_policies.sql              Ger inloggad admin rätt att spara lager
   image_support.sql               Bildkolumn + lagringsplats för kortfoton
+  auctions.sql                    Auktioner + bud, med skyddad budgivarinfo
 ```

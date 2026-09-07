@@ -44,3 +44,18 @@ export interface CartItem {
   setSlug: string;
   setName: string;
 }
+
+export interface AuctionListing {
+  auctionId: string;
+  cardName: string;
+  cardNumber: number;
+  variant: Variant;
+  rarity: Rarity;
+  imageUrl: string | null;
+  startingPriceSek: number;
+  minIncrementSek: number;
+  currentHighSek: number;
+  bidCount: number;
+  endsAt: string;
+  status: "open" | "closed";
+}

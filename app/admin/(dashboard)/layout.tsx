@@ -16,7 +16,12 @@ export default function AdminLayout({
           >
             Kortlagret — Admin
           </Link>
-          <LogoutButton />
+          <nav className="flex items-center gap-4">
+            <Link href="/admin/auktioner" className="focus-ring text-sm text-paper hover:text-gold">
+              Auktioner
+            </Link>
+            <LogoutButton />
+          </nav>
         </div>
       </div>
       {children}

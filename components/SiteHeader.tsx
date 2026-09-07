@@ -12,15 +12,23 @@ export default function SiteHeader() {
         <Link href="/" className="font-display text-xl font-bold tracking-tight text-paper">
           Kortlagret
         </Link>
-        <Link
-          href="/kassa"
-          className="focus-ring flex items-center gap-3 rounded-md border border-line px-4 py-2 hover:border-gold transition-colors"
-        >
-          <span className="font-mono text-sm text-mute">{itemCount} kort</span>
-          <span className="font-mono text-sm font-medium text-gold">
-            {subtotalSek} kr
-          </span>
-        </Link>
+        <nav className="flex items-center gap-4">
+          <Link
+            href="/auktioner"
+            className="focus-ring text-sm text-paper hover:text-gold"
+          >
+            Auktioner
+          </Link>
+          <Link
+            href="/kassa"
+            className="focus-ring flex items-center gap-3 rounded-md border border-line px-4 py-2 hover:border-gold transition-colors"
+          >
+            <span className="font-mono text-sm text-mute">{itemCount} kort</span>
+            <span className="font-mono text-sm font-medium text-gold">
+              {subtotalSek} kr
+            </span>
+          </Link>
+        </nav>
       </div>
     </header>
   );

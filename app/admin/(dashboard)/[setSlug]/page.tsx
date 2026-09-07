@@ -34,9 +34,17 @@ export default async function AdminSetPage({
         </Link>{" "}
         / {set.name}
       </div>
-      <h1 className="font-display text-2xl font-bold text-paper mb-1">
-        {set.name}
-      </h1>
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="font-display text-2xl font-bold text-paper">
+          {set.name}
+        </h1>
+        <Link
+          href={`/admin/${set.slug}/bilder`}
+          className="focus-ring text-sm rounded-sm border border-line px-3 py-1.5 text-paper hover:border-gold"
+        >
+          Massuppladdning av bilder →
+        </Link>
+      </div>
       <p className="text-mute mb-8">
         Fyll i hur många du har av varje kort och variant. Klicka i en ruta
         och skriv, eller använd +1 för snabb bulkinmatning. Glöm inte att
