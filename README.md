@@ -184,15 +184,18 @@ Utöver Pitch Black finns nu färdiga seed-filer för:
 
 - **Chaos Rising (ME04)** — `supabase/seed_chaos_rising.sql`, 122 kort
 - **Phantasmal Flames (ME02)** — `supabase/seed_phantasmal_flames.sql`, 130 kort
+- **Mega Evolution (ME01, grundsetet)** — `supabase/seed_mega_evolution_base.sql`, 188 kort
+- **Ascended Heroes (ME2.5)** — `supabase/seed_ascended_heroes.sql`, 295 kort (historiens största Pokémon-set!)
+- **Perfect Order (ME03)** — `supabase/seed_perfect_order.sql`, 124 kort
 
 Kör valfri fil i Supabase SQL Editor (efter `set_visibility.sql`) för att
 lägga till hela setet med korrekt namn, nummer och sällsynthet på en gång —
-precis som med Pitch Black. Båda seten läggs in **dolda** automatiskt (se
+precis som med Pitch Black. Alla fem läggs in **dolda** automatiskt (se
 punkt 9 ovan), så de stör inte butiken förrän ni faktiskt har kort i lager.
 
-Kvar i Mega Evolution-serien: **ME01 (Mega Evolution, grundset — 188 kort)**,
-**ME2.5 (Ascended Heroes)** och **ME03 (Perfect Order)**. Hör av er så
-genererar vi seed-filer för de också.
+Hela Mega Evolution-serien är nu representerad, från ME01 till ME05
+(Pitch Black). Nästa set i serien, **Delta Reign (ME06)**, väntas
+6 november 2026 — hör av er när det är dags.
 
 ## 11. Sammanfattning — sätt att lägga till ett nytt set
 
@@ -257,4 +260,7 @@ supabase/
   set_visibility.sql                 Dölj/visa-funktion för set
   seed_chaos_rising.sql              Chaos Rising, alla 122 kort
   seed_phantasmal_flames.sql         Phantasmal Flames, alla 130 kort
+  seed_mega_evolution_base.sql       Mega Evolution (ME01), alla 188 kort
+  seed_ascended_heroes.sql           Ascended Heroes (ME2.5), alla 295 kort
+  seed_perfect_order.sql             Perfect Order (ME03), alla 124 kort
 ```
