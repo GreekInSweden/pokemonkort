@@ -299,6 +299,23 @@ ett eget kort via **"+ Nytt kort"** (t.ex. "Alexander Isak — Gold Parallel
 Diamond Rookies m.fl.) och parallellversioner — hör av er så genererar vi
 fler seed-filer på samma sätt.
 
+## 16. Destined Rivals (Scarlet & Violet, ny kategori)
+
+Destined Rivals hör till Scarlet & Violet-eran (inte Mega Evolution), så
+det blir en helt ny kategori i butiken: "Scarlet & Violet".
+
+1. Kör `supabase/seed_destined_rivals.sql` i Supabase SQL Editor (efter de
+   vanliga grundmigrationerna — schema.sql, set_visibility.sql osv.).
+2. Setet läggs in **dolt** som vanligt, 244 kort totalt (182 grundkort +
+   62 secret rares, inklusive alla 11 Special Illustration Rares och de
+   4 Hyper Rares — bland dem Team Rocket's Mewtwo ex, samma kort ni redan
+   sett i chatten).
+
+**Notis om etiketten "Hyper Rare":** den hette tidigare "Mega Hyper Rare"
+i systemet (döpt efter Mega Evolution-seten), men eftersom Destined Rivals
+inte har några Mega-kort bytte vi till den mer generella termen "Hyper
+Rare" — gäller nu automatiskt för alla set, inklusive de gamla.
+
 ## Struktur
 
 ```
@@ -365,4 +382,5 @@ supabase/
   seed_topps_pl_beastmode.sql         Topps PL Beast Mode-insert, 25 kort
   seed_topps_pl_8bitballers.sql       Topps PL 8-Bit Ballers-insert, 20 kort
   seed_topps_pl_chromeclassics.sql    Topps PL Chrome Classics-insert, 25 kort
+  seed_destined_rivals.sql            Destined Rivals (Scarlet & Violet), 244 kort
 ```

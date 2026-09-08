@@ -5,7 +5,7 @@ export const rarityLabel: Record<Rarity, string> = {
   illustration_rare: "Illustration Rare",
   ultra_rare: "Ultra Rare",
   special_illustration_rare: "Special Illustration Rare",
-  mega_hyper_rare: "Mega Hyper Rare",
+  mega_hyper_rare: "Hyper Rare",
   promo: "Promo",
   base: "Grundkort",
   insert: "Insert",
