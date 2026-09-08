@@ -8,6 +8,8 @@ import { rarityLabel } from "@/lib/rarity";
 
 const rarityOptions: Rarity[] = [
   "promo",
+  "base",
+  "insert",
   "common",
   "illustration_rare",
   "ultra_rare",

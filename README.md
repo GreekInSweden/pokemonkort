@@ -270,6 +270,35 @@ produkt släpps, så den växer kontinuerligt.
    setet, precis som ni redan gjorde med Zarude och Binacle. Ingen ny
    seed-fil behövs för enstaka tillskott.
 
+## 15. Topps Premier League 2026/27 (fotbollskort, ny kategori)
+
+Samma system som Pokémon-korten fungerar utmärkt för fotbollskort också.
+Eftersom Topps inte har samma sällsynthetsnivåer som Pokémon (ingen
+"Illustration Rare" osv.) finns två generella nivåer istället: **Grundkort**
+och **Insert** (för temaserier som Beast Mode).
+
+1. Kör `supabase/topps_rarity.sql` i Supabase SQL Editor (lägger till
+   "Grundkort" och "Insert" som giltiga korttyper).
+2. Kör därefter valfri/alla av dessa fyra seed-filer, i valfri ordning:
+   - `supabase/seed_topps_pl_base.sql` — Grundset (Base + Future Stars), 300 kort
+   - `supabase/seed_topps_pl_beastmode.sql` — Beast Mode-insert, 25 kort
+   - `supabase/seed_topps_pl_8bitballers.sql` — 8-Bit Ballers-insert, 20 kort
+   - `supabase/seed_topps_pl_chromeclassics.sql` — Chrome Classics-insert, 25 kort
+3. Alla fyra läggs in **dolda** under en ny kategori "Topps Premier League
+   2026/27" (samma dölj/visa-system som Pokémon-seten). Fyll i lager,
+   pris och bilder i `/admin` precis som vanligt — samma
+   massuppladdningsverktyg för bilder fungerar identiskt.
+
+**Skillnad mot Pokémon-korten:** bara en **normal**-variant skapas per
+kort, ingen holo — Topps fotbollskort har inte det begreppet. Vill ni sälja
+en specifik parallellversion eller autografkort separat, lägg till det som
+ett eget kort via **"+ Nytt kort"** (t.ex. "Alexander Isak — Gold Parallel
+/50") snarare än som en variant av grundkortet.
+
+**Kommer senare om ni vill:** fler insert-serier (All Kings, Black Edge,
+Diamond Rookies m.fl.) och parallellversioner — hör av er så genererar vi
+fler seed-filer på samma sätt.
+
 ## Struktur
 
 ```
@@ -331,4 +360,9 @@ supabase/
   seed_mega_evolution_base.sql       Mega Evolution (ME01), alla 188 kort
   seed_ascended_heroes.sql           Ascended Heroes (ME2.5), alla 295 kort
   seed_perfect_order.sql             Perfect Order (ME03), alla 124 kort
+  topps_rarity.sql                    Lägger till "Grundkort"/"Insert" som korttyper
+  seed_topps_pl_base.sql              Topps PL Grundset, 300 kort
+  seed_topps_pl_beastmode.sql         Topps PL Beast Mode-insert, 25 kort
+  seed_topps_pl_8bitballers.sql       Topps PL 8-Bit Ballers-insert, 20 kort
+  seed_topps_pl_chromeclassics.sql    Topps PL Chrome Classics-insert, 25 kort
 ```
