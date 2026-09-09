@@ -188,101 +188,122 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
       {uploadError && <p className="text-sm text-red-400 mb-4">{uploadError}</p>}
 
       <div className="space-y-2">
-        {filteredCards.map((card) => (
-          <div
-            key={card.id}
-            className="border border-line rounded-md p-3 bg-panel flex flex-wrap items-center gap-4"
-          >
-            <label className="shrink-0 cursor-pointer group relative">
-              <CardImage
-                src={images[card.id] ?? null}
-                alt={card.name}
-                number={card.number}
-                rarity={card.rarity}
-                className="w-12 h-16 rounded-sm"
-              />
-              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-sm">
-                <span className="text-[10px] text-paper text-center leading-tight px-1">
-                  {uploadingId === card.id ? "Laddar…" : "Byt bild"}
-                </span>
-              </div>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                disabled={uploadingId === card.id}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleImageUpload(card.id, file);
-                  e.target.value = "";
-                }}
-              />
-            </label>
-            <div className="w-16 shrink-0 font-mono text-xs text-mute">
-              #{String(card.number).padStart(3, "0")}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-display text-sm font-medium text-paper truncate">
-                {card.name}
-              </div>
-              <div className="text-xs text-mute">{rarityLabel[card.rarity]}</div>
-            </div>
-            {(["normal", "holo"] as const).map((variantType) => {
-              const variant = card.card_variants.find(
-                (v) => v.variant === variantType
-              );
-              if (!variant) return null;
-              const isStockDirty = values[variant.id] !== (initial[variant.id] ?? 0);
-              const isPriceDirty = prices[variant.id] !== (initialPrices[variant.id] ?? 0);
-              return (
-                <div key={variant.id} className="flex items-center gap-1 shrink-0">
-                  <span className="text-xs text-mute w-10">
-                    {variantType === "holo" ? "Holo" : "Van."}
-                  </span>
-                  <div className="flex items-center gap-0.5">
-                    <input
-                      type="number"
-                      min={0}
-                      value={prices[variant.id] ?? 0}
-                      onChange={(e) => setPrice(variant.id, Number(e.target.value))}
-                      title="Pris (kr)"
-                      className={`focus-ring w-14 bg-ink border rounded-sm px-1 py-1 text-center font-mono text-sm text-paper ${
-                        isPriceDirty ? "border-gold" : "border-line"
-                      }`}
-                    />
-                    <span className="text-xs text-mute">kr</span>
-                  </div>
-                  <button
-                    onClick={() => bump(variant.id, -1)}
-                    className="focus-ring w-7 h-7 rounded-sm border border-line text-paper hover:border-gold text-sm"
-                    aria-label={`Minska ${variantType}`}
-                  >
-                    −
-                  </button>
-                  <input
-                    type="number"
-                    min={0}
-                    value={values[variant.id] ?? 0}
-                    onChange={(e) =>
-                      setValue(variant.id, Number(e.target.value))
-                    }
-                    title="Antal i lager"
-                    className={`focus-ring w-14 bg-ink border rounded-sm px-1 py-1 text-center font-mono text-sm text-paper ${
-                      isStockDirty ? "border-gold" : "border-line"
-                    }`}
+        {filteredCards.map((card) => {
+          const variantsPresent = (["normal", "holo"] as const)
+            .map((vt) => card.card_variants.find((v) => v.variant === vt))
+            .filter((v): v is VariantRow => !!v);
+
+          return (
+            <div
+              key={card.id}
+              className="border border-line rounded-md p-3 bg-panel space-y-2"
+            >
+              {/* Rad 1: bild, nummer, namn */}
+              <div className="flex items-center gap-4">
+                <label className="shrink-0 cursor-pointer group relative">
+                  <CardImage
+                    src={images[card.id] ?? null}
+                    alt={card.name}
+                    number={card.number}
+                    rarity={card.rarity}
+                    className="w-12 h-16 rounded-sm"
                   />
-                  <button
-                    onClick={() => bump(variant.id, 1)}
-                    className="focus-ring w-7 h-7 rounded-sm border border-line text-paper hover:border-gold text-sm"
-                    aria-label={`Öka ${variantType}`}
-                  >
-                    +
-                  </button>
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-sm">
+                    <span className="text-[10px] text-paper text-center leading-tight px-1">
+                      {uploadingId === card.id ? "Laddar…" : "Byt bild"}
+                    </span>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={uploadingId === card.id}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageUpload(card.id, file);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+                <div className="w-16 shrink-0 font-mono text-xs text-mute">
+                  #{String(card.number).padStart(3, "0")}
                 </div>
-              );
-            })}
-          </div>
-        ))}
+                <div className="flex-1 min-w-0">
+                  <div className="font-display text-sm font-medium text-paper truncate">
+                    {card.name}
+                  </div>
+                  <div className="text-xs text-mute">{rarityLabel[card.rarity]}</div>
+                </div>
+              </div>
+
+              {/* Rad 2: Pris */}
+              <div className="flex items-center gap-3 pl-16">
+                <span className="text-xs text-mute w-12 shrink-0">Pris</span>
+                {variantsPresent.map((variant) => {
+                  const isPriceDirty =
+                    prices[variant.id] !== (initialPrices[variant.id] ?? 0);
+                  return (
+                    <div key={variant.id} className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-xs text-mute w-10">
+                        {variant.variant === "holo" ? "Holo" : "Van."}
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={prices[variant.id] ?? 0}
+                        onChange={(e) => setPrice(variant.id, Number(e.target.value))}
+                        title="Pris (kr)"
+                        className={`focus-ring w-16 bg-ink border rounded-sm px-1 py-1 text-center font-mono text-sm text-paper ${
+                          isPriceDirty ? "border-gold" : "border-line"
+                        }`}
+                      />
+                      <span className="text-xs text-mute">kr</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Rad 3: Antal */}
+              <div className="flex items-center gap-3 pl-16">
+                <span className="text-xs text-mute w-12 shrink-0">Antal</span>
+                {variantsPresent.map((variant) => {
+                  const isStockDirty = values[variant.id] !== (initial[variant.id] ?? 0);
+                  return (
+                    <div key={variant.id} className="flex items-center gap-1 shrink-0">
+                      <span className="text-xs text-mute w-10">
+                        {variant.variant === "holo" ? "Holo" : "Van."}
+                      </span>
+                      <button
+                        onClick={() => bump(variant.id, -1)}
+                        className="focus-ring w-7 h-7 rounded-sm border border-line text-paper hover:border-gold text-sm"
+                        aria-label={`Minska ${variant.variant}`}
+                      >
+                        −
+                      </button>
+                      <input
+                        type="number"
+                        min={0}
+                        value={values[variant.id] ?? 0}
+                        onChange={(e) => setValue(variant.id, Number(e.target.value))}
+                        title="Antal i lager"
+                        className={`focus-ring w-16 bg-ink border rounded-sm px-1 py-1 text-center font-mono text-sm text-paper ${
+                          isStockDirty ? "border-gold" : "border-line"
+                        }`}
+                      />
+                      <button
+                        onClick={() => bump(variant.id, 1)}
+                        className="focus-ring w-7 h-7 rounded-sm border border-line text-paper hover:border-gold text-sm"
+                        aria-label={`Öka ${variant.variant}`}
+                      >
+                        +
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
