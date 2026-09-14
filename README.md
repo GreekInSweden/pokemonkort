@@ -284,6 +284,22 @@ och **Insert** (för temaserier som Beast Mode).
    - `supabase/seed_topps_pl_beastmode.sql` — Beast Mode-insert, 25 kort
    - `supabase/seed_topps_pl_8bitballers.sql` — 8-Bit Ballers-insert, 20 kort
    - `supabase/seed_topps_pl_chromeclassics.sql` — Chrome Classics-insert, 25 kort
+   - `supabase/seed_topps_pl_nitroboost.sql` — Nitro Boost-insert, 25 kort
+   - Plus 18 ytterligare insert-serier (samtliga filer med prefixet
+     `seed_topps_pl_`) — se listan i mappen `supabase/` för alla namn
+     (All Kings, Billboard Material, Black Edge, Carpe Diem, Diamond
+     Rookies, Flying The Flag, Gold Lion, Golden Boot, Home Pitch, Mayhem,
+     On Fire, Perfect 10, Perfect Storm, Quasar, Remember the Name, Retro
+     Threads, Stars of the Premier League, The Rise, Ultra Beast Mode,
+     Vibes)
+
+   **Två serier är medvetet uteslutna:** "True Gold Lion" (varje kort är
+   ett unikt 24-karats guldkort, inlöses individuellt — passar inte ett
+   vanligt lagersystem med antal) och "Marks of Excellence" (finns bara
+   som signerade autografkort, ingen vanlig "bas"-version att sälja).
+   Hör av er om ni ändå får tag i något av dessa så löser vi det som
+   ett enskilt kort via "+ Nytt kort".
+   - `supabase/seed_topps_pl_nitroboost.sql` — Nitro Boost-insert, 25 kort
 3. Alla fyra läggs in **dolda** under en ny kategori "Topps Premier League
    2026/27" (samma dölj/visa-system som Pokémon-seten). Fyll i lager,
    pris och bilder i `/admin` precis som vanligt — samma
@@ -382,5 +398,7 @@ supabase/
   seed_topps_pl_beastmode.sql         Topps PL Beast Mode-insert, 25 kort
   seed_topps_pl_8bitballers.sql       Topps PL 8-Bit Ballers-insert, 20 kort
   seed_topps_pl_chromeclassics.sql    Topps PL Chrome Classics-insert, 25 kort
+  seed_topps_pl_nitroboost.sql        Topps PL Nitro Boost-insert, 25 kort
+  seed_topps_pl_*.sql                  18 fler insert-serier (se ovan)
   seed_destined_rivals.sql            Destined Rivals (Scarlet & Violet), 244 kort
 ```

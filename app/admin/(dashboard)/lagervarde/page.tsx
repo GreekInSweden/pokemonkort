@@ -4,6 +4,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 interface VariantRow {
+  variant: "normal" | "holo";
   stock: number;
   price_sek: number;
   cards: {
@@ -23,6 +24,7 @@ interface SetSummary {
   categoryName: string;
   cardsInStock: number;
   unitsInStock: number;
+  holoUnitsInStock: number;
   valueSek: number;
 }
 
@@ -31,7 +33,7 @@ export default async function LagervardePage() {
 
   const { data, error } = await supabase
     .from("card_variants")
-    .select("stock, price_sek, cards(set_id, sets(slug, name, category_name))");
+    .select("variant, stock, price_sek, cards(set_id, sets(slug, name, category_name))");
 
   const variants = (data as unknown as VariantRow[]) ?? [];
 
@@ -39,16 +41,20 @@ export default async function LagervardePage() {
   let grandTotalValue = 0;
   let grandTotalUnits = 0;
   let grandTotalCards = 0;
+  let grandTotalHoloUnits = 0;
+  let grandTotalHoloCards = 0;
 
   for (const v of variants) {
     if (!v.cards || !v.cards.sets || v.stock <= 0) continue;
     const setId = v.cards.set_id;
     const existing = bySet.get(setId);
     const lineValue = v.stock * v.price_sek;
+    const holoUnits = v.variant === "holo" ? v.stock : 0;
 
     if (existing) {
       existing.cardsInStock += 1;
       existing.unitsInStock += v.stock;
+      existing.holoUnitsInStock += holoUnits;
       existing.valueSek += lineValue;
     } else {
       bySet.set(setId, {
@@ -58,6 +64,7 @@ export default async function LagervardePage() {
         categoryName: v.cards.sets.category_name,
         cardsInStock: 1,
         unitsInStock: v.stock,
+        holoUnitsInStock: holoUnits,
         valueSek: lineValue,
       });
     }
@@ -65,6 +72,10 @@ export default async function LagervardePage() {
     grandTotalValue += lineValue;
     grandTotalUnits += v.stock;
     grandTotalCards += 1;
+    if (v.variant === "holo") {
+      grandTotalHoloUnits += v.stock;
+      grandTotalHoloCards += 1;
+    }
   }
 
   const setSummaries = Array.from(bySet.values()).sort(
@@ -96,6 +107,9 @@ export default async function LagervardePage() {
               {grandTotalUnits.toLocaleString("sv-SE")} kort i lager, fördelat
               på {grandTotalCards} olika kort/varianter
             </div>
+            <div className="text-sm text-mute font-mono mt-1">
+              Varav <span className="text-paper">{grandTotalHoloUnits.toLocaleString("sv-SE")} holo-kort</span> ({grandTotalHoloCards} olika holo-varianter)
+            </div>
           </div>
 
           <div className="border border-line rounded-md divide-y divide-line">
@@ -115,6 +129,9 @@ export default async function LagervardePage() {
                   <div className="text-xs text-mute font-mono mt-0.5">
                     {s.unitsInStock} kort i lager · {s.cardsInStock} olika
                     kort/varianter
+                    {s.holoUnitsInStock > 0 && (
+                      <> · {s.holoUnitsInStock} holo</>
+                    )}
                   </div>
                 </div>
                 <div className="font-mono text-lg text-gold font-semibold shrink-0">
