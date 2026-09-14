@@ -1,17 +1,21 @@
-// Shipping calculation based on number of cards ordered, mapped to
-// PostNord's actual TRACKED services (as of 2026 — PostNord phased out
-// untracked letters for goods, so "Skicka Lätt" is now the cheapest
-// tracked option):
-//   - Skicka Lätt, letter format (up to 2 kg): 49 kr
-//   - Skicka Lätt, parcel format (thicker/bulkier, still up to 2 kg): 69 kr
-//   - Postpaket 1 kg (once it's too much for Skicka Lätt): 102 kr
-// All three give a trackable ID via the PostNord app/website, so you can
-// confirm delivery instead of just hoping it arrives.
-// Adjust the breakpoints and prices freely if your actual packaging
-// weighs in differently than assumed here.
+// Shipping calculation based on number of cards ordered.
+//
+// IMPORTANT CONTEXT (2026-09): the tiered model below this comment used to
+// assume light letter-format shipping would cover most orders cheaply.
+// Real-world data proved that wrong — an order of ~30 cards with cardboard
+// packaging, only 100g total, still needed PostNord Skicka Lätt in PARCEL
+// format and cost 107 kr to actually send, because rigid packaging makes
+// the parcel too thick for the cheaper letter-format tiers regardless of
+// how little it weighs. The old tiers charged only 69 kr for that order —
+// a real loss.
+//
+// Until there's more real shipping-receipt data to calibrate proper tiers
+// again, this uses one flat rate set safely above the worst real cost seen
+// so far (107 kr), so a repeat of that loss doesn't happen while we
+// gather more data points.
+const FLAT_RATE_SEK = 129;
+
 export function calculateShippingSek(totalCardCount: number): number {
   if (totalCardCount <= 0) return 0;
-  if (totalCardCount <= 10) return 49;
-  if (totalCardCount <= 40) return 69;
-  return 102;
+  return FLAT_RATE_SEK;
 }
