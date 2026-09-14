@@ -1,5 +1,7 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import OrderActions from "@/components/admin/OrderActions";
+import DeleteOrderButton from "@/components/admin/DeleteOrderButton";
+import ArchivedOrders from "@/components/admin/ArchivedOrders";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +18,8 @@ const statusColor: Record<string, string> = {
   shipped: "bg-green-500/10 text-green-400",
   cancelled: "bg-line text-mute",
 };
+
+const ARCHIVE_AFTER_DAYS = 30;
 
 export default async function BestallningarPage() {
   const supabase = createServerSupabase();
@@ -35,6 +39,14 @@ export default async function BestallningarPage() {
         .eq("order_id", o.id);
       return { ...o, items: items ?? [] };
     })
+  );
+
+  const cutoff = Date.now() - ARCHIVE_AFTER_DAYS * 24 * 60 * 60 * 1000;
+  const recentOrders = ordersWithItems.filter(
+    (o) => new Date(o.created_at).getTime() >= cutoff
+  );
+  const archivedOrders = ordersWithItems.filter(
+    (o) => new Date(o.created_at).getTime() < cutoff
   );
 
   const pendingCount = ordersWithItems.filter(
@@ -57,63 +69,74 @@ export default async function BestallningarPage() {
       ) : ordersWithItems.length === 0 ? (
         <p className="text-mute">Inga beställningar ännu.</p>
       ) : (
-        <div className="space-y-4">
-          {ordersWithItems.map((o) => (
-            <div key={o.id} className="border border-line rounded-md p-4 bg-panel">
-              <div className="flex items-start justify-between mb-2 gap-3">
-                <div>
-                  <div className="font-mono text-sm text-paper">
-                    {o.order_number}
+        <>
+          {recentOrders.length === 0 ? (
+            <p className="text-mute">
+              Inga beställningar de senaste {ARCHIVE_AFTER_DAYS} dagarna.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {recentOrders.map((o) => (
+                <div key={o.id} className="border border-line rounded-md p-4 bg-panel">
+                  <div className="flex items-start justify-between mb-2 gap-3">
+                    <div>
+                      <div className="font-mono text-sm text-paper">
+                        {o.order_number}
+                      </div>
+                      <div className="text-xs text-mute">
+                        {new Date(o.created_at).toLocaleString("sv-SE")}
+                      </div>
+                    </div>
+                    <span
+                      className={`text-xs font-mono px-2 py-1 rounded-sm shrink-0 ${statusColor[o.status]}`}
+                    >
+                      {statusLabel[o.status] ?? o.status}
+                    </span>
                   </div>
-                  <div className="text-xs text-mute">
-                    {new Date(o.created_at).toLocaleString("sv-SE")}
+
+                  <div className="text-sm text-paper mb-1">{o.customer_name}</div>
+                  <div className="text-xs text-mute mb-3">
+                    {o.email} · {o.phone} · {o.address}, {o.postal_code} {o.city}
                   </div>
+
+                  <div className="space-y-1 mb-3">
+                    {o.items.map((item, i) => (
+                      <div key={i} className="text-sm flex justify-between text-paper">
+                        <span>
+                          #{String(item.card_number).padStart(3, "0")} {item.card_name}{" "}
+                          <span className="text-mute">
+                            ({item.variant === "holo" ? "Holo" : "Vanligt"}) ×{item.quantity}
+                          </span>
+                        </span>
+                        <span className="font-mono">
+                          {item.unit_price_sek * item.quantity} kr
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="text-xs text-mute font-mono mb-3">
+                    Delsumma {o.subtotal_sek} kr · Frakt {o.shipping_sek} kr ·{" "}
+                    <span className="text-paper font-semibold">Totalt {o.total_sek} kr</span>
+                  </div>
+
+                  {o.status === "pending_payment" && (
+                    <OrderActions
+                      orderId={o.id}
+                      items={o.items.map((i) => ({
+                        cardVariantId: i.card_variant_id,
+                        quantity: i.quantity,
+                      }))}
+                    />
+                  )}
+                  {o.status === "cancelled" && <DeleteOrderButton orderId={o.id} />}
                 </div>
-                <span
-                  className={`text-xs font-mono px-2 py-1 rounded-sm shrink-0 ${statusColor[o.status]}`}
-                >
-                  {statusLabel[o.status] ?? o.status}
-                </span>
-              </div>
-
-              <div className="text-sm text-paper mb-1">{o.customer_name}</div>
-              <div className="text-xs text-mute mb-3">
-                {o.email} · {o.phone} · {o.address}, {o.postal_code} {o.city}
-              </div>
-
-              <div className="space-y-1 mb-3">
-                {o.items.map((item, i) => (
-                  <div key={i} className="text-sm flex justify-between text-paper">
-                    <span>
-                      #{String(item.card_number).padStart(3, "0")} {item.card_name}{" "}
-                      <span className="text-mute">
-                        ({item.variant === "holo" ? "Holo" : "Vanligt"}) ×{item.quantity}
-                      </span>
-                    </span>
-                    <span className="font-mono">
-                      {item.unit_price_sek * item.quantity} kr
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="text-xs text-mute font-mono mb-3">
-                Delsumma {o.subtotal_sek} kr · Frakt {o.shipping_sek} kr ·{" "}
-                <span className="text-paper font-semibold">Totalt {o.total_sek} kr</span>
-              </div>
-
-              {o.status === "pending_payment" && (
-                <OrderActions
-                  orderId={o.id}
-                  items={o.items.map((i) => ({
-                    cardVariantId: i.card_variant_id,
-                    quantity: i.quantity,
-                  }))}
-                />
-              )}
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+
+          <ArchivedOrders orders={archivedOrders} />
+        </>
       )}
     </div>
   );
