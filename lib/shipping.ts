@@ -1,19 +1,11 @@
 // Shipping calculation based on number of cards ordered.
 //
-// IMPORTANT CONTEXT (2026-09): the tiered model below this comment used to
-// assume light letter-format shipping would cover most orders cheaply.
-// Real-world data proved that wrong — an order of ~30 cards with cardboard
-// packaging, only 100g total, still needed PostNord Skicka Lätt in PARCEL
-// format and cost 107 kr to actually send, because rigid packaging makes
-// the parcel too thick for the cheaper letter-format tiers regardless of
-// how little it weighs. The old tiers charged only 69 kr for that order —
-// a real loss.
-//
-// Until there's more real shipping-receipt data to calibrate proper tiers
-// again, this uses one flat rate set safely above the worst real cost seen
-// so far (107 kr), so a repeat of that loss doesn't happen while we
-// gather more data points.
-const FLAT_RATE_SEK = 129;
+// UPDATE (2026-09): switched to DHL's small-parcel tier, which covers up
+// to 1 kg for 73 kr — comfortably covers essentially any card order by
+// weight, and DHL's parcel dimensions are more forgiving for rigid
+// packaging (toploaders, cardboard) than PostNord's letter-format tiers
+// were, which is what caused the earlier 107 kr surprise.
+const FLAT_RATE_SEK = 73;
 
 export function calculateShippingSek(totalCardCount: number): number {
   if (totalCardCount <= 0) return 0;

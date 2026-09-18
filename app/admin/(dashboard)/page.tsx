@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
-import ToggleSetVisibilityButton from "@/components/admin/ToggleSetVisibilityButton";
+import AdminSetGroups from "@/components/admin/AdminSetGroups";
 
 export const dynamic = "force-dynamic";
 
@@ -25,36 +25,13 @@ export default async function AdminHomePage() {
       </div>
       <p className="text-mute mb-8">
         Välj ett set för att fylla i antal. Dolda set syns bara här, aldrig
-        i butiken.
+        i butiken. Klicka en kategorirubrik för att fälla ihop den.
       </p>
 
       {!sets || sets.length === 0 ? (
         <p className="text-mute">Inga set upplagda ännu.</p>
       ) : (
-        <div className="space-y-2">
-          {sets.map((s) => (
-            <div
-              key={s.slug}
-              className="flex items-center gap-2 border border-line rounded-md p-4 bg-panel"
-            >
-              <Link
-                href={`/admin/${s.slug}`}
-                className="focus-ring flex-1 min-w-0 hover:opacity-80 transition-opacity"
-              >
-                <div className="text-xs text-mute font-mono">
-                  {s.category_name}
-                </div>
-                <div className="font-display font-medium text-paper">
-                  {s.name}
-                </div>
-              </Link>
-              <ToggleSetVisibilityButton
-                setId={s.id}
-                isVisible={s.is_visible}
-              />
-            </div>
-          ))}
-        </div>
+        <AdminSetGroups sets={sets} />
       )}
     </div>
   );
