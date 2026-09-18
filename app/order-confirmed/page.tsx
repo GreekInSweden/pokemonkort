@@ -49,6 +49,13 @@ export default function OrderConfirmedPage({
         med spårningsinfo.
       </p>
 
+      <p className="text-xs text-mute mb-8 border-t border-line pt-4">
+        Vi reserverar oss för eventuella prisfel och slutförsäljning. Om
+        något kort i din order visar sig ha fått fel pris eller redan är
+        sålt kontaktar vi dig innan något skickas, och betalningen
+        återbetalas i sin helhet om vi inte kommer överens om något annat.
+      </p>
+
       <Link
         href="/"
         className="focus-ring inline-block rounded-sm border border-line px-6 py-3 text-paper hover:border-gold"

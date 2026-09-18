@@ -207,6 +207,12 @@ export default function KassaPage() {
           Nästa steg visar vårt Swish-nummer och ett ordernummer att skriva
           som meddelande. Vi skickar när betalningen kommit in.
         </p>
+        <p className="text-xs text-mute text-center border-t border-line pt-3 mt-3">
+          Vi reserverar oss för eventuella prisfel och slutförsäljning. Om
+          ett kort visar sig ha fått fel pris eller redan är sålt kontaktar
+          vi dig och betalningen återbetalas i sin helhet — du är aldrig
+          skyldig att fullfölja köpet till fel pris.
+        </p>
       </form>
     </div>
   );
