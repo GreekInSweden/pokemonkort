@@ -3,12 +3,18 @@
 import { useMemo, useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { rarityLabel } from "@/lib/rarity";
-import { Rarity } from "@/lib/types";
+import { Rarity, PokemonType, Variant } from "@/lib/types";
+import { variantShortLabel } from "@/lib/variant";
+import {
+  pokemonTypeOptions,
+  pokemonTypeLabel,
+  pokemonTypeColor,
+} from "@/lib/pokemonType";
 import CardImage from "@/components/CardImage";
 
 interface VariantRow {
   id: string;
-  variant: "normal" | "holo";
+  variant: Variant;
   price_sek: number;
   stock: number;
 }
@@ -19,8 +25,11 @@ interface CardRow {
   name: string;
   rarity: Rarity;
   image_url: string | null;
+  pokemon_type: PokemonType | null;
   card_variants: VariantRow[];
 }
+
+const VARIANT_ORDER: Variant[] = ["normal", "holo", "reverse_holo"];
 
 export default function StockEditor({ cards }: { cards: CardRow[] }) {
   // Local editable copy: variantId -> current stock value shown in the input.
@@ -41,6 +50,12 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
     return map;
   }, [cards]);
   const [prices, setPrices] = useState<Record<string, number>>(initialPrices);
+  const initialTypes = useMemo(() => {
+    const map: Record<string, PokemonType | null> = {};
+    for (const card of cards) map[card.id] = card.pokemon_type;
+    return map;
+  }, [cards]);
+  const [types, setTypes] = useState<Record<string, PokemonType | null>>(initialTypes);
   const [images, setImages] = useState<Record<string, string | null>>(() => {
     const map: Record<string, string | null> = {};
     for (const card of cards) map[card.id] = card.image_url;
@@ -64,15 +79,32 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
     return Array.from(ids);
   }, [values, initial, prices, initialPrices]);
 
+  const dirtyCardIds = useMemo(() => {
+    return cards
+      .filter((c) => (types[c.id] ?? null) !== (initialTypes[c.id] ?? null))
+      .map((c) => c.id);
+  }, [cards, types, initialTypes]);
+
+  const totalDirtyCount = dirtyIds.length + dirtyCardIds.length;
+
   const filteredCards = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return cards;
-    return cards.filter(
-      (c) =>
+    return cards.filter((c) => {
+      const type = types[c.id];
+      const typeLabel = type ? pokemonTypeLabel[type].toLowerCase() : "";
+      return (
         c.name.toLowerCase().includes(q) ||
-        String(c.number).padStart(3, "0").includes(q)
-    );
-  }, [cards, query]);
+        String(c.number).padStart(3, "0").includes(q) ||
+        (type ? type.includes(q) : false) ||
+        typeLabel.includes(q)
+      );
+    });
+  }, [cards, query, types]);
+
+  function setType(cardId: string, value: PokemonType | "") {
+    setTypes((t) => ({ ...t, [cardId]: value === "" ? null : value }));
+  }
 
   function setValue(variantId: string, value: number) {
     setValues((v) => ({ ...v, [variantId]: Math.max(0, value) }));
@@ -90,12 +122,12 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
   }
 
   async function handleSave() {
-    if (dirtyIds.length === 0) return;
+    if (totalDirtyCount === 0) return;
     setSaving(true);
     setErrorMsg(null);
     const supabase = createBrowserSupabase();
 
-    const results = await Promise.all(
+    const variantResults = await Promise.all(
       dirtyIds.map((id) =>
         supabase
           .from("card_variants")
@@ -103,7 +135,15 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
           .eq("id", id)
       )
     );
-    const failed = results.find((r) => r.error);
+    const cardResults = await Promise.all(
+      dirtyCardIds.map((id) =>
+        supabase
+          .from("cards")
+          .update({ pokemon_type: types[id] ?? null })
+          .eq("id", id)
+      )
+    );
+    const failed = [...variantResults, ...cardResults].find((r) => r.error);
 
     setSaving(false);
     if (failed) {
@@ -115,6 +155,7 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
     // Treat the saved values as the new baseline.
     Object.assign(initial, values);
     Object.assign(initialPrices, prices);
+    Object.assign(initialTypes, types);
     setSavedAt(Date.now());
   }
 
@@ -163,25 +204,25 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
       <div className="sticky top-0 z-10 bg-ink py-3 -mx-4 px-4 mb-4 border-b border-line flex items-center gap-3">
         <input
           type="text"
-          placeholder="Sök kort efter namn eller nummer…"
+          placeholder="Sök kort efter namn, nummer eller typ (t.ex. water)…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="focus-ring flex-1 bg-panel border border-line rounded-sm px-3 py-2 text-paper text-sm"
         />
         <button
           onClick={handleSave}
-          disabled={dirtyIds.length === 0 || saving}
+          disabled={totalDirtyCount === 0 || saving}
           className="focus-ring shrink-0 rounded-sm bg-gold text-ink font-semibold px-4 py-2 text-sm disabled:opacity-40"
         >
           {saving
             ? "Sparar…"
-            : dirtyIds.length > 0
-            ? `Spara ${dirtyIds.length} ändring${dirtyIds.length === 1 ? "" : "ar"}`
+            : totalDirtyCount > 0
+            ? `Spara ${totalDirtyCount} ändring${totalDirtyCount === 1 ? "" : "ar"}`
             : "Inga ändringar"}
         </button>
       </div>
 
-      {savedAt && dirtyIds.length === 0 && (
+      {savedAt && totalDirtyCount === 0 && (
         <p className="text-sm text-gold mb-4">Sparat ✓</p>
       )}
       {errorMsg && <p className="text-sm text-red-400 mb-4">{errorMsg}</p>}
@@ -189,9 +230,11 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
 
       <div className="space-y-2">
         {filteredCards.map((card) => {
-          const variantsPresent = (["normal", "holo"] as const)
+          const variantsPresent = VARIANT_ORDER
             .map((vt) => card.card_variants.find((v) => v.variant === vt))
             .filter((v): v is VariantRow => !!v);
+          const cardType = types[card.id] ?? null;
+          const isTypeDirty = cardType !== (initialTypes[card.id] ?? null);
 
           return (
             <div
@@ -234,6 +277,34 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
                   </div>
                   <div className="text-xs text-mute">{rarityLabel[card.rarity]}</div>
                 </div>
+                <div className="shrink-0 flex items-center gap-1.5">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full border border-line shrink-0"
+                    style={{
+                      backgroundColor: cardType
+                        ? pokemonTypeColor[cardType]
+                        : "transparent",
+                    }}
+                    aria-hidden
+                  />
+                  <select
+                    value={cardType ?? ""}
+                    onChange={(e) =>
+                      setType(card.id, e.target.value as PokemonType | "")
+                    }
+                    title="Pokémon-typ (färg)"
+                    className={`focus-ring bg-ink border rounded-sm px-1.5 py-1 text-xs text-paper ${
+                      isTypeDirty ? "border-gold" : "border-line"
+                    }`}
+                  >
+                    <option value="">Typ…</option>
+                    {pokemonTypeOptions.map((t) => (
+                      <option key={t} value={t}>
+                        {pokemonTypeLabel[t]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* Rad 2: Pris */}
@@ -245,7 +316,7 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
                   return (
                     <div key={variant.id} className="flex items-center gap-1.5 shrink-0">
                       <span className="text-xs text-mute w-10">
-                        {variant.variant === "holo" ? "Holo" : "Van."}
+                        {variantShortLabel[variant.variant]}
                       </span>
                       <input
                         type="number"
@@ -271,7 +342,7 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
                   return (
                     <div key={variant.id} className="flex items-center gap-1 shrink-0">
                       <span className="text-xs text-mute w-10">
-                        {variant.variant === "holo" ? "Holo" : "Van."}
+                        {variantShortLabel[variant.variant]}
                       </span>
                       <button
                         onClick={() => bump(variant.id, -1)}

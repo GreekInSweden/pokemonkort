@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { Variant } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 interface VariantRow {
-  variant: "normal" | "holo";
+  variant: Variant;
   stock: number;
   price_sek: number;
   cards: {
@@ -25,6 +26,7 @@ interface SetSummary {
   cardsInStock: number;
   unitsInStock: number;
   holoUnitsInStock: number;
+  reverseHoloUnitsInStock: number;
   valueSek: number;
 }
 
@@ -43,6 +45,8 @@ export default async function LagervardePage() {
   let grandTotalCards = 0;
   let grandTotalHoloUnits = 0;
   let grandTotalHoloCards = 0;
+  let grandTotalReverseHoloUnits = 0;
+  let grandTotalReverseHoloCards = 0;
 
   for (const v of variants) {
     if (!v.cards || !v.cards.sets || v.stock <= 0) continue;
@@ -50,11 +54,13 @@ export default async function LagervardePage() {
     const existing = bySet.get(setId);
     const lineValue = v.stock * v.price_sek;
     const holoUnits = v.variant === "holo" ? v.stock : 0;
+    const reverseHoloUnits = v.variant === "reverse_holo" ? v.stock : 0;
 
     if (existing) {
       existing.cardsInStock += 1;
       existing.unitsInStock += v.stock;
       existing.holoUnitsInStock += holoUnits;
+      existing.reverseHoloUnitsInStock += reverseHoloUnits;
       existing.valueSek += lineValue;
     } else {
       bySet.set(setId, {
@@ -65,6 +71,7 @@ export default async function LagervardePage() {
         cardsInStock: 1,
         unitsInStock: v.stock,
         holoUnitsInStock: holoUnits,
+        reverseHoloUnitsInStock: reverseHoloUnits,
         valueSek: lineValue,
       });
     }
@@ -75,6 +82,10 @@ export default async function LagervardePage() {
     if (v.variant === "holo") {
       grandTotalHoloUnits += v.stock;
       grandTotalHoloCards += 1;
+    }
+    if (v.variant === "reverse_holo") {
+      grandTotalReverseHoloUnits += v.stock;
+      grandTotalReverseHoloCards += 1;
     }
   }
 
@@ -110,6 +121,11 @@ export default async function LagervardePage() {
             <div className="text-sm text-mute font-mono mt-1">
               Varav <span className="text-paper">{grandTotalHoloUnits.toLocaleString("sv-SE")} holo-kort</span> ({grandTotalHoloCards} olika holo-varianter)
             </div>
+            {grandTotalReverseHoloUnits > 0 && (
+              <div className="text-sm text-mute font-mono mt-1">
+                Varav <span className="text-paper">{grandTotalReverseHoloUnits.toLocaleString("sv-SE")} reverse holo-kort</span> ({grandTotalReverseHoloCards} olika reverse holo-varianter)
+              </div>
+            )}
           </div>
 
           <div className="border border-line rounded-md divide-y divide-line">
@@ -131,6 +147,9 @@ export default async function LagervardePage() {
                     kort/varianter
                     {s.holoUnitsInStock > 0 && (
                       <> · {s.holoUnitsInStock} holo</>
+                    )}
+                    {s.reverseHoloUnitsInStock > 0 && (
+                      <> · {s.reverseHoloUnitsInStock} rev. holo</>
                     )}
                   </div>
                 </div>

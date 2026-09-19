@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { CardRow, Variant } from "@/lib/types";
 import { rarityLabel } from "@/lib/rarity";
+import { variantLabel } from "@/lib/variant";
 import { useCart } from "@/lib/CartContext";
 import CardImage from "@/components/CardImage";
 
@@ -100,7 +101,7 @@ export default function CardModal({
                         : "border-line text-paper hover:border-mute"
                     }`}
                   >
-                    {v.variant === "holo" ? "Holo" : "Vanligt"}
+                    {variantLabel[v.variant]}
                     <span className="block text-xs font-mono text-mute mt-0.5">
                       {v.price_sek} kr · {v.stock} st
                     </span>

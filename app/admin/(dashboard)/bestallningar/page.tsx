@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
+import { variantLabel } from "@/lib/variant";
 import OrderActions from "@/components/admin/OrderActions";
 import DeleteOrderButton from "@/components/admin/DeleteOrderButton";
 import ArchivedOrders from "@/components/admin/ArchivedOrders";
@@ -105,7 +106,7 @@ export default async function BestallningarPage() {
                         <span>
                           #{String(item.card_number).padStart(3, "0")} {item.card_name}{" "}
                           <span className="text-mute">
-                            ({item.variant === "holo" ? "Holo" : "Vanligt"}) ×{item.quantity}
+                            ({variantLabel[item.variant as keyof typeof variantLabel] ?? "Vanligt"}) ×{item.quantity}
                           </span>
                         </span>
                         <span className="font-mono">

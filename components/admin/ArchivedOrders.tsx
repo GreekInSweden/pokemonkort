@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { variantLabel } from "@/lib/variant";
 import OrderActions from "@/components/admin/OrderActions";
 import DeleteOrderButton from "@/components/admin/DeleteOrderButton";
 
@@ -88,7 +89,7 @@ export default function ArchivedOrders({ orders }: { orders: OrderRow[] }) {
                     <span>
                       #{String(item.card_number).padStart(3, "0")} {item.card_name}{" "}
                       <span className="text-mute">
-                        ({item.variant === "holo" ? "Holo" : "Vanligt"}) ×{item.quantity}
+                        ({variantLabel[item.variant as keyof typeof variantLabel] ?? "Vanligt"}) ×{item.quantity}
                       </span>
                     </span>
                     <span className="font-mono">{item.unit_price_sek * item.quantity} kr</span>

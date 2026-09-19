@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { AuctionListing } from "@/lib/types";
 import { rarityLabel } from "@/lib/rarity";
+import { variantLabel } from "@/lib/variant";
 import CardImage from "@/components/CardImage";
 
 function timeLeftLabel(endsAt: string): string {
@@ -73,7 +74,7 @@ export default function AuktionerPage() {
                 <div className="font-display font-semibold text-paper mb-2">
                   {a.cardName}{" "}
                   <span className="text-mute text-sm font-body">
-                    ({a.variant === "holo" ? "Holo" : "Vanligt"})
+                    ({variantLabel[a.variant]})
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">

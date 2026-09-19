@@ -20,7 +20,7 @@ async function getSetWithCards(categorySlug: string, setSlug: string) {
 
   const { data: cards, error: cardsError } = await supabase
     .from("cards")
-    .select("id, set_id, number, name, rarity, image_url, card_variants(id, card_id, variant, price_sek, stock)")
+    .select("id, set_id, number, name, rarity, image_url, pokemon_type, card_variants(id, card_id, variant, price_sek, stock)")
     .eq("set_id", set.id)
     .order("number", { ascending: true });
 
@@ -33,6 +33,7 @@ async function getSetWithCards(categorySlug: string, setSlug: string) {
     name: c.name,
     rarity: c.rarity,
     image_url: c.image_url,
+    pokemon_type: c.pokemon_type ?? null,
     variants: c.card_variants ?? [],
   }));
 

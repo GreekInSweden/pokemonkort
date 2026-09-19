@@ -23,6 +23,9 @@ export default function AdminLayout({
             <Link href="/admin/lagervarde" className="focus-ring text-sm text-paper hover:text-gold">
               Lagervärde
             </Link>
+            <Link href="/admin/paket" className="focus-ring text-sm text-paper hover:text-gold">
+              Paket
+            </Link>
             <Link href="/admin/auktioner" className="focus-ring text-sm text-paper hover:text-gold">
               Auktioner
             </Link>

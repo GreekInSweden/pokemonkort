@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/lib/CartContext";
 import { calculateShippingSek } from "@/lib/shipping";
+import { variantLabel } from "@/lib/variant";
 
 export default function KassaPage() {
   const { items, updateQuantity, removeItem, subtotalSek, itemCount, clear } =
@@ -104,7 +105,7 @@ export default function KassaPage() {
               <div className="font-display font-medium text-paper">
                 {item.cardName}{" "}
                 <span className="text-mute text-sm font-body">
-                  ({item.variant === "holo" ? "Holo" : "Vanligt"})
+                  ({variantLabel[item.variant]})
                 </span>
               </div>
             </div>

@@ -8,7 +8,23 @@ export type Rarity =
   | "base"
   | "insert";
 
-export type Variant = "normal" | "holo";
+export type Variant = "normal" | "holo" | "reverse_holo";
+
+// Energityp/"färg" på Pokémon-korten — används för att kunna söka i admin
+// på samma sätt korten sorteras fysiskt innan de läggs i fack. Sätts inte
+// på Topps-kort (null där).
+export type PokemonType =
+  | "grass"
+  | "fire"
+  | "water"
+  | "lightning"
+  | "psychic"
+  | "fighting"
+  | "darkness"
+  | "metal"
+  | "fairy"
+  | "dragon"
+  | "colorless";
 
 export interface SetRow {
   id: string;
@@ -33,6 +49,7 @@ export interface CardRow {
   name: string;
   rarity: Rarity;
   image_url: string | null;
+  pokemon_type: PokemonType | null;
   variants: CardVariantRow[];
 }
 

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
+import { Variant } from "@/lib/types";
+import { variantLabel } from "@/lib/variant";
 
 interface SetOption {
   id: string;
@@ -12,7 +14,7 @@ interface SetOption {
 
 interface VariantOption {
   id: string;
-  variant: "normal" | "holo";
+  variant: Variant;
   stock: number;
 }
 
@@ -142,7 +144,7 @@ export default function NewAuctionForm({ sets }: { sets: SetOption[] }) {
             <option value="">Välj variant…</option>
             {selectedCard.variants.map((v) => (
               <option key={v.id} value={v.id}>
-                {v.variant === "holo" ? "Holo" : "Vanligt"} (lager: {v.stock})
+                {variantLabel[v.variant]} (lager: {v.stock})
               </option>
             ))}
           </select>

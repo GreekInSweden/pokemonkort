@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { variantLabel } from "@/lib/variant";
 import CloseAuctionButton from "@/components/admin/CloseAuctionButton";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +62,9 @@ export default async function AdminAuktionerPage() {
                   <div>
                     <div className="font-mono text-xs text-mute">
                       #{String(card?.number ?? 0).padStart(3, "0")} ·{" "}
-                      {a.card_variants?.variant === "holo" ? "Holo" : "Vanligt"}
+                      {a.card_variants?.variant
+                        ? variantLabel[a.card_variants.variant as keyof typeof variantLabel]
+                        : "Vanligt"}
                     </div>
                     <div className="font-display font-semibold text-paper">
                       {card?.name ?? "Okänt kort"}
