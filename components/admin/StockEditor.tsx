@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { rarityLabel } from "@/lib/rarity";
 import { Rarity, PokemonType, Variant } from "@/lib/types";
-import { variantShortLabel } from "@/lib/variant";
+import { variantShortLabel, variantLabel } from "@/lib/variant";
 import {
   pokemonTypeOptions,
   pokemonTypeLabel,
@@ -32,6 +33,7 @@ interface CardRow {
 const VARIANT_ORDER: Variant[] = ["normal", "holo", "reverse_holo"];
 
 export default function StockEditor({ cards }: { cards: CardRow[] }) {
+  const router = useRouter();
   // Local editable copy: variantId -> current stock value shown in the input.
   const initial = useMemo(() => {
     const map: Record<string, number> = {};
@@ -67,6 +69,28 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [addingVariantKey, setAddingVariantKey] = useState<string | null>(null);
+
+  async function handleAddVariant(cardId: string, variant: Variant) {
+    const key = `${cardId}-${variant}`;
+    setAddingVariantKey(key);
+    setErrorMsg(null);
+    const supabase = createBrowserSupabase();
+
+    const { error } = await supabase
+      .from("card_variants")
+      .insert({ card_id: cardId, variant, price_sek: 0, stock: 0 });
+
+    setAddingVariantKey(null);
+    if (error) {
+      setErrorMsg(
+        `Kunde inte lägga till ${variantLabel[variant].toLowerCase()}: ${error.message}`
+      );
+      return;
+    }
+    // Refetch from the server so the new row shows up with its real id.
+    router.refresh();
+  }
 
   const dirtyIds = useMemo(() => {
     const ids = new Set<string>();
@@ -233,6 +257,9 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
           const variantsPresent = VARIANT_ORDER
             .map((vt) => card.card_variants.find((v) => v.variant === vt))
             .filter((v): v is VariantRow => !!v);
+          const missingVariants = VARIANT_ORDER.filter(
+            (vt) => !card.card_variants.some((v) => v.variant === vt)
+          );
           const cardType = types[card.id] ?? null;
           const isTypeDirty = cardType !== (initialTypes[card.id] ?? null);
 
@@ -372,6 +399,28 @@ export default function StockEditor({ cards }: { cards: CardRow[] }) {
                   );
                 })}
               </div>
+
+              {/* Rad 4: Lägg till saknad variant */}
+              {missingVariants.length > 0 && (
+                <div className="flex items-center gap-2 pl-16 flex-wrap">
+                  {missingVariants.map((variant) => {
+                    const key = `${card.id}-${variant}`;
+                    const isAdding = addingVariantKey === key;
+                    return (
+                      <button
+                        key={variant}
+                        onClick={() => handleAddVariant(card.id, variant)}
+                        disabled={isAdding}
+                        className="focus-ring text-xs rounded-sm border border-dashed border-line px-2 py-1 text-mute hover:border-gold hover:text-gold disabled:opacity-40"
+                      >
+                        {isAdding
+                          ? "Lägger till…"
+                          : `+ ${variantLabel[variant]}`}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           );
         })}
