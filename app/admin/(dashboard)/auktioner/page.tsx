@@ -12,8 +12,8 @@ export const dynamic = "force-dynamic";
 const ARCHIVE_AFTER_DAYS = 30;
 
 const winStatusLabel: Record<string, string> = {
-  pending: "Väntar på att vinnaren fyller i sina uppgifter",
-  claimed: "Uppgifter inlämnade — väntar på Swish",
+  pending: "Väntar på att vinnaren loggar in och ser betalsidan",
+  claimed: "Har sett betalsidan — väntar på Swish",
   paid: "Betald",
   expired: "Utgången — ingen hämtade ut vinsten",
 };
@@ -24,7 +24,7 @@ export default async function AdminAuktionerPage() {
   const { data: auctions } = await supabase
     .from("auctions")
     .select(
-      "id, starting_price_sek, min_increment_sek, reserve_price_sek, ends_at, status, front_image_url, back_image_url, card_variants(variant, cards(number, name)), auction_wins(id, status, amount_sek, buyer_name, buyer_email, buyer_phone, claim_deadline)"
+      "id, starting_price_sek, min_increment_sek, reserve_price_sek, ends_at, status, front_image_url, back_image_url, card_variants(variant, cards(number, name)), auction_wins(id, status, amount_sek, claim_deadline, members(member_number, name, email, phone))"
     )
     .order("created_at", { ascending: false });
 
@@ -32,7 +32,7 @@ export default async function AdminAuktionerPage() {
     (auctions ?? []).map(async (a: any) => {
       const { data: bids } = await supabase
         .from("bids")
-        .select("bidder_token, amount_sek, created_at")
+        .select("amount_sek, created_at, members(member_number, name)")
         .eq("auction_id", a.id)
         .order("amount_sek", { ascending: false });
       const win = Array.isArray(a.auction_wins) ? a.auction_wins[0] ?? null : a.auction_wins;
@@ -150,7 +150,9 @@ export default async function AdminAuktionerPage() {
                       >
                         <span className={i === 0 ? "text-gold font-medium" : "text-paper"}>
                           {i === 0 && "🏆 "}
-                          Budgivare {b.bidder_token?.slice(0, 8) ?? "okänd"}
+                          {b.members
+                            ? `Medlem #${b.members.member_number} (${b.members.name})`
+                            : "Okänd medlem"}
                         </span>
                         <span className="font-mono">{b.amount_sek} kr</span>
                       </div>
@@ -163,9 +165,10 @@ export default async function AdminAuktionerPage() {
                     <p className="text-sm text-paper font-medium mb-1">
                       {winStatusLabel[a.win.status] ?? a.win.status}
                     </p>
-                    {a.win.buyer_name && (
+                    {a.win.members && (
                       <p className="text-sm text-mute">
-                        {a.win.buyer_name} — {a.win.buyer_email} · {a.win.buyer_phone}
+                        Medlem #{a.win.members.member_number} — {a.win.members.name} —{" "}
+                        {a.win.members.email} · {a.win.members.phone ?? "inget telefonnr"}
                       </p>
                     )}
                     {a.win.status === "claimed" && (

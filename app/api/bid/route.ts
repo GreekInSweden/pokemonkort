@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { MEMBER_SESSION_COOKIE, verifyMemberSession } from "@/lib/memberSession";
 
 // Anti-snipe: a bid placed inside this window before the deadline pushes
 // the deadline out to "now + this window" again, so a last-second bid
@@ -10,17 +11,25 @@ const SNIPE_WINDOW_MS = 3 * 60 * 1000;
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  // Bidding requires a member account now — that's what lets every bid
+  // show a member number instead of asking for name/e-post/telefon on
+  // every single bid. Once logged in, a bid only needs an amount.
+  const sessionToken = req.cookies.get(MEMBER_SESSION_COOKIE)?.value;
+  const memberId = sessionToken ? await verifyMemberSession(sessionToken) : null;
+  if (!memberId) {
+    return NextResponse.json(
+      { error: "Logga in på ditt medlemskonto för att buda." },
+      { status: 401 }
+    );
+  }
+
   const body = await req.json();
-  const { auctionId, bidderToken, amountSek } = body as {
+  const { auctionId, amountSek } = body as {
     auctionId: string;
-    bidderToken: string;
     amountSek: number;
   };
 
-  // No name/e-post/telefon here on purpose — a bid only needs an amount
-  // and the browser's anonymous bidder token. Contact details are only
-  // ever collected once, from whoever actually wins, on the claim page.
-  if (!auctionId || !bidderToken || !amountSek) {
+  if (!auctionId || !amountSek) {
     return NextResponse.json({ error: "Något saknas i budet." }, { status: 400 });
   }
 
@@ -59,7 +68,7 @@ export async function POST(req: NextRequest) {
 
   const { error: insertError } = await supabaseAdmin.from("bids").insert({
     auction_id: auctionId,
-    bidder_token: bidderToken,
+    member_id: memberId,
     amount_sek: amountSek,
   });
 

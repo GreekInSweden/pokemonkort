@@ -11,8 +11,9 @@ const CLAIM_WINDOW_MS = 7 * 24 * 60 * 60 * 1000; // 1 week to claim a win
 // this is the one place guaranteed to run often (the storefront polls it
 // every 20s). For each newly-expired auction: work out the winning bid,
 // and if the reserve (if any) was met, create the "outbox" entry that
-// lets that bidder's browser recognize it won and claim it. Auctions
-// with no bids, or that missed reserve, are just closed with no winner.
+// lets that member recognize (next time they're logged in) that they
+// won and claim it. Auctions with no bids, or that missed reserve, are
+// just closed with no winner.
 async function closeExpiredAuctions() {
   const { data: expired } = await supabaseAdmin
     .from("auctions")
@@ -23,7 +24,7 @@ async function closeExpiredAuctions() {
   for (const a of expired ?? []) {
     const { data: topBid } = await supabaseAdmin
       .from("bids")
-      .select("amount_sek, bidder_token")
+      .select("amount_sek, member_id")
       .eq("auction_id", a.id)
       .order("amount_sek", { ascending: false })
       .limit(1);
@@ -31,7 +32,7 @@ async function closeExpiredAuctions() {
     const reservePrice =
       a.reserve_price_sek !== null ? Number(a.reserve_price_sek) : null;
 
-    if (topBid && topBid.length > 0 && topBid[0].bidder_token) {
+    if (topBid && topBid.length > 0 && topBid[0].member_id) {
       const amount = Number(topBid[0].amount_sek);
       const reserveMet = reservePrice === null || amount >= reservePrice;
       if (reserveMet) {
@@ -40,7 +41,7 @@ async function closeExpiredAuctions() {
         await supabaseAdmin.from("auction_wins").upsert(
           {
             auction_id: a.id,
-            bidder_token: topBid[0].bidder_token,
+            member_id: topBid[0].member_id,
             amount_sek: amount,
             status: "pending",
             claim_deadline: new Date(Date.now() + CLAIM_WINDOW_MS).toISOString(),
@@ -81,22 +82,23 @@ export async function GET() {
   for (const a of auctions as any[]) {
     if (a.status !== "open") continue;
 
-    const { data: bids } = await supabaseAdmin
+    // Member numbers only — never anything else about a bidder — so the
+    // public listing can show "vem som leder" without exposing any
+    // contact details.
+    const { data: bidRows } = await supabaseAdmin
       .from("bids")
-      .select("amount_sek")
+      .select("amount_sek, created_at, members(member_number)")
       .eq("auction_id", a.id)
-      .order("amount_sek", { ascending: false })
-      .limit(1);
+      .order("amount_sek", { ascending: false });
 
-    const { count } = await supabaseAdmin
-      .from("bids")
-      .select("id", { count: "exact", head: true })
-      .eq("auction_id", a.id);
+    const bidHistory = (bidRows ?? []).map((b: any) => ({
+      memberNumber: b.members?.member_number ?? null,
+      amountSek: Number(b.amount_sek),
+    }));
 
-    const highest = bids && bids.length > 0 ? Number(bids[0].amount_sek) : null;
     const card = a.card_variants?.cards;
     const reservePrice = a.reserve_price_sek !== null ? Number(a.reserve_price_sek) : null;
-    const currentHighSek = highest ?? Number(a.starting_price_sek);
+    const currentHighSek = bidHistory.length > 0 ? bidHistory[0].amountSek : Number(a.starting_price_sek);
 
     results.push({
       auctionId: a.id,
@@ -112,7 +114,9 @@ export async function GET() {
       startingPriceSek: Number(a.starting_price_sek),
       minIncrementSek: Number(a.min_increment_sek),
       currentHighSek,
-      bidCount: count ?? 0,
+      bidCount: bidHistory.length,
+      bidHistory,
+      leadingMemberNumber: bidHistory[0]?.memberNumber ?? null,
       endsAt: a.ends_at,
       status: a.status,
       // Never send the actual reserve_price_sek to the client — only

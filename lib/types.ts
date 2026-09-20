@@ -79,6 +79,8 @@ export interface AuctionListing {
   minIncrementSek: number;
   currentHighSek: number;
   bidCount: number;
+  bidHistory: { memberNumber: number | null; amountSek: number }[];
+  leadingMemberNumber: number | null;
   endsAt: string;
   status: "open" | "closed";
   reserveMet: boolean;
@@ -95,5 +97,14 @@ export interface AuctionWin {
   rarity: Rarity;
   imageUrl: string | null;
   backImageUrl: string | null;
-  buyerName: string | null;
+}
+
+export interface Member {
+  memberNumber: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  address: string | null;
+  postalCode: string | null;
+  city: string | null;
 }

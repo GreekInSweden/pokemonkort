@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/lib/CartContext";
@@ -22,6 +22,27 @@ export default function KassaPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Pre-fill from the member's saved profile if they're logged in, so
+  // they don't have to retype their details on every purchase — still
+  // editable, and guest checkout (no account) works exactly as before.
+  useEffect(() => {
+    fetch("/api/member/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.member) return;
+        setForm((f) => ({
+          name: f.name || data.member.name || "",
+          email: f.email || data.member.email || "",
+          phone: f.phone || data.member.phone || "",
+          address: f.address || data.member.address || "",
+          postalCode: f.postalCode || data.member.postalCode || "",
+          city: f.city || data.member.city || "",
+        }));
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const shippingSek = useMemo(() => calculateShippingSek(itemCount), [itemCount]);
   const totalSek = subtotalSek + shippingSek;

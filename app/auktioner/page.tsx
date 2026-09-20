@@ -2,10 +2,9 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { AuctionListing, AuctionWin } from "@/lib/types";
+import { AuctionListing, AuctionWin, Member } from "@/lib/types";
 import { rarityLabel } from "@/lib/rarity";
 import { variantLabel } from "@/lib/variant";
-import { getBidderToken } from "@/lib/bidderToken";
 import CardImage from "@/components/CardImage";
 import CountdownTimer from "@/components/CountdownTimer";
 
@@ -14,6 +13,7 @@ export default function AuktionerPage() {
   const [loading, setLoading] = useState(true);
   const [activeAuction, setActiveAuction] = useState<AuctionListing | null>(null);
   const [win, setWin] = useState<AuctionWin | null>(null);
+  const [member, setMember] = useState<Member | null | undefined>(undefined);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/auctions");
@@ -23,22 +23,27 @@ export default function AuktionerPage() {
   }, []);
 
   const checkWin = useCallback(async () => {
-    const token = getBidderToken();
-    if (!token) return;
-    const res = await fetch(`/api/auction-win?token=${encodeURIComponent(token)}`);
+    const res = await fetch("/api/auction-win");
     const data = await res.json();
     setWin(data.win ?? null);
+  }, []);
+
+  const loadMember = useCallback(async () => {
+    const res = await fetch("/api/member/me");
+    const data = await res.json();
+    setMember(data.member ?? null);
   }, []);
 
   useEffect(() => {
     load();
     checkWin();
+    loadMember();
     const interval = setInterval(() => {
       load();
       checkWin();
     }, 20000); // poll every 20s for near-live updates
     return () => clearInterval(interval);
-  }, [load, checkWin]);
+  }, [load, checkWin, loadMember]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-14">
@@ -47,7 +52,16 @@ export default function AuktionerPage() {
       </h1>
       <p className="text-mute mb-6 max-w-prose">
         Buda på våra mest värdefulla kort. Högsta bud vid sluttid vinner —
-        vinner du dyker en betalsida upp här automatiskt.
+        vinner du dyker en betalsida upp här automatiskt.{" "}
+        {member === null && (
+          <>
+            Du behöver vara{" "}
+            <Link href="/konto/logga-in?next=/auktioner" className="text-gold hover:underline">
+              inloggad
+            </Link>{" "}
+            för att buda.
+          </>
+        )}
       </p>
 
       {win && (
@@ -59,8 +73,7 @@ export default function AuktionerPage() {
             🎉 Du vann auktionen för {win.cardName}!
           </p>
           <p className="text-sm text-paper">
-            Klicka här för att fylla i dina uppgifter och betala —{" "}
-            {win.amountSek} kr.
+            Klicka här för att betala — {win.amountSek} kr.
           </p>
         </Link>
       )}
@@ -105,6 +118,11 @@ export default function AuktionerPage() {
                     {a.bidCount} bud
                   </span>
                 </div>
+                {a.leadingMemberNumber !== null && (
+                  <div className="text-xs text-mute mt-1">
+                    Leder: Medlem #{a.leadingMemberNumber}
+                  </div>
+                )}
                 {!a.reserveMet && a.bidCount > 0 && (
                   <div className="text-xs text-amber-400/90 mt-1">
                     Minimipris ej uppnått ännu
@@ -122,6 +140,7 @@ export default function AuktionerPage() {
       {activeAuction && (
         <BidModal
           auction={activeAuction}
+          member={member ?? null}
           onClose={() => setActiveAuction(null)}
           onBidPlaced={() => {
             load();
@@ -135,10 +154,12 @@ export default function AuktionerPage() {
 
 function BidModal({
   auction,
+  member,
   onClose,
   onBidPlaced,
 }: {
   auction: AuctionListing;
+  member: Member | null;
   onClose: () => void;
   onBidPlaced: () => void;
 }) {
@@ -160,7 +181,6 @@ function BidModal({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         auctionId: auction.auctionId,
-        bidderToken: getBidderToken(),
         amountSek: amount,
       }),
     });
@@ -237,10 +257,31 @@ function BidModal({
           Högsta bud just nu: <span className="text-gold">{auction.currentHighSek} kr</span>{" "}
           · Minsta bud: {minBid} kr
         </p>
+
+        {auction.bidHistory.length > 0 && (
+          <div className="border border-line rounded-md mb-4 max-h-32 overflow-y-auto divide-y divide-line">
+            {auction.bidHistory.map((b, i) => (
+              <div
+                key={i}
+                className={`flex items-center justify-between px-3 py-1.5 text-xs ${
+                  i === 0 ? "bg-gold/10 text-gold font-medium" : "text-mute"
+                }`}
+              >
+                <span>
+                  {i === 0 && "🏆 "}
+                  {b.memberNumber !== null ? `Medlem #${b.memberNumber}` : "Okänd medlem"}
+                </span>
+                <span className="font-mono">{b.amountSek} kr</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {!auction.reserveMet && auction.bidCount > 0 && (
           <p className="text-xs text-amber-400/90 mb-4">
-            Minimipris ej uppnått ännu — säljaren kan välja att inte sälja
-            om inget högre bud kommer in innan sluttid.
+            Det här kortet har ett dolt lägsta pris som ännu inte är
+            uppnått. Om inget bud når upp till det innan auktionen slutar
+            säljs kortet inte, och vi kan välja att lägga upp det igen.
           </p>
         )}
         {extended && (
@@ -251,12 +292,23 @@ function BidModal({
         )}
         <p className="text-xs text-mute mb-4">
           Bud inom sista 3 minuterna förlänger auktionen automatiskt med 3
-          minuter. Vinner du dyker en betalsida upp här på sidan efter
-          sluttid — inga uppgifter behövs för att buda.
+          minuter.
         </p>
 
         {success ? (
           <p className="text-gold">Bud lagt! Håll koll på sidan om du vinner.</p>
+        ) : !member ? (
+          <div className="text-center">
+            <p className="text-sm text-mute mb-3">
+              Logga in på ditt medlemskonto för att buda.
+            </p>
+            <Link
+              href={`/konto/logga-in?next=/auktioner`}
+              className="focus-ring inline-block w-full rounded-sm bg-gold text-ink font-semibold py-3"
+            >
+              Logga in
+            </Link>
+          </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
             <label className="block">
@@ -276,7 +328,7 @@ function BidModal({
               disabled={submitting}
               className="focus-ring w-full rounded-sm bg-gold text-ink font-semibold py-3 disabled:opacity-50"
             >
-              {submitting ? "Skickar…" : "Lägg bud"}
+              {submitting ? "Skickar…" : `Buda som Medlem #${member.memberNumber}`}
             </button>
           </form>
         )}

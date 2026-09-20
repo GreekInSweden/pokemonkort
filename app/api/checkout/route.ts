@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { MEMBER_SESSION_COOKIE, verifyMemberSession } from "@/lib/memberSession";
 
 interface CheckoutItem {
   variantId: string;
@@ -67,10 +68,17 @@ export async function POST(req: NextRequest) {
 
   const orderNumber = generateOrderNumber();
 
+  // Link the order to a member account if the buyer happens to be logged
+  // in — purely for their own order history on /konto, guest checkout
+  // (no account) still works exactly as before.
+  const sessionToken = req.cookies.get(MEMBER_SESSION_COOKIE)?.value;
+  const memberId = sessionToken ? await verifyMemberSession(sessionToken) : null;
+
   const { data: order, error: orderError } = await supabaseAdmin
     .from("orders")
     .insert({
       order_number: orderNumber,
+      member_id: memberId,
       customer_name: customer.name,
       email: customer.email,
       phone: customer.phone,
