@@ -1,5 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
-import { Variant } from "@/lib/types";
+import { Variant, Rarity } from "@/lib/types";
 import PackageCompleteness, {
   SetPackageSummary,
 } from "@/components/admin/PackageCompleteness";
@@ -16,6 +16,7 @@ interface CardRow {
   id: string;
   number: number;
   name: string;
+  rarity: Rarity;
   card_variants: VariantRow[];
 }
 
@@ -29,13 +30,25 @@ interface SetRow {
 
 const VARIANTS: Variant[] = ["normal", "holo", "reverse_holo"];
 
+// These rarities ARE the special print already (full-art, textured,
+// gold, etc.) — they never get a separate holo or reverse holo version,
+// so they're excluded from those two counts no matter what, even if a
+// holo/reverse_holo row happens to exist on one by mistake. They still
+// count fully toward the "normal" (vanlig) variant.
+const NEVER_HOLO_RARITIES: Rarity[] = [
+  "illustration_rare",
+  "special_illustration_rare",
+  "ultra_rare",
+  "mega_hyper_rare",
+];
+
 export default async function PaketPage() {
   const supabase = createServerSupabase();
 
   const { data, error } = await supabase
     .from("sets")
     .select(
-      "id, slug, name, category_name, cards(id, number, name, card_variants(variant, price_sek, stock))"
+      "id, slug, name, category_name, cards(id, number, name, rarity, card_variants(variant, price_sek, stock))"
     )
     .order("category_name")
     .order("name");
@@ -47,10 +60,17 @@ export default async function PaketPage() {
       const totalCards = set.cards.length;
 
       const perVariant = VARIANTS.map((variant) => {
+        const isHoloType = variant === "holo" || variant === "reverse_holo";
+        const eligibleCards = isHoloType
+          ? set.cards.filter((c) => !NEVER_HOLO_RARITIES.includes(c.rarity))
+          : set.cards;
+
         // Only count cards that were ever given this variant — a set where
         // only rares get a holo print shouldn't be judged against cards
-        // that never had one.
-        const cardsWithVariant = set.cards.filter((c) =>
+        // that never had one. Rarities that are already the special print
+        // (full-art, gold, etc.) are excluded above regardless of whether
+        // a row exists for them.
+        const cardsWithVariant = eligibleCards.filter((c) =>
           c.card_variants.some((v) => v.variant === variant)
         );
         const inStock = cardsWithVariant.filter((c) =>
@@ -98,7 +118,10 @@ export default async function PaketPage() {
       <p className="text-mute mb-8">
         Hur nära varje set är att kunna säljas komplett som paket — per
         variant (vanlig/holo/reverse holo). Bara varianter som faktiskt
-        finns upplagda på minst ett kort i setet räknas med.
+        finns upplagda på minst ett kort i setet räknas med. Illustration
+        Rare, Special Illustration Rare, Ultra Rare och Hyper Rare räknas
+        aldrig in i holo/reverse holo — de är redan den speciella
+        tryckningen.
       </p>
 
       {error ? (
