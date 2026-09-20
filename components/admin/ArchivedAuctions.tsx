@@ -5,15 +5,12 @@ import { variantLabel } from "@/lib/variant";
 import DeleteAuctionButton from "@/components/admin/DeleteAuctionButton";
 
 interface Bid {
-  bidder_token: string | null;
   amount_sek: number;
 }
 
 interface Win {
   status: string;
-  buyer_name: string | null;
-  buyer_email: string | null;
-  buyer_phone: string | null;
+  members: { member_number: number; name: string; email: string; phone: string | null } | null;
 }
 
 interface AuctionRow {
@@ -84,10 +81,14 @@ export default function ArchivedAuctions({ auctions }: { auctions: AuctionRow[] 
                 {topBid ? (
                   <p className="text-sm text-paper mb-3">
                     🏆 <span className="font-mono">{topBid.amount_sek} kr</span>
-                    {a.win?.buyer_name && (
-                      <> — {a.win.buyer_name} · {a.win.buyer_email} · {a.win.buyer_phone}</>
+                    {a.win?.members && (
+                      <>
+                        {" "}
+                        — Medlem #{a.win.members.member_number} ({a.win.members.name}) —{" "}
+                        {a.win.members.email} · {a.win.members.phone ?? "inget telefonnr"}
+                      </>
                     )}
-                    {a.win && !a.win.buyer_name && (
+                    {a.win && !a.win.members && (
                       <span className="text-mute">
                         {" "}
                         —{" "}
