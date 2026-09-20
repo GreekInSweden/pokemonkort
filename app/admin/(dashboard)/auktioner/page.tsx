@@ -3,8 +3,12 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { variantLabel } from "@/lib/variant";
 import CloseAuctionButton from "@/components/admin/CloseAuctionButton";
 import AuctionImageUploader from "@/components/admin/AuctionImageUploader";
+import DeleteAuctionButton from "@/components/admin/DeleteAuctionButton";
+import ArchivedAuctions from "@/components/admin/ArchivedAuctions";
 
 export const dynamic = "force-dynamic";
+
+const ARCHIVE_AFTER_DAYS = 30;
 
 export default async function AdminAuktionerPage() {
   const supabase = createServerSupabase();
@@ -25,6 +29,14 @@ export default async function AdminAuktionerPage() {
         .order("amount_sek", { ascending: false });
       return { ...a, bids: bids ?? [] };
     })
+  );
+
+  const archiveCutoff = Date.now() - ARCHIVE_AFTER_DAYS * 24 * 60 * 60 * 1000;
+  const recentAuctions = withBids.filter(
+    (a) => new Date(a.ends_at).getTime() >= archiveCutoff
+  );
+  const archivedAuctions = withBids.filter(
+    (a) => new Date(a.ends_at).getTime() < archiveCutoff
   );
 
   return (
@@ -50,7 +62,7 @@ export default async function AdminAuktionerPage() {
         <p className="text-mute">Inga auktioner ännu.</p>
       ) : (
         <div className="space-y-4">
-          {withBids.map((a: any) => {
+          {recentAuctions.map((a: any) => {
             const card = a.card_variants?.cards;
             const topBid = a.bids[0];
             const ended = new Date(a.ends_at) < new Date();
@@ -155,11 +167,19 @@ export default async function AdminAuktionerPage() {
                     <CloseAuctionButton auctionId={a.id} />
                   </div>
                 )}
+
+                {a.status === "closed" && (
+                  <div className="mt-3">
+                    <DeleteAuctionButton auctionId={a.id} />
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       )}
+
+      <ArchivedAuctions auctions={archivedAuctions} />
     </div>
   );
 }
