@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { variantLabel } from "@/lib/variant";
 import CloseAuctionButton from "@/components/admin/CloseAuctionButton";
+import AuctionBackImageUploader from "@/components/admin/AuctionBackImageUploader";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ export default async function AdminAuktionerPage() {
   const { data: auctions } = await supabase
     .from("auctions")
     .select(
-      "id, starting_price_sek, min_increment_sek, reserve_price_sek, ends_at, status, card_variants(variant, cards(number, name))"
+      "id, starting_price_sek, min_increment_sek, reserve_price_sek, ends_at, status, back_image_url, card_variants(variant, cards(number, name))"
     )
     .order("created_at", { ascending: false });
 
@@ -129,7 +130,11 @@ export default async function AdminAuktionerPage() {
                 )}
 
                 {a.status === "open" && (
-                  <div className="mt-3">
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <AuctionBackImageUploader
+                      auctionId={a.id}
+                      initialUrl={a.back_image_url ?? null}
+                    />
                     <CloseAuctionButton auctionId={a.id} />
                   </div>
                 )}

@@ -155,7 +155,7 @@ export default function NewAuctionForm({ sets }: { sets: SetOption[] }) {
         <span className="text-sm text-mute mb-1 block">Utropspris (kr)</span>
         <input
           type="number"
-          min={1}
+          min={0}
           value={startingPrice}
           onChange={(e) => setStartingPrice(Number(e.target.value))}
           className="focus-ring w-full bg-panel border border-line rounded-sm px-3 py-2 text-paper"
@@ -208,6 +208,11 @@ export default function NewAuctionForm({ sets }: { sets: SetOption[] }) {
           required
           className="focus-ring w-full bg-panel border border-line rounded-sm px-3 py-2 text-paper"
         />
+        <span className="text-xs text-mute mt-1 block">
+          Kommer bud in inom sista 3 minuterna innan sluttid förlängs
+          auktionen automatiskt med 3 minuter, så ingen snor vinsten i
+          sista sekunden.
+        </span>
       </label>
 
       {error && <p className="text-sm text-red-400">{error}</p>}

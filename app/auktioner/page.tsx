@@ -5,17 +5,7 @@ import { AuctionListing } from "@/lib/types";
 import { rarityLabel } from "@/lib/rarity";
 import { variantLabel } from "@/lib/variant";
 import CardImage from "@/components/CardImage";
-
-function timeLeftLabel(endsAt: string): string {
-  const diffMs = new Date(endsAt).getTime() - Date.now();
-  if (diffMs <= 0) return "Avslutad";
-  const hours = Math.floor(diffMs / (1000 * 60 * 60));
-  const days = Math.floor(hours / 24);
-  if (days > 0) return `${days}d ${hours % 24}h kvar`;
-  const minutes = Math.floor((diffMs / (1000 * 60)) % 60);
-  if (hours > 0) return `${hours}h ${minutes}m kvar`;
-  return `${minutes}m kvar`;
-}
+import CountdownTimer from "@/components/CountdownTimer";
 
 export default function AuktionerPage() {
   const [auctions, setAuctions] = useState<AuctionListing[]>([]);
@@ -90,8 +80,8 @@ export default function AuktionerPage() {
                     Minimipris ej uppnått ännu
                   </div>
                 )}
-                <div className="text-xs text-mute mt-1 font-mono">
-                  {timeLeftLabel(a.endsAt)}
+                <div className="mt-1">
+                  <CountdownTimer endsAt={a.endsAt} />
                 </div>
               </div>
             </button>
@@ -127,6 +117,9 @@ function BidModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [showBack, setShowBack] = useState(false);
+  const [endsAt, setEndsAt] = useState(auction.endsAt);
+  const [extended, setExtended] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -149,6 +142,10 @@ function BidModal({
       setError(data.error ?? "Något gick fel.");
       return;
     }
+    if (data.extendedEndsAt) {
+      setEndsAt(data.extendedEndsAt);
+      setExtended(true);
+    }
     setSuccess(true);
     onBidPlaced();
     setTimeout(onClose, 1200);
@@ -163,12 +160,51 @@ function BidModal({
         className="bg-panel border border-line rounded-md max-w-sm w-full p-6"
         onClick={(e) => e.stopPropagation()}
       >
+        {(auction.imageUrl || auction.backImageUrl) && (
+          <div className="mb-4">
+            <CardImage
+              src={showBack ? auction.backImageUrl : auction.imageUrl}
+              alt={auction.cardName}
+              number={auction.cardNumber}
+              rarity={auction.rarity}
+              className="w-full aspect-[3/4] rounded-sm mb-2"
+            />
+            {auction.backImageUrl && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowBack(false)}
+                  className={`focus-ring flex-1 text-xs rounded-sm border px-2 py-1 ${
+                    !showBack
+                      ? "border-gold text-gold"
+                      : "border-line text-mute hover:border-mute"
+                  }`}
+                >
+                  Framsida
+                </button>
+                <button
+                  onClick={() => setShowBack(true)}
+                  className={`focus-ring flex-1 text-xs rounded-sm border px-2 py-1 ${
+                    showBack
+                      ? "border-gold text-gold"
+                      : "border-line text-mute hover:border-mute"
+                  }`}
+                >
+                  Baksida
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="font-mono text-xs text-mute mb-1">
           #{String(auction.cardNumber).padStart(3, "0")}
         </div>
         <h2 className="font-display text-xl font-bold text-paper mb-1">
           {auction.cardName}
         </h2>
+        <div className="mb-2">
+          <CountdownTimer endsAt={endsAt} size="lg" />
+        </div>
         <p className="text-sm text-mute mb-4">
           Högsta bud just nu: <span className="text-gold">{auction.currentHighSek} kr</span>{" "}
           · Minsta bud: {minBid} kr
@@ -179,6 +215,16 @@ function BidModal({
             om inget högre bud kommer in innan sluttid.
           </p>
         )}
+        {extended && (
+          <p className="text-xs text-gold mb-4">
+            Ditt bud kom in nära sluttid, så auktionen förlängdes med 3
+            minuter.
+          </p>
+        )}
+        <p className="text-xs text-mute mb-4">
+          Bud inom sista 3 minuterna förlänger auktionen automatiskt med 3
+          minuter.
+        </p>
 
         {success ? (
           <p className="text-gold">Bud lagt! Vi hör av oss om du vinner.</p>

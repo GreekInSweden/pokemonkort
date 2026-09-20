@@ -5,7 +5,7 @@ export async function GET() {
   const { data: auctions, error } = await supabaseAdmin
     .from("auctions")
     .select(
-      "id, starting_price_sek, min_increment_sek, reserve_price_sek, ends_at, status, card_variants(id, variant, card_id, cards(number, name, rarity, image_url))"
+      "id, starting_price_sek, min_increment_sek, reserve_price_sek, ends_at, status, back_image_url, card_variants(id, variant, card_id, cards(number, name, rarity, image_url))"
     )
     .order("ends_at", { ascending: true });
 
@@ -41,6 +41,7 @@ export async function GET() {
       variant: a.card_variants?.variant ?? "normal",
       rarity: card?.rarity ?? "common",
       imageUrl: card?.image_url ?? null,
+      backImageUrl: a.back_image_url ?? null,
       startingPriceSek: Number(a.starting_price_sek),
       minIncrementSek: Number(a.min_increment_sek),
       currentHighSek,

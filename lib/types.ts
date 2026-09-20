@@ -72,6 +72,7 @@ export interface AuctionListing {
   variant: Variant;
   rarity: Rarity;
   imageUrl: string | null;
+  backImageUrl: string | null;
   startingPriceSek: number;
   minIncrementSek: number;
   currentHighSek: number;

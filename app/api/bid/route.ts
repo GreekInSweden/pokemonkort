@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
+// Anti-snipe: a bid placed inside this window before the deadline pushes
+// the deadline out to "now + this window" again, so a last-second bid
+// always leaves everyone else the same amount of time to respond instead
+// of ending the auction on the spot.
+const SNIPE_WINDOW_MS = 3 * 60 * 1000;
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { auctionId, bidderName, email, phone, amountSek } = body as {
@@ -60,5 +66,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Kunde inte spara budet." }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, amountSek });
+  // If this bid landed inside the last SNIPE_WINDOW_MS before the deadline,
+  // push the deadline out so it always ends at least that far in the future.
+  const now = Date.now();
+  const currentEndsAt = new Date(auction.ends_at).getTime();
+  let newEndsAt: string | null = null;
+  if (currentEndsAt - now < SNIPE_WINDOW_MS) {
+    newEndsAt = new Date(now + SNIPE_WINDOW_MS).toISOString();
+    await supabaseAdmin
+      .from("auctions")
+      .update({ ends_at: newEndsAt })
+      .eq("id", auctionId);
+  }
+
+  return NextResponse.json({
+    ok: true,
+    amountSek,
+    extendedEndsAt: newEndsAt,
+  });
 }
