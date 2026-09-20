@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { AuctionListing } from "@/lib/types";
+import Link from "next/link";
+import { AuctionListing, AuctionWin } from "@/lib/types";
 import { rarityLabel } from "@/lib/rarity";
 import { variantLabel } from "@/lib/variant";
+import { getBidderToken } from "@/lib/bidderToken";
 import CardImage from "@/components/CardImage";
 import CountdownTimer from "@/components/CountdownTimer";
 
@@ -11,6 +13,7 @@ export default function AuktionerPage() {
   const [auctions, setAuctions] = useState<AuctionListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeAuction, setActiveAuction] = useState<AuctionListing | null>(null);
+  const [win, setWin] = useState<AuctionWin | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/auctions");
@@ -19,21 +22,48 @@ export default function AuktionerPage() {
     setLoading(false);
   }, []);
 
+  const checkWin = useCallback(async () => {
+    const token = getBidderToken();
+    if (!token) return;
+    const res = await fetch(`/api/auction-win?token=${encodeURIComponent(token)}`);
+    const data = await res.json();
+    setWin(data.win ?? null);
+  }, []);
+
   useEffect(() => {
     load();
-    const interval = setInterval(load, 20000); // poll every 20s for near-live updates
+    checkWin();
+    const interval = setInterval(() => {
+      load();
+      checkWin();
+    }, 20000); // poll every 20s for near-live updates
     return () => clearInterval(interval);
-  }, [load]);
+  }, [load, checkWin]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-14">
       <h1 className="font-display text-4xl font-bold text-paper mb-2">
         Auktioner
       </h1>
-      <p className="text-mute mb-10 max-w-prose">
+      <p className="text-mute mb-6 max-w-prose">
         Buda på våra mest värdefulla kort. Högsta bud vid sluttid vinner —
-        vi hör av oss för betalning via Swish.
+        vinner du dyker en betalsida upp här automatiskt.
       </p>
+
+      {win && (
+        <Link
+          href={`/auktioner/vinst?win=${win.winId}`}
+          className="focus-ring block border border-gold rounded-md p-4 bg-gold/10 mb-8 hover:bg-gold/15 transition-colors"
+        >
+          <p className="font-display font-semibold text-gold mb-1">
+            🎉 Du vann auktionen för {win.cardName}!
+          </p>
+          <p className="text-sm text-paper">
+            Klicka här för att fylla i dina uppgifter och betala —{" "}
+            {win.amountSek} kr.
+          </p>
+        </Link>
+      )}
 
       {loading ? (
         <p className="text-mute">Laddar…</p>
@@ -93,7 +123,10 @@ export default function AuktionerPage() {
         <BidModal
           auction={activeAuction}
           onClose={() => setActiveAuction(null)}
-          onBidPlaced={load}
+          onBidPlaced={() => {
+            load();
+            checkWin();
+          }}
         />
       )}
     </div>
@@ -111,9 +144,6 @@ function BidModal({
 }) {
   const minBid = auction.currentHighSek + auction.minIncrementSek;
   const [amount, setAmount] = useState(minBid);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -130,9 +160,7 @@ function BidModal({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         auctionId: auction.auctionId,
-        bidderName: name,
-        email,
-        phone,
+        bidderToken: getBidderToken(),
         amountSek: amount,
       }),
     });
@@ -157,7 +185,7 @@ function BidModal({
       onClick={onClose}
     >
       <div
-        className="bg-panel border border-line rounded-md max-w-sm w-full p-6"
+        className="bg-panel border border-line rounded-md max-w-sm w-full max-h-[90vh] overflow-y-auto p-6"
         onClick={(e) => e.stopPropagation()}
       >
         {(auction.imageUrl || auction.backImageUrl) && (
@@ -223,11 +251,12 @@ function BidModal({
         )}
         <p className="text-xs text-mute mb-4">
           Bud inom sista 3 minuterna förlänger auktionen automatiskt med 3
-          minuter.
+          minuter. Vinner du dyker en betalsida upp här på sidan efter
+          sluttid — inga uppgifter behövs för att buda.
         </p>
 
         {success ? (
-          <p className="text-gold">Bud lagt! Vi hör av oss om du vinner.</p>
+          <p className="text-gold">Bud lagt! Håll koll på sidan om du vinner.</p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
             <label className="block">
@@ -238,34 +267,6 @@ function BidModal({
                 required
                 value={amount}
                 onChange={(e) => setAmount(Number(e.target.value))}
-                className="focus-ring w-full bg-ink border border-line rounded-sm px-3 py-2 text-paper"
-              />
-            </label>
-            <label className="block">
-              <span className="text-sm text-mute mb-1 block">Namn</span>
-              <input
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="focus-ring w-full bg-ink border border-line rounded-sm px-3 py-2 text-paper"
-              />
-            </label>
-            <label className="block">
-              <span className="text-sm text-mute mb-1 block">E-post</span>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="focus-ring w-full bg-ink border border-line rounded-sm px-3 py-2 text-paper"
-              />
-            </label>
-            <label className="block">
-              <span className="text-sm text-mute mb-1 block">Telefon</span>
-              <input
-                required
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
                 className="focus-ring w-full bg-ink border border-line rounded-sm px-3 py-2 text-paper"
               />
             </label>

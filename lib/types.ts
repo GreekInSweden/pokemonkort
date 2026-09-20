@@ -83,3 +83,17 @@ export interface AuctionListing {
   status: "open" | "closed";
   reserveMet: boolean;
 }
+
+export interface AuctionWin {
+  winId: string;
+  status: "pending" | "claimed" | "paid" | "expired";
+  amountSek: number;
+  claimDeadline: string;
+  cardName: string;
+  cardNumber: number;
+  variant: Variant;
+  rarity: Rarity;
+  imageUrl: string | null;
+  backImageUrl: string | null;
+  buyerName: string | null;
+}

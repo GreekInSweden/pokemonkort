@@ -11,16 +11,17 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { auctionId, bidderName, email, phone, amountSek } = body as {
+  const { auctionId, bidderToken, amountSek } = body as {
     auctionId: string;
-    bidderName: string;
-    email: string;
-    phone: string;
+    bidderToken: string;
     amountSek: number;
   };
 
-  if (!auctionId || !bidderName || !email || !phone || !amountSek) {
-    return NextResponse.json({ error: "Fyll i alla fält." }, { status: 400 });
+  // No name/e-post/telefon here on purpose — a bid only needs an amount
+  // and the browser's anonymous bidder token. Contact details are only
+  // ever collected once, from whoever actually wins, on the claim page.
+  if (!auctionId || !bidderToken || !amountSek) {
+    return NextResponse.json({ error: "Något saknas i budet." }, { status: 400 });
   }
 
   const { data: auction, error: auctionError } = await supabaseAdmin
@@ -58,9 +59,7 @@ export async function POST(req: NextRequest) {
 
   const { error: insertError } = await supabaseAdmin.from("bids").insert({
     auction_id: auctionId,
-    bidder_name: bidderName,
-    email,
-    phone,
+    bidder_token: bidderToken,
     amount_sek: amountSek,
   });
 

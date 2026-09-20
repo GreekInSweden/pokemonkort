@@ -5,10 +5,15 @@ import { variantLabel } from "@/lib/variant";
 import DeleteAuctionButton from "@/components/admin/DeleteAuctionButton";
 
 interface Bid {
-  bidder_name: string;
-  email: string;
-  phone: string;
+  bidder_token: string | null;
   amount_sek: number;
+}
+
+interface Win {
+  status: string;
+  buyer_name: string | null;
+  buyer_email: string | null;
+  buyer_phone: string | null;
 }
 
 interface AuctionRow {
@@ -19,6 +24,7 @@ interface AuctionRow {
   status: string;
   card_variants: { variant: string; cards: { number: number; name: string } | null } | null;
   bids: Bid[];
+  win: Win | null;
 }
 
 export default function ArchivedAuctions({ auctions }: { auctions: AuctionRow[] }) {
@@ -77,8 +83,19 @@ export default function ArchivedAuctions({ auctions }: { auctions: AuctionRow[] 
 
                 {topBid ? (
                   <p className="text-sm text-paper mb-3">
-                    🏆 {topBid.bidder_name} — {topBid.email} · {topBid.phone} ·{" "}
-                    <span className="font-mono">{topBid.amount_sek} kr</span>
+                    🏆 <span className="font-mono">{topBid.amount_sek} kr</span>
+                    {a.win?.buyer_name && (
+                      <> — {a.win.buyer_name} · {a.win.buyer_email} · {a.win.buyer_phone}</>
+                    )}
+                    {a.win && !a.win.buyer_name && (
+                      <span className="text-mute">
+                        {" "}
+                        —{" "}
+                        {a.win.status === "expired"
+                          ? "hämtades aldrig ut"
+                          : "väntar på köparen"}
+                      </span>
+                    )}
                   </p>
                 ) : (
                   <p className="text-sm text-mute mb-3">Inga bud lades.</p>

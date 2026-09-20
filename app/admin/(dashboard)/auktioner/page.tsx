@@ -4,11 +4,19 @@ import { variantLabel } from "@/lib/variant";
 import CloseAuctionButton from "@/components/admin/CloseAuctionButton";
 import AuctionImageUploader from "@/components/admin/AuctionImageUploader";
 import DeleteAuctionButton from "@/components/admin/DeleteAuctionButton";
+import AuctionWinActions from "@/components/admin/AuctionWinActions";
 import ArchivedAuctions from "@/components/admin/ArchivedAuctions";
 
 export const dynamic = "force-dynamic";
 
 const ARCHIVE_AFTER_DAYS = 30;
+
+const winStatusLabel: Record<string, string> = {
+  pending: "Väntar på att vinnaren fyller i sina uppgifter",
+  claimed: "Uppgifter inlämnade — väntar på Swish",
+  paid: "Betald",
+  expired: "Utgången — ingen hämtade ut vinsten",
+};
 
 export default async function AdminAuktionerPage() {
   const supabase = createServerSupabase();
@@ -16,7 +24,7 @@ export default async function AdminAuktionerPage() {
   const { data: auctions } = await supabase
     .from("auctions")
     .select(
-      "id, starting_price_sek, min_increment_sek, reserve_price_sek, ends_at, status, front_image_url, back_image_url, card_variants(variant, cards(number, name))"
+      "id, starting_price_sek, min_increment_sek, reserve_price_sek, ends_at, status, front_image_url, back_image_url, card_variants(variant, cards(number, name)), auction_wins(id, status, amount_sek, buyer_name, buyer_email, buyer_phone, claim_deadline)"
     )
     .order("created_at", { ascending: false });
 
@@ -24,10 +32,11 @@ export default async function AdminAuktionerPage() {
     (auctions ?? []).map(async (a: any) => {
       const { data: bids } = await supabase
         .from("bids")
-        .select("bidder_name, email, phone, amount_sek, created_at")
+        .select("bidder_token, amount_sek, created_at")
         .eq("auction_id", a.id)
         .order("amount_sek", { ascending: false });
-      return { ...a, bids: bids ?? [] };
+      const win = Array.isArray(a.auction_wins) ? a.auction_wins[0] ?? null : a.auction_wins;
+      return { ...a, bids: bids ?? [], win };
     })
   );
 
@@ -47,7 +56,8 @@ export default async function AdminAuktionerPage() {
             Auktioner
           </h1>
           <p className="text-mute text-sm">
-            Se bud och kontaktuppgifter, avsluta när du kontaktat vinnaren.
+            Bud visas bara med belopp — köparens uppgifter dyker upp här
+            först när de faktiskt vunnit och fyllt i sin betalsida.
           </p>
         </div>
         <Link
@@ -140,11 +150,29 @@ export default async function AdminAuktionerPage() {
                       >
                         <span className={i === 0 ? "text-gold font-medium" : "text-paper"}>
                           {i === 0 && "🏆 "}
-                          {b.bidder_name} — {b.email} · {b.phone}
+                          Budgivare {b.bidder_token?.slice(0, 8) ?? "okänd"}
                         </span>
                         <span className="font-mono">{b.amount_sek} kr</span>
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {a.win && (
+                  <div className="mt-3 border border-line rounded-md p-3 bg-ink/40">
+                    <p className="text-sm text-paper font-medium mb-1">
+                      {winStatusLabel[a.win.status] ?? a.win.status}
+                    </p>
+                    {a.win.buyer_name && (
+                      <p className="text-sm text-mute">
+                        {a.win.buyer_name} — {a.win.buyer_email} · {a.win.buyer_phone}
+                      </p>
+                    )}
+                    {a.win.status === "claimed" && (
+                      <div className="mt-2">
+                        <AuctionWinActions winId={a.win.id} />
+                      </div>
+                    )}
                   </div>
                 )}
 
