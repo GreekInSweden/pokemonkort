@@ -215,6 +215,12 @@ export default function NewAuctionForm({ sets }: { sets: SetOption[] }) {
         </span>
       </label>
 
+      <p className="text-xs text-mute">
+        Bild på kortet (fram- och baksida) laddar du upp på nästa sida, direkt
+        efter att auktionen skapats — det är bilden av det faktiska
+        exemplaret som säljs, inte lagerbilden från butiken.
+      </p>
+
       {error && <p className="text-sm text-red-400">{error}</p>}
       {success && <p className="text-sm text-gold">Auktion skapad ✓</p>}
 

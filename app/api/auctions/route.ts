@@ -5,7 +5,7 @@ export async function GET() {
   const { data: auctions, error } = await supabaseAdmin
     .from("auctions")
     .select(
-      "id, starting_price_sek, min_increment_sek, reserve_price_sek, ends_at, status, back_image_url, card_variants(id, variant, card_id, cards(number, name, rarity, image_url))"
+      "id, starting_price_sek, min_increment_sek, reserve_price_sek, ends_at, status, front_image_url, back_image_url, card_variants(id, variant, card_id, cards(number, name, rarity, image_url))"
     )
     .order("ends_at", { ascending: true });
 
@@ -40,7 +40,10 @@ export async function GET() {
       cardNumber: card?.number ?? 0,
       variant: a.card_variants?.variant ?? "normal",
       rarity: card?.rarity ?? "common",
-      imageUrl: card?.image_url ?? null,
+      // Deliberately NOT falling back to the card's regular shop image —
+      // an auction sells one specific physical copy, and showing the
+      // generic stock photo would misrepresent its actual condition.
+      imageUrl: a.front_image_url ?? null,
       backImageUrl: a.back_image_url ?? null,
       startingPriceSek: Number(a.starting_price_sek),
       minIncrementSek: Number(a.min_increment_sek),

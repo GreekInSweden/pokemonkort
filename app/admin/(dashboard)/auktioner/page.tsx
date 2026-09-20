@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { variantLabel } from "@/lib/variant";
 import CloseAuctionButton from "@/components/admin/CloseAuctionButton";
-import AuctionBackImageUploader from "@/components/admin/AuctionBackImageUploader";
+import AuctionImageUploader from "@/components/admin/AuctionImageUploader";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +12,7 @@ export default async function AdminAuktionerPage() {
   const { data: auctions } = await supabase
     .from("auctions")
     .select(
-      "id, starting_price_sek, min_increment_sek, reserve_price_sek, ends_at, status, back_image_url, card_variants(variant, cards(number, name))"
+      "id, starting_price_sek, min_increment_sek, reserve_price_sek, ends_at, status, front_image_url, back_image_url, card_variants(variant, cards(number, name))"
     )
     .order("created_at", { ascending: false });
 
@@ -82,6 +82,13 @@ export default async function AdminAuktionerPage() {
                   </span>
                 </div>
 
+                {a.status === "open" && !a.front_image_url && (
+                  <p className="text-xs text-amber-400/90 mb-2">
+                    ⚠ Ingen bild av kortet uppladdad än — auktionen visas
+                    utan bild för köpare tills du laddar upp en.
+                  </p>
+                )}
+
                 <p className="text-xs text-mute mb-3">
                   Utrop: {a.starting_price_sek} kr
                   {a.reserve_price_sek !== null && (
@@ -130,11 +137,21 @@ export default async function AdminAuktionerPage() {
                 )}
 
                 {a.status === "open" && (
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <AuctionBackImageUploader
-                      auctionId={a.id}
-                      initialUrl={a.back_image_url ?? null}
-                    />
+                  <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-4">
+                      <AuctionImageUploader
+                        auctionId={a.id}
+                        field="front_image_url"
+                        label="Framsida"
+                        initialUrl={a.front_image_url ?? null}
+                      />
+                      <AuctionImageUploader
+                        auctionId={a.id}
+                        field="back_image_url"
+                        label="Baksida"
+                        initialUrl={a.back_image_url ?? null}
+                      />
+                    </div>
                     <CloseAuctionButton auctionId={a.id} />
                   </div>
                 )}
