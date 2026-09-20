@@ -1,18 +1,9 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { Rarity, Variant } from "@/lib/types";
+import { baseVariantByRarity, reverseHoloEligibleRarities } from "@/lib/rarity";
 import MasterSetChecklist from "@/components/admin/MasterSetChecklist";
 
 export const dynamic = "force-dynamic";
-
-// Same rarities the Paket page treats as "already the special print" —
-// they never need a separate holo/reverse holo copy for the set to be
-// complete, master or grand master.
-const NEVER_HOLO_RARITIES: Rarity[] = [
-  "illustration_rare",
-  "special_illustration_rare",
-  "ultra_rare",
-  "mega_hyper_rare",
-];
 
 interface VariantRow {
   variant: Variant;
@@ -76,18 +67,19 @@ export default async function MasterSetPage({
   }
 
   // Work out, per card, which variants actually count toward each tier —
-  // driven entirely by which card_variants rows already exist in the shop
-  // (same source of truth the Paket page uses), minus the rarities that
-  // never get a separate holo/reverse holo print.
+  // driven by rarity, not just "does a row happen to exist": a Rare-tier
+  // card's base print IS the holo row (it never got a plain normal print),
+  // while everything from Double Rare up is single-print with no reverse
+  // holo, regardless of any stray rows a bulk seed may have left behind.
   const checklistCards = cards.map((c) => {
-    const eligible = !NEVER_HOLO_RARITIES.includes(c.rarity);
     const hasVariant = (v: Variant) => c.card_variants.some((cv) => cv.variant === v);
+    const baseVariant = baseVariantByRarity[c.rarity];
+    const reverseEligible = reverseHoloEligibleRarities.includes(c.rarity);
 
-    const masterVariants: Variant[] = ["normal"];
-    if (eligible && hasVariant("holo")) masterVariants.push("holo");
+    const masterVariants: Variant[] = hasVariant(baseVariant) ? [baseVariant] : [];
 
     const grandMasterVariants: Variant[] = [...masterVariants];
-    if (eligible && hasVariant("reverse_holo")) grandMasterVariants.push("reverse_holo");
+    if (reverseEligible && hasVariant("reverse_holo")) grandMasterVariants.push("reverse_holo");
 
     const ownedVariants = owned
       .filter((o) => o.card_id === c.id)

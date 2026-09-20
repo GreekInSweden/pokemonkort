@@ -1,5 +1,7 @@
 export type Rarity =
   | "common"
+  | "rare"
+  | "double_rare"
   | "illustration_rare"
   | "ultra_rare"
   | "special_illustration_rare"

@@ -15,6 +15,8 @@ const config: Config = {
         mute: "#9A9CA8",
         rare: {
           common: "#5B5E68",
+          tier: "#4FC1E9",
+          double: "#F2994A",
           illustration: "#5FA8D3",
           ultra: "#B26FD1",
           special: "#E8B33D",

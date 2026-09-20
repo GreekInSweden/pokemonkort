@@ -7,6 +7,8 @@ import QRCode from "qrcode";
 // when you create a payment QR code in the Swish app (confirmed by
 // decoding a real one), just with the amount and message filled in
 // per-order instead of left blank.
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   const amount = req.nextUrl.searchParams.get("amount");
   const message = req.nextUrl.searchParams.get("message") ?? "";

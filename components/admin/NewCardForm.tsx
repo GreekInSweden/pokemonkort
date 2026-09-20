@@ -12,6 +12,8 @@ const rarityOptions: Rarity[] = [
   "base",
   "insert",
   "common",
+  "rare",
+  "double_rare",
   "illustration_rare",
   "ultra_rare",
   "special_illustration_rare",

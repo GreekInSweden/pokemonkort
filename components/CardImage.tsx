@@ -2,6 +2,8 @@ import { Rarity } from "@/lib/types";
 
 const placeholderTint: Record<Rarity, string> = {
   common: "bg-rare-common/20",
+  rare: "bg-rare-tier/20",
+  double_rare: "bg-rare-double/20",
   illustration_rare: "bg-rare-illustration/20",
   ultra_rare: "bg-rare-ultra/20",
   special_illustration_rare: "bg-rare-special/20",

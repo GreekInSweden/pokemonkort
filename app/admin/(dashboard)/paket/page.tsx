@@ -36,6 +36,7 @@ const VARIANTS: Variant[] = ["normal", "holo", "reverse_holo"];
 // holo/reverse_holo row happens to exist on one by mistake. They still
 // count fully toward the "normal" (vanlig) variant.
 const NEVER_HOLO_RARITIES: Rarity[] = [
+  "double_rare",
   "illustration_rare",
   "special_illustration_rare",
   "ultra_rare",

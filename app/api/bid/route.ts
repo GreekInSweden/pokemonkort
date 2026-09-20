@@ -7,6 +7,8 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 // of ending the auction on the spot.
 const SNIPE_WINDOW_MS = 3 * 60 * 1000;
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { auctionId, bidderName, email, phone, amountSek } = body as {
