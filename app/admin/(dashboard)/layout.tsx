@@ -26,6 +26,9 @@ export default function AdminLayout({
             <Link href="/admin/paket" className="focus-ring text-sm text-paper hover:text-gold">
               Paket
             </Link>
+            <Link href="/admin/masterset" className="focus-ring text-sm text-paper hover:text-gold">
+              Master Set
+            </Link>
             <Link href="/admin/auktioner" className="focus-ring text-sm text-paper hover:text-gold">
               Auktioner
             </Link>
