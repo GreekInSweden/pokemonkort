@@ -150,10 +150,8 @@ export default function PortfolioChecklist({
       </div>
 
       <p className="text-xs text-mute mb-3">
-        Markera "Har" för kort du äger. Kryssa sedan i Sälja och/eller Byta
-        om du faktiskt är öppen för det just nu — annars räknas kortet
-        bara till din egen samlingsöversikt och dyker inte upp som en
-        matchning hos andra.
+        Sälja/Byta = öppen för det nu. Annars är kortet bara med i din
+        egen översikt.
       </p>
 
       <input
