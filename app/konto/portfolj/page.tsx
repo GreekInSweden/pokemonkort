@@ -88,18 +88,17 @@ export default async function PortfolioPage({
       <h1 className="font-display text-3xl font-bold text-paper mb-1">
         Min portfölj
       </h1>
-      <p className="text-mute mb-8 max-w-prose">
-        Markera vilka kort du redan äger och vilka du söker. Andra
-        medlemmar ser aldrig din lista direkt — bara aggregerade siffror
-        på{" "}
+      <p className="text-mute mb-8 max-w-prose text-sm">
+        Markera kort du äger och söker. Din lista är privat — andra ser
+        bara aggregat på{" "}
         <a href="/mest-eftertraktade" className="text-gold hover:underline">
           Mest eftertraktade
-        </a>
-        , och en matchning på{" "}
+        </a>{" "}
+        och{" "}
         <a href="/konto/matchningar" className="text-gold hover:underline">
           Mina matchningar
-        </a>{" "}
-        om ni verkar kunna byta.
+        </a>
+        .
       </p>
 
       <SetPicker sets={sets} selectedSlug={selectedSlug} baseHref="/konto/portfolj" />
