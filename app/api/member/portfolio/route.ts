@@ -19,7 +19,9 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabaseAdmin
     .from("member_cards")
-    .select("card_id, variant, status, quantity, cards(id, number, name, set_id)")
+    .select(
+      "card_id, variant, status, quantity, sellable, tradeable, cards(id, number, name, set_id)"
+    )
     .eq("member_id", member.id);
   if (error) {
     return NextResponse.json({ error: "Kunde inte hämta din portfölj." }, { status: 500 });
@@ -39,11 +41,13 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { cardId, variant, status, quantity } = body as {
+  const { cardId, variant, status, quantity, sellable, tradeable } = body as {
     cardId: string;
     variant: Variant;
     status: "have" | "want";
     quantity?: number;
+    sellable?: boolean;
+    tradeable?: boolean;
   };
 
   if (!cardId || !variant || !status) {
@@ -57,6 +61,10 @@ export async function POST(req: NextRequest) {
       variant,
       status,
       quantity: quantity && quantity > 0 ? quantity : 1,
+      // Only meaningful for "have" rows — whether the member is actually
+      // open to selling/trading this specific card, not just tracking it.
+      sellable: status === "have" ? !!sellable : false,
+      tradeable: status === "have" ? !!tradeable : false,
     },
     { onConflict: "member_id,card_id,variant,status" }
   );

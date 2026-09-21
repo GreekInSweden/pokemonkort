@@ -22,9 +22,19 @@ interface CardRow {
 
 type Status = "have" | "want";
 type EntryKey = string; // `${cardId}:${variant}:${status}`
+type IntentKey = string; // `${cardId}:${variant}`
 
 function key(cardId: string, variant: Variant, status: Status): EntryKey {
   return `${cardId}:${variant}:${status}`;
+}
+
+function intentKey(cardId: string, variant: Variant): IntentKey {
+  return `${cardId}:${variant}`;
+}
+
+interface Intent {
+  sellable: boolean;
+  tradeable: boolean;
 }
 
 export default function PortfolioChecklist({
@@ -34,10 +44,27 @@ export default function PortfolioChecklist({
 }: {
   setName: string;
   cards: CardRow[];
-  initialEntries: { card_id: string; variant: Variant; status: Status }[];
+  initialEntries: {
+    card_id: string;
+    variant: Variant;
+    status: Status;
+    sellable?: boolean;
+    tradeable?: boolean;
+  }[];
 }) {
   const [entries, setEntries] = useState<Set<EntryKey>>(
     () => new Set(initialEntries.map((e) => key(e.card_id, e.variant, e.status)))
+  );
+  const [intents, setIntents] = useState<Map<IntentKey, Intent>>(
+    () =>
+      new Map(
+        initialEntries
+          .filter((e) => e.status === "have")
+          .map((e) => [
+            intentKey(e.card_id, e.variant),
+            { sellable: !!e.sellable, tradeable: !!e.tradeable },
+          ])
+      )
   );
   const [pending, setPending] = useState<Set<EntryKey>>(new Set());
   const [query, setQuery] = useState("");
@@ -71,6 +98,13 @@ export default function PortfolioChecklist({
         next.delete(k);
         return next;
       });
+      if (status === "have") {
+        setIntents((m) => {
+          const next = new Map(m);
+          next.delete(intentKey(cardId, variant));
+          return next;
+        });
+      }
     } else {
       await fetch("/api/member/portfolio", {
         method: "POST",
@@ -78,12 +112,29 @@ export default function PortfolioChecklist({
         body: JSON.stringify({ cardId, variant, status }),
       });
       setEntries((e) => new Set(e).add(k));
+      if (status === "have") {
+        setIntents((m) =>
+          new Map(m).set(intentKey(cardId, variant), { sellable: false, tradeable: false })
+        );
+      }
     }
 
     setPending((p) => {
       const next = new Set(p);
       next.delete(k);
       return next;
+    });
+  }
+
+  async function toggleIntent(cardId: string, variant: Variant, field: "sellable" | "tradeable") {
+    const ik = intentKey(cardId, variant);
+    const current = intents.get(ik) ?? { sellable: false, tradeable: false };
+    const next = { ...current, [field]: !current[field] };
+    setIntents((m) => new Map(m).set(ik, next));
+    await fetch("/api/member/portfolio", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cardId, variant, status: "have", ...next }),
     });
   }
 
@@ -97,6 +148,13 @@ export default function PortfolioChecklist({
           {haveCount} har · {wantCount} vill ha
         </p>
       </div>
+
+      <p className="text-xs text-mute mb-3">
+        Markera "Har" för kort du äger. Kryssa sedan i Sälja och/eller Byta
+        om du faktiskt är öppen för det just nu — annars räknas kortet
+        bara till din egen samlingsöversikt och dyker inte upp som en
+        matchning hos andra.
+      </p>
 
       <input
         type="text"
@@ -127,38 +185,68 @@ export default function PortfolioChecklist({
                 {card.name}
               </div>
               <div className="mt-2 flex flex-wrap gap-2">
-                {card.card_variants.map((v) => (
-                  <div
-                    key={v.id}
-                    className="flex items-center gap-1 border border-line rounded-sm px-2 py-1"
-                  >
-                    <span className="text-xs text-mute mr-1">
-                      {variantLabel[v.variant]}
-                    </span>
-                    <button
-                      onClick={() => toggle(card.id, v.variant, "have")}
-                      disabled={pending.has(key(card.id, v.variant, "have"))}
-                      className={`focus-ring text-xs rounded-sm px-2 py-0.5 disabled:opacity-50 ${
-                        entries.has(key(card.id, v.variant, "have"))
-                          ? "bg-gold text-ink font-semibold"
-                          : "border border-line text-mute hover:border-gold"
-                      }`}
+                {card.card_variants.map((v) => {
+                  const hasIt = entries.has(key(card.id, v.variant, "have"));
+                  const intent = intents.get(intentKey(card.id, v.variant));
+                  return (
+                    <div
+                      key={v.id}
+                      className="flex items-center gap-1 border border-line rounded-sm px-2 py-1 flex-wrap"
                     >
-                      Har
-                    </button>
-                    <button
-                      onClick={() => toggle(card.id, v.variant, "want")}
-                      disabled={pending.has(key(card.id, v.variant, "want"))}
-                      className={`focus-ring text-xs rounded-sm px-2 py-0.5 disabled:opacity-50 ${
-                        entries.has(key(card.id, v.variant, "want"))
-                          ? "bg-gold/20 text-gold font-semibold border border-gold"
-                          : "border border-line text-mute hover:border-gold"
-                      }`}
-                    >
-                      ★ Vill ha
-                    </button>
-                  </div>
-                ))}
+                      <span className="text-xs text-mute mr-1">
+                        {variantLabel[v.variant]}
+                      </span>
+                      <button
+                        onClick={() => toggle(card.id, v.variant, "have")}
+                        disabled={pending.has(key(card.id, v.variant, "have"))}
+                        className={`focus-ring text-xs rounded-sm px-2 py-0.5 disabled:opacity-50 ${
+                          hasIt
+                            ? "bg-gold text-ink font-semibold"
+                            : "border border-line text-mute hover:border-gold"
+                        }`}
+                      >
+                        Har
+                      </button>
+                      {hasIt && (
+                        <>
+                          <button
+                            onClick={() => toggleIntent(card.id, v.variant, "sellable")}
+                            className={`focus-ring text-xs rounded-sm px-2 py-0.5 ${
+                              intent?.sellable
+                                ? "bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/50"
+                                : "border border-line text-mute hover:border-emerald-500/50"
+                            }`}
+                            title="Öppen för att sälja det här kortet"
+                          >
+                            Sälja
+                          </button>
+                          <button
+                            onClick={() => toggleIntent(card.id, v.variant, "tradeable")}
+                            className={`focus-ring text-xs rounded-sm px-2 py-0.5 ${
+                              intent?.tradeable
+                                ? "bg-sky-500/20 text-sky-400 font-semibold border border-sky-500/50"
+                                : "border border-line text-mute hover:border-sky-500/50"
+                            }`}
+                            title="Öppen för att byta bort det här kortet"
+                          >
+                            Byta
+                          </button>
+                        </>
+                      )}
+                      <button
+                        onClick={() => toggle(card.id, v.variant, "want")}
+                        disabled={pending.has(key(card.id, v.variant, "want"))}
+                        className={`focus-ring text-xs rounded-sm px-2 py-0.5 disabled:opacity-50 ${
+                          entries.has(key(card.id, v.variant, "want"))
+                            ? "bg-gold/20 text-gold font-semibold border border-gold"
+                            : "border border-line text-mute hover:border-gold"
+                        }`}
+                      >
+                        ★ Vill ha
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

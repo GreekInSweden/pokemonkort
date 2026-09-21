@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentMember } from "@/lib/currentMember";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { Variant, Rarity } from "@/lib/types";
 import PortfolioChecklist from "@/components/PortfolioChecklist";
 import SetPicker from "@/components/SetPicker";
@@ -55,7 +56,13 @@ export default async function PortfolioPage({
   const selectedSet = sets.find((s) => s.slug === selectedSlug) ?? null;
 
   let cards: CardRow[] = [];
-  let ownEntries: { card_id: string; variant: Variant; status: "have" | "want" }[] = [];
+  let ownEntries: {
+    card_id: string;
+    variant: Variant;
+    status: "have" | "want";
+    sellable: boolean;
+    tradeable: boolean;
+  }[] = [];
 
   if (selectedSet) {
     const { data: cardsData } = await supabase
@@ -65,9 +72,13 @@ export default async function PortfolioPage({
       .order("number");
     cards = (cardsData as unknown as CardRow[]) ?? [];
 
-    const { data: entriesData } = await supabase
+    // member_cards is only readable by the admin login under RLS — a
+    // member isn't a Supabase Auth user — so this has to go through the
+    // service-role client, same as the /api/member/* routes, not the
+    // anon-cookie client used for the public sets/cards above.
+    const { data: entriesData } = await supabaseAdmin
       .from("member_cards")
-      .select("card_id, variant, status")
+      .select("card_id, variant, status, sellable, tradeable")
       .eq("member_id", member.id);
     ownEntries = (entriesData as any[]) ?? [];
   }

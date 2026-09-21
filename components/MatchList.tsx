@@ -11,11 +11,15 @@ interface Match {
   setName: string;
   variant: Variant;
   matchCount: number;
+  sellCount: number;
+  tradeCount: number;
 }
 
 interface Contact {
   memberNumber: number;
   name: string;
+  sellable: boolean;
+  tradeable: boolean;
   contactMessenger: string | null;
   contactWhatsapp: string | null;
   contactOther: string | null;
@@ -82,7 +86,14 @@ export default function MatchList() {
                 </div>
                 <div className="text-xs text-gold mt-1">
                   {m.matchCount} {m.matchCount === 1 ? "medlem har" : "medlemmar har"} det
-                  här kortet
+                  här kortet tillgängligt
+                  {" "}
+                  ({[
+                    m.sellCount > 0 ? `${m.sellCount} säljer` : null,
+                    m.tradeCount > 0 ? `${m.tradeCount} byter` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(", ")})
                 </div>
               </div>
               {!state && (
@@ -109,6 +120,11 @@ export default function MatchList() {
                   <div key={i} className="text-sm">
                     <span className="text-gold font-medium">
                       Medlem #{c.memberNumber} ({c.name})
+                    </span>{" "}
+                    <span className="text-xs text-mute">
+                      {[c.sellable ? "säljer" : null, c.tradeable ? "byter" : null]
+                        .filter(Boolean)
+                        .join(" / ")}
                     </span>
                     <div className="text-mute text-xs mt-0.5 space-y-0.5">
                       {c.contactMessenger && <div>Messenger: {c.contactMessenger}</div>}

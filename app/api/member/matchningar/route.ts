@@ -28,22 +28,29 @@ export async function GET() {
 
   const matches = [];
   for (const w of wants as any[]) {
-    const { count } = await supabaseAdmin
+    // Only count "have" rows the other member actually opted in to
+    // selling or trading — someone just cataloguing their own collection
+    // shouldn't show up as a match.
+    const { data: haves } = await supabaseAdmin
       .from("member_cards")
-      .select("id", { count: "exact", head: true })
+      .select("sellable, tradeable")
       .eq("card_id", w.card_id)
       .eq("variant", w.variant)
       .eq("status", "have")
+      .or("sellable.eq.true,tradeable.eq.true")
       .neq("member_id", member.id);
 
-    if (count && count > 0) {
+    const matchCount = haves?.length ?? 0;
+    if (matchCount > 0) {
       matches.push({
         cardId: w.card_id,
         cardNumber: w.cards?.number ?? 0,
         cardName: w.cards?.name ?? "Okänt kort",
         setName: w.cards?.sets?.name ?? "",
         variant: w.variant,
-        matchCount: count,
+        matchCount,
+        sellCount: haves!.filter((h: any) => h.sellable).length,
+        tradeCount: haves!.filter((h: any) => h.tradeable).length,
       });
     }
   }

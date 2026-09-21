@@ -42,23 +42,29 @@ export async function POST(req: NextRequest) {
 
   const { data: haves } = await supabaseAdmin
     .from("member_cards")
-    .select("member_id, quantity, members(member_number, name, contact_messenger, contact_whatsapp, contact_other)")
+    .select(
+      "member_id, quantity, sellable, tradeable, members(member_number, name, contact_messenger, contact_whatsapp, contact_other)"
+    )
     .eq("card_id", cardId)
     .eq("variant", variant)
     .eq("status", "have")
+    .or("sellable.eq.true,tradeable.eq.true")
     .neq("member_id", member.id);
 
   const contacts = (haves ?? [])
-    .map((h: any) => h.members)
     .filter(
-      (m: any) => m && (m.contact_messenger || m.contact_whatsapp || m.contact_other)
+      (h: any) =>
+        h.members &&
+        (h.members.contact_messenger || h.members.contact_whatsapp || h.members.contact_other)
     )
-    .map((m: any) => ({
-      memberNumber: m.member_number,
-      name: m.name,
-      contactMessenger: m.contact_messenger,
-      contactWhatsapp: m.contact_whatsapp,
-      contactOther: m.contact_other,
+    .map((h: any) => ({
+      memberNumber: h.members.member_number,
+      name: h.members.name,
+      sellable: h.sellable,
+      tradeable: h.tradeable,
+      contactMessenger: h.members.contact_messenger,
+      contactWhatsapp: h.members.contact_whatsapp,
+      contactOther: h.members.contact_other,
     }));
 
   return NextResponse.json({ contacts });
