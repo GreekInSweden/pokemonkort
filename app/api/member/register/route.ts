@@ -21,19 +21,31 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { name, email, phone, address, postalCode, city, password } = body as {
+  const { name, email, phone, address, postalCode, city, username, password } = body as {
     name: string;
     email: string;
     phone?: string;
     address?: string;
     postalCode?: string;
     city?: string;
+    username: string;
     password: string;
   };
 
   if (!name?.trim() || !email?.trim() || !password || password.length < 8) {
     return NextResponse.json(
       { error: "Fyll i namn, e-post och ett lösenord på minst 8 tecken." },
+      { status: 400 }
+    );
+  }
+
+  const trimmedUsername = username?.trim() ?? "";
+  if (!/^[A-Za-z0-9_-]{3,20}$/.test(trimmedUsername)) {
+    return NextResponse.json(
+      {
+        error:
+          "Användarnamnet ska vara 3–20 tecken (bokstäver, siffror, _ eller -).",
+      },
       { status: 400 }
     );
   }
@@ -53,6 +65,19 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const { data: usernameTaken } = await supabaseAdmin
+    .from("members")
+    .select("id")
+    .ilike("username", trimmedUsername)
+    .maybeSingle();
+
+  if (usernameTaken) {
+    return NextResponse.json(
+      { error: "Det användarnamnet är redan taget." },
+      { status: 409 }
+    );
+  }
+
   const passwordHash = await bcrypt.hash(password, 10);
 
   const { data: member, error } = await supabaseAdmin
@@ -64,12 +89,19 @@ export async function POST(req: NextRequest) {
       address: address?.trim() || null,
       postal_code: postalCode?.trim() || null,
       city: city?.trim() || null,
+      username: trimmedUsername,
       password_hash: passwordHash,
     })
-    .select("id, member_number, name, email")
+    .select("id, member_number, name, email, username")
     .single();
 
   if (error || !member) {
+    if (error?.code === "23505") {
+      return NextResponse.json(
+        { error: "Det användarnamnet är redan taget." },
+        { status: 409 }
+      );
+    }
     return NextResponse.json({ error: "Kunde inte skapa kontot." }, { status: 500 });
   }
 
@@ -79,6 +111,7 @@ export async function POST(req: NextRequest) {
       memberNumber: member.member_number,
       name: member.name,
       email: member.email,
+      username: member.username,
     },
   });
   res.cookies.set(MEMBER_SESSION_COOKIE, token, memberSessionCookieOptions);

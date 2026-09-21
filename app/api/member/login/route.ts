@@ -38,7 +38,9 @@ export async function POST(req: NextRequest) {
 
   const { data: member } = await supabaseAdmin
     .from("members")
-    .select("id, member_number, name, email, password_hash, failed_login_attempts, locked_until")
+    .select(
+      "id, member_number, name, email, username, password_hash, failed_login_attempts, locked_until"
+    )
     .eq("email", normalizedEmail)
     .maybeSingle();
 
@@ -82,6 +84,7 @@ export async function POST(req: NextRequest) {
       memberNumber: member.member_number,
       name: member.name,
       email: member.email,
+      username: member.username,
     },
   });
   res.cookies.set(MEMBER_SESSION_COOKIE, token, memberSessionCookieOptions);

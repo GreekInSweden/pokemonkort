@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/CartContext";
 import { Member } from "@/lib/types";
+import { memberLabel } from "@/lib/memberLabel";
 
 export default function SiteHeader() {
   const { itemCount, subtotalSek } = useCart();
@@ -40,7 +41,7 @@ export default function SiteHeader() {
               href="/konto"
               className="focus-ring text-sm text-paper hover:text-gold"
             >
-              Medlem #{member.memberNumber}
+              {memberLabel(member.memberNumber, member.username)}
             </Link>
           ) : (
             <Link

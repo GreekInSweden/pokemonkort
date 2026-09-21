@@ -9,7 +9,7 @@ export default async function AdminMedlemmarPage() {
   const { data: members } = await supabase
     .from("members")
     .select(
-      "id, member_number, name, email, phone, created_at, failed_login_attempts, locked_until, password_reset_requested_at"
+      "id, member_number, username, name, email, phone, created_at, failed_login_attempts, locked_until, password_reset_requested_at"
     )
     .order("member_number", { ascending: true });
 
@@ -36,6 +36,7 @@ export default async function AdminMedlemmarPage() {
                   <div>
                     <div className="font-mono text-xs text-gold">
                       Medlem #{m.member_number}
+                      {m.username && ` · ${m.username}`}
                     </div>
                     <div className="font-display font-semibold text-paper">
                       {m.name}

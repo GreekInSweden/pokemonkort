@@ -19,6 +19,12 @@ export default async function KontoPage() {
       </h1>
       <p className="text-mute mb-6">
         Medlemsnummer <span className="font-mono text-gold">#{member.memberNumber}</span>
+        {member.username && (
+          <>
+            {" "}
+            · Användarnamn <span className="text-gold">{member.username}</span>
+          </>
+        )}
       </p>
 
       <div className="flex flex-wrap gap-2 mb-10">

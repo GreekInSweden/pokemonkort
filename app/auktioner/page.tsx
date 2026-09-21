@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { AuctionListing, AuctionWin, Member } from "@/lib/types";
+import { memberLabel } from "@/lib/memberLabel";
 import { rarityLabel } from "@/lib/rarity";
 import { variantLabel } from "@/lib/variant";
 import CardImage from "@/components/CardImage";
@@ -120,7 +121,7 @@ export default function AuktionerPage() {
                 </div>
                 {a.leadingMemberNumber !== null && (
                   <div className="text-xs text-mute mt-1">
-                    Leder: Medlem #{a.leadingMemberNumber}
+                    Leder: {memberLabel(a.leadingMemberNumber, a.leadingUsername)}
                   </div>
                 )}
                 {!a.reserveMet && a.bidCount > 0 && (
@@ -269,7 +270,7 @@ function BidModal({
               >
                 <span>
                   {i === 0 && "🏆 "}
-                  {b.memberNumber !== null ? `Medlem #${b.memberNumber}` : "Okänd medlem"}
+                  {memberLabel(b.memberNumber, b.username)}
                 </span>
                 <span className="font-mono">{b.amountSek} kr</span>
               </div>
@@ -328,7 +329,9 @@ function BidModal({
               disabled={submitting}
               className="focus-ring w-full rounded-sm bg-gold text-ink font-semibold py-3 disabled:opacity-50"
             >
-              {submitting ? "Skickar…" : `Buda som Medlem #${member.memberNumber}`}
+              {submitting
+                ? "Skickar…"
+                : `Buda som ${memberLabel(member.memberNumber, member.username)}`}
             </button>
           </form>
         )}

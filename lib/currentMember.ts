@@ -5,6 +5,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 export interface MemberProfile {
   id: string;
   memberNumber: number;
+  username: string | null;
   name: string;
   email: string;
   phone: string | null;
@@ -30,7 +31,7 @@ export async function getCurrentMember(): Promise<MemberProfile | null> {
   const { data } = await supabaseAdmin
     .from("members")
     .select(
-      "id, member_number, name, email, phone, address, postal_code, city, contact_messenger, contact_whatsapp, contact_other"
+      "id, member_number, username, name, email, phone, address, postal_code, city, contact_messenger, contact_whatsapp, contact_other"
     )
     .eq("id", memberId)
     .single();
@@ -40,6 +41,7 @@ export async function getCurrentMember(): Promise<MemberProfile | null> {
   return {
     id: data.id,
     memberNumber: data.member_number,
+    username: data.username,
     name: data.name,
     email: data.email,
     phone: data.phone,

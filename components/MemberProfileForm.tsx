@@ -62,6 +62,16 @@ export default function MemberProfileForm({ member }: { member: MemberProfile })
           <span className="text-sm text-mute mb-1 block">E-post</span>
           <p className="text-paper">{member.email}</p>
         </div>
+        {member.username && (
+          <div>
+            <span className="text-sm text-mute mb-1 block">Användarnamn</span>
+            <p className="text-paper">{member.username}</p>
+            <p className="text-xs text-mute mt-0.5">
+              Valdes vid registreringen och går inte att ändra själv än —
+              hör av dig till oss om du vill byta.
+            </p>
+          </div>
+        )}
         <Field label="Telefon" value={form.phone} onChange={(v) => updateField("phone", v)} />
         <Field label="Adress" value={form.address} onChange={(v) => updateField("address", v)} />
         <div className="grid grid-cols-2 gap-4">

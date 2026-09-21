@@ -24,6 +24,7 @@ function RegisterForm() {
     address: "",
     postalCode: "",
     city: "",
+    username: "",
     password: "",
   });
   const [submitting, setSubmitting] = useState(false);
@@ -63,6 +64,18 @@ function RegisterForm() {
       </p>
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Namn" value={form.name} onChange={(v) => updateField("name", v)} required />
+        <div>
+          <Field
+            label="Användarnamn (visas istället för medlemsnummer vid bud)"
+            value={form.username}
+            onChange={(v) => updateField("username", v)}
+            required
+          />
+          <p className="text-xs text-mute mt-1">
+            3–20 tecken, bokstäver/siffror/_/-. Går inte att ändra själv
+            senare, så välj nåt du trivs med.
+          </p>
+        </div>
         <Field
           label="E-post"
           type="email"
