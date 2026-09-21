@@ -3,6 +3,7 @@ import { getCurrentMember } from "@/lib/currentMember";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { Variant, Rarity } from "@/lib/types";
 import PortfolioChecklist from "@/components/PortfolioChecklist";
+import SetPicker from "@/components/SetPicker";
 
 export const dynamic = "force-dynamic";
 
@@ -39,10 +40,13 @@ export default async function PortfolioPage({
 
   const supabase = createServerSupabase();
 
+  // Note: no is_visible filter here on purpose — the full historical
+  // card catalog is imported with is_visible = false (it's not for sale,
+  // just reference data), but members still need to be able to log cards
+  // from any of it in their portfolio/wishlist.
   const { data: setsData } = await supabase
     .from("sets")
     .select("id, slug, name, category_name")
-    .eq("is_visible", true)
     .order("category_name")
     .order("name");
   const sets = (setsData as SetOption[]) ?? [];
@@ -68,10 +72,6 @@ export default async function PortfolioPage({
     ownEntries = (entriesData as any[]) ?? [];
   }
 
-  // Grouped by category for the set picker, same pattern as the shop's
-  // own category/set navigation.
-  const categories = Array.from(new Set(sets.map((s) => s.category_name)));
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-14">
       <h1 className="font-display text-3xl font-bold text-paper mb-1">
@@ -91,27 +91,7 @@ export default async function PortfolioPage({
         om ni verkar kunna byta.
       </p>
 
-      <div className="flex flex-wrap gap-2 mb-8">
-        {categories.map((cat) => (
-          <div key={cat} className="flex flex-wrap gap-2">
-            {sets
-              .filter((s) => s.category_name === cat)
-              .map((s) => (
-                <a
-                  key={s.id}
-                  href={`/konto/portfolj?set=${s.slug}`}
-                  className={`focus-ring text-xs rounded-sm border px-3 py-1.5 ${
-                    s.slug === selectedSlug
-                      ? "border-gold text-gold bg-gold/10"
-                      : "border-line text-mute hover:border-mute"
-                  }`}
-                >
-                  {s.name}
-                </a>
-              ))}
-          </div>
-        ))}
-      </div>
+      <SetPicker sets={sets} selectedSlug={selectedSlug} baseHref="/konto/portfolj" />
 
       {!selectedSet ? (
         <p className="text-mute">Inga set upplagda ännu.</p>
