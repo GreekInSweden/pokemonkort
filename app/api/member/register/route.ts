@@ -11,6 +11,22 @@ import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  try {
+    return await handleRegister(req);
+  } catch (err: any) {
+    // Any uncaught exception here (e.g. a pending migration the code
+    // already assumes is applied) would otherwise bubble up as a bare
+    // 500 with a non-JSON body — the frontend's res.json() then throws,
+    // which used to leave the submit button stuck on "Skapar konto…"
+    // forever with no visible error. Always answer with real JSON.
+    return NextResponse.json(
+      { error: `Serverfel: ${err?.message ?? "okänt fel"}` },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleRegister(req: NextRequest) {
   const ip = getClientIp(req);
   const withinIpLimit = await checkRateLimit(`register:ip:${ip}`, 5, 60 * 60);
   if (!withinIpLimit) {

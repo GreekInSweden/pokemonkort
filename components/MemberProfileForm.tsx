@@ -30,18 +30,23 @@ export default function MemberProfileForm({ member }: { member: MemberProfile })
     e.preventDefault();
     setError(null);
     setSubmitting(true);
-    const res = await fetch("/api/member/profile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    const data = await res.json();
-    setSubmitting(false);
-    if (!res.ok) {
-      setError(data.error ?? "Något gick fel.");
-      return;
+    try {
+      const res = await fetch("/api/member/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json().catch(() => ({}));
+      setSubmitting(false);
+      if (!res.ok) {
+        setError(data.error ?? `Något gick fel (${res.status}).`);
+        return;
+      }
+      setSaved(true);
+    } catch {
+      setSubmitting(false);
+      setError("Kunde inte nå servern. Kontrollera internetuppkopplingen och försök igen.");
     }
-    setSaved(true);
   }
 
   async function handleLogout() {

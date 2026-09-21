@@ -14,6 +14,20 @@ const LOCK_AFTER_ATTEMPTS = 5;
 const LOCK_DURATION_MS = 15 * 60 * 1000;
 
 export async function POST(req: NextRequest) {
+  try {
+    return await handleLogin(req);
+  } catch (err: any) {
+    // See the matching comment in register/route.ts — never let an
+    // uncaught exception fall through as a non-JSON 500, or the login
+    // button hangs on "Loggar in…" forever with no visible error.
+    return NextResponse.json(
+      { error: `Serverfel: ${err?.message ?? "okänt fel"}` },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleLogin(req: NextRequest) {
   const ip = getClientIp(req);
   // Caps how many login attempts total can come from one IP address —
   // catches a script trying many different accounts, on top of the

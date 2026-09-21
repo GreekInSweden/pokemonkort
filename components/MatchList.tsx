@@ -32,22 +32,27 @@ export default function MatchList() {
   useEffect(() => {
     fetch("/api/member/matchningar")
       .then((res) => res.json())
-      .then((data) => setMatches(data.matches ?? []));
+      .then((data) => setMatches(data.matches ?? []))
+      .catch(() => setMatches([]));
   }, []);
 
   async function handleReveal(m: Match) {
     const k = `${m.cardId}:${m.variant}`;
     setRevealed((r) => ({ ...r, [k]: "loading" }));
-    const res = await fetch("/api/member/matchningar/reveal", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cardId: m.cardId, variant: m.variant }),
-    });
-    const data = await res.json();
-    setRevealed((r) => ({
-      ...r,
-      [k]: data.contacts && data.contacts.length > 0 ? data.contacts : "none",
-    }));
+    try {
+      const res = await fetch("/api/member/matchningar/reveal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cardId: m.cardId, variant: m.variant }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setRevealed((r) => ({
+        ...r,
+        [k]: data.contacts && data.contacts.length > 0 ? data.contacts : "none",
+      }));
+    } catch {
+      setRevealed((r) => ({ ...r, [k]: "none" }));
+    }
   }
 
   if (matches === null) {

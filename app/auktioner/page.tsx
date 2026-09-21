@@ -17,22 +17,35 @@ export default function AuktionerPage() {
   const [member, setMember] = useState<Member | null | undefined>(undefined);
 
   const load = useCallback(async () => {
-    const res = await fetch("/api/auctions");
-    const data = await res.json();
-    if (data.auctions) setAuctions(data.auctions);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/auctions");
+      const data = await res.json();
+      if (data.auctions) setAuctions(data.auctions);
+    } catch {
+      // Transient network hiccup on a 20s poll — just try again next tick.
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const checkWin = useCallback(async () => {
-    const res = await fetch("/api/auction-win");
-    const data = await res.json();
-    setWin(data.win ?? null);
+    try {
+      const res = await fetch("/api/auction-win");
+      const data = await res.json();
+      setWin(data.win ?? null);
+    } catch {
+      // Ignore — next poll will retry.
+    }
   }, []);
 
   const loadMember = useCallback(async () => {
-    const res = await fetch("/api/member/me");
-    const data = await res.json();
-    setMember(data.member ?? null);
+    try {
+      const res = await fetch("/api/member/me");
+      const data = await res.json();
+      setMember(data.member ?? null);
+    } catch {
+      setMember(null);
+    }
   }, []);
 
   useEffect(() => {
@@ -177,27 +190,32 @@ function BidModal({
     e.preventDefault();
     setError(null);
     setSubmitting(true);
-    const res = await fetch("/api/bid", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        auctionId: auction.auctionId,
-        amountSek: amount,
-      }),
-    });
-    const data = await res.json();
-    setSubmitting(false);
-    if (!res.ok) {
-      setError(data.error ?? "Något gick fel.");
-      return;
+    try {
+      const res = await fetch("/api/bid", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          auctionId: auction.auctionId,
+          amountSek: amount,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setSubmitting(false);
+      if (!res.ok) {
+        setError(data.error ?? `Något gick fel (${res.status}).`);
+        return;
+      }
+      if (data.extendedEndsAt) {
+        setEndsAt(data.extendedEndsAt);
+        setExtended(true);
+      }
+      setSuccess(true);
+      onBidPlaced();
+      setTimeout(onClose, 1200);
+    } catch {
+      setSubmitting(false);
+      setError("Kunde inte nå servern. Kontrollera internetuppkopplingen och försök igen.");
     }
-    if (data.extendedEndsAt) {
-      setEndsAt(data.extendedEndsAt);
-      setExtended(true);
-    }
-    setSuccess(true);
-    onBidPlaced();
-    setTimeout(onClose, 1200);
   }
 
   return (
