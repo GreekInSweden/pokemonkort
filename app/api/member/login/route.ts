@@ -36,13 +36,25 @@ export async function POST(req: NextRequest) {
 
   const normalizedEmail = email.trim().toLowerCase();
 
-  const { data: member } = await supabaseAdmin
+  const { data: member, error: fetchError } = await supabaseAdmin
     .from("members")
     .select(
       "id, member_number, name, email, username, password_hash, failed_login_attempts, locked_until"
     )
     .eq("email", normalizedEmail)
     .maybeSingle();
+
+  // A real query failure (e.g. a column the code expects isn't in the
+  // database yet because a migration hasn't been run) must not be
+  // reported as "wrong password" — that's indistinguishable from a
+  // real login failure and just leaves someone stuck retyping a
+  // correct password forever. Surface it plainly instead.
+  if (fetchError) {
+    return NextResponse.json(
+      { error: `Serverfel vid inloggning: ${fetchError.message}` },
+      { status: 500 }
+    );
+  }
 
   if (member?.locked_until && new Date(member.locked_until) > new Date()) {
     const minutesLeft = Math.ceil(

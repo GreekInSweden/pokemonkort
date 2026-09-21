@@ -28,13 +28,22 @@ export async function getCurrentMember(): Promise<MemberProfile | null> {
   const memberId = await verifyMemberSession(token);
   if (!memberId) return null;
 
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from("members")
     .select(
       "id, member_number, username, name, email, phone, address, postal_code, city, contact_messenger, contact_whatsapp, contact_other"
     )
     .eq("id", memberId)
     .single();
+
+  // A real query failure (e.g. a pending migration) must not look like
+  // "not logged in" — that's what causes an endless redirect back to
+  // the login page even with a valid session/cookie and correct
+  // password. Throwing surfaces the actual error instead of a silent
+  // loop.
+  if (error && error.code !== "PGRST116") {
+    throw new Error(`Kunde inte hämta medlemsprofilen: ${error.message}`);
+  }
 
   if (!data) return null;
 
