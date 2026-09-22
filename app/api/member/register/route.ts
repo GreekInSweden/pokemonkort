@@ -68,6 +68,19 @@ async function handleRegister(req: NextRequest) {
 
   const normalizedEmail = email.trim().toLowerCase();
 
+  const { data: blocked } = await supabaseAdmin
+    .from("blocked_emails")
+    .select("email")
+    .eq("email", normalizedEmail)
+    .maybeSingle();
+
+  if (blocked) {
+    return NextResponse.json(
+      { error: "Den här e-postadressen kan inte användas för registrering." },
+      { status: 403 }
+    );
+  }
+
   const { data: existing } = await supabaseAdmin
     .from("members")
     .select("id")

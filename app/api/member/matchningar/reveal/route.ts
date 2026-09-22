@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
         (h.members.contact_messenger || h.members.contact_whatsapp || h.members.contact_other)
     )
     .map((h: any) => ({
+      memberId: h.member_id,
       memberNumber: h.members.member_number,
       name: h.members.name,
       sellable: h.sellable,
