@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Rarity, Variant } from "@/lib/types";
 import { rarityAccent, rarityLabel } from "@/lib/rarity";
 import { variantLabel } from "@/lib/variant";
-import CardImage from "@/components/CardImage";
+import CardZoomImage from "@/components/CardZoomImage";
 
 interface WantedCard {
   cardId: string;
@@ -54,7 +54,7 @@ export default function MestEftertraktadePage() {
               <span className="font-mono text-mute text-sm w-6 text-right shrink-0">
                 {i + 1}
               </span>
-              <CardImage
+              <CardZoomImage
                 src={c.imageUrl}
                 alt={c.cardName}
                 number={c.cardNumber}

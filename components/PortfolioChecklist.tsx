@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Rarity, Variant } from "@/lib/types";
 import { rarityAccent, rarityLabel } from "@/lib/rarity";
 import { variantLabel } from "@/lib/variant";
-import CardImage from "@/components/CardImage";
+import CardZoomImage from "@/components/CardZoomImage";
 
 interface VariantRow {
   id: string;
@@ -168,7 +168,7 @@ export default function PortfolioChecklist({
             key={card.id}
             className={`border-l-4 ${rarityAccent[card.rarity]} border-y border-r border-line rounded-sm bg-panel p-3 flex items-center gap-3`}
           >
-            <CardImage
+            <CardZoomImage
               src={card.image_url}
               alt={card.name}
               number={card.number}
