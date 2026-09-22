@@ -15,7 +15,7 @@ export default function LoginPage() {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/konto";
+  const next = searchParams.get("next") || "/konto/portfolj";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

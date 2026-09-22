@@ -15,7 +15,7 @@ export default function RegisterPage() {
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/konto";
+  const next = searchParams.get("next") || "/konto/portfolj";
 
   const [form, setForm] = useState({
     name: "",
