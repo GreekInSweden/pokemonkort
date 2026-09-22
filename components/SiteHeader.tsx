@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useCart } from "@/lib/CartContext";
 import { Member } from "@/lib/types";
 import { memberLabel } from "@/lib/memberLabel";
@@ -9,13 +10,21 @@ import { memberLabel } from "@/lib/memberLabel";
 export default function SiteHeader() {
   const { itemCount, subtotalSek } = useCart();
   const [member, setMember] = useState<Member | null | undefined>(undefined);
+  const pathname = usePathname();
 
+  // SiteHeader lives in the root layout and never unmounts across
+  // client-side navigations (router.push after login/register/logout
+  // doesn't remount it) — so an effect with an empty dependency array
+  // would only ever check login state once, on the very first page
+  // load, and then show that stale state forever even after logging
+  // in. Re-checking on every pathname change catches the redirect that
+  // follows login/register/logout.
   useEffect(() => {
     fetch("/api/member/me")
       .then((res) => res.json())
       .then((data) => setMember(data.member ?? null))
       .catch(() => setMember(null));
-  }, []);
+  }, [pathname]);
 
   return (
     <header className="border-b border-line sticky top-0 z-30 bg-ink/95 backdrop-blur">
