@@ -25,6 +25,12 @@ export default function SiteHeader() {
         </Link>
         <nav className="flex items-center gap-4">
           <Link
+            href="/lager"
+            className="focus-ring text-sm text-paper hover:text-gold"
+          >
+            Vårt lager
+          </Link>
+          <Link
             href="/auktioner"
             className="focus-ring text-sm text-paper hover:text-gold"
           >
