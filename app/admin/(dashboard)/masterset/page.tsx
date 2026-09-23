@@ -115,25 +115,45 @@ export default async function MasterSetPage({
   // SetPicker can grönmarkera each finished set and guldmarkera a whole
   // era/kategori (t.ex. "Mega Evolution") once every set inside it —
   // "Pitch Black", "Perfect Order" osv — is itself complete.
-  const { data: allCardsData } = await supabase
-    .from("cards")
-    .select("id, set_id, rarity, card_variants(variant)");
-  const allCards =
-    (allCardsData as unknown as {
-      id: string;
-      set_id: string;
-      rarity: Rarity;
-      card_variants: { variant: Variant }[];
-    }[]) ?? [];
+  //
+  // Both tables are bigger than PostgREST's default 1000-row response
+  // cap — the catalogimporten alone is ~19 250 kort — so a plain
+  // .select() silently truncates and sets whose cards happen to sort
+  // past row 1000 would never show as complete no matter how many
+  // cards you check off. Page through with .range() until a page comes
+  // back short of the page size.
+  async function fetchAllRows<T>(
+    table: string,
+    columns: string
+  ): Promise<T[]> {
+    const pageSize = 1000;
+    let from = 0;
+    const rows: T[] = [];
+    for (;;) {
+      const { data, error } = await supabase
+        .from(table)
+        .select(columns)
+        .range(from, from + pageSize - 1);
+      if (error || !data) break;
+      rows.push(...(data as unknown as T[]));
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+    return rows;
+  }
 
-  const { data: allProgressData } = await supabase
-    .from("master_set_progress")
-    .select("card_id, variant");
-  const ownedKeys = new Set(
-    ((allProgressData as { card_id: string; variant: Variant }[]) ?? []).map(
-      (p) => `${p.card_id}:${p.variant}`
-    )
+  const allCards = await fetchAllRows<{
+    id: string;
+    set_id: string;
+    rarity: Rarity;
+    card_variants: { variant: Variant }[];
+  }>("cards", "id, set_id, rarity, card_variants(variant)");
+
+  const allProgress = await fetchAllRows<{ card_id: string; variant: Variant }>(
+    "master_set_progress",
+    "card_id, variant"
   );
+  const ownedKeys = new Set(allProgress.map((p) => `${p.card_id}:${p.variant}`));
 
   const setTotals = new Map<string, { total: number; owned: number }>();
   for (const c of allCards) {
