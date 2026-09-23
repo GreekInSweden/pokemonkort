@@ -214,19 +214,24 @@ export default function SetPicker({
                             {cat.sets.map((s) => {
                               const isComplete = completeSet.has(s.id);
                               const selected = s.slug === selectedSlug;
+                              // "Klart" (grönt) och "det här är setet du tittar
+                              // på just nu" (rosa ring) är två helt olika
+                              // saker och får ALDRIG dela färg — annars ser
+                              // ett bara-valt-men-inte-klart set (t.ex.
+                              // Retro Threads på 0%) grönt ut precis som ett
+                              // faktiskt klart set, vilket är exakt bugen
+                              // som rapporterades.
+                              const colorClasses = isComplete
+                                ? "border-sport-pitch text-sport-pitch bg-sport-pitch/10"
+                                : "border-line text-mute hover:border-mute hover:text-paper";
+                              const selectedRing = selected
+                                ? "ring-2 ring-inset ring-rose-400"
+                                : "";
                               return (
                                 <a
                                   key={s.id}
                                   href={`${baseHref}?set=${s.slug}`}
-                                  className={`focus-ring text-xs rounded-sm border px-3 py-1.5 inline-flex items-center gap-1 ${
-                                    isComplete
-                                      ? `border-sport-pitch text-sport-pitch ${
-                                          selected ? "bg-sport-pitch/15" : "bg-sport-pitch/5"
-                                        }`
-                                      : selected
-                                      ? `border-current ${meta.textAccent} ${meta.activeBg}`
-                                      : "border-line text-mute hover:border-mute hover:text-paper"
-                                  }`}
+                                  className={`focus-ring text-xs rounded-sm border px-3 py-1.5 inline-flex items-center gap-1 ${colorClasses} ${selectedRing}`}
                                 >
                                   {isComplete && <span aria-hidden>✓</span>}
                                   {s.name}
