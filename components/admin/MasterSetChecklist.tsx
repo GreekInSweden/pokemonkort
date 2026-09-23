@@ -14,7 +14,6 @@ interface ChecklistCard {
   rarity: Rarity;
   imageUrl: string | null;
   masterVariants: Variant[];
-  grandMasterVariants: Variant[];
   ownedVariants: Variant[];
 }
 
@@ -51,12 +50,10 @@ export default function MasterSetChecklist({
   setName,
   cards,
   masterProgress,
-  grandMasterProgress,
 }: {
   setName: string;
   cards: ChecklistCard[];
   masterProgress: Progress;
-  grandMasterProgress: Progress;
 }) {
   const [owned, setOwned] = useState<Record<string, Variant[]>>(() => {
     const map: Record<string, Variant[]> = {};
@@ -80,16 +77,6 @@ export default function MasterSetChecklist({
     return { owned: ownedN, total: totalN };
   }, [cards, owned]);
 
-  const liveGrand = useMemo(() => {
-    let ownedN = 0;
-    let totalN = 0;
-    for (const c of cards) {
-      totalN += c.grandMasterVariants.length;
-      ownedN += c.grandMasterVariants.filter((v) => owned[c.id]?.includes(v)).length;
-    }
-    return { owned: ownedN, total: totalN };
-  }, [cards, owned]);
-
   const filteredCards = useMemo(() => {
     const q = query.trim().toLowerCase();
     let list = cards;
@@ -102,7 +89,7 @@ export default function MasterSetChecklist({
     }
     if (hideComplete) {
       list = list.filter((c) => {
-        const need = c.grandMasterVariants;
+        const need = c.masterVariants;
         return !need.every((v) => owned[c.id]?.includes(v));
       });
     }
@@ -154,7 +141,6 @@ export default function MasterSetChecklist({
 
       <div className="flex flex-wrap gap-3 mb-6">
         <ProgressBar label="Master Set" progress={liveMaster} />
-        <ProgressBar label="Grand Master Set" progress={liveGrand} />
       </div>
 
       <div className="sticky top-0 z-10 bg-ink py-3 -mx-4 px-4 mb-4 border-b border-line flex items-center gap-3">
@@ -203,9 +189,8 @@ export default function MasterSetChecklist({
                 <div className="text-xs text-mute">{rarityLabel[c.rarity]}</div>
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                {c.grandMasterVariants.map((v) => {
+                {c.masterVariants.map((v) => {
                   const isOwned = cardOwned.includes(v);
-                  const isMasterRequired = c.masterVariants.includes(v);
                   const key = `${c.id}-${v}`;
                   const isPending = pending === key;
                   return (
@@ -221,9 +206,6 @@ export default function MasterSetChecklist({
                         className="focus-ring accent-gold w-4 h-4"
                       />
                       {variantShortLabel[v]}
-                      {!isMasterRequired && (
-                        <span className="text-mute/70">(GM)</span>
-                      )}
                     </label>
                   );
                 })}

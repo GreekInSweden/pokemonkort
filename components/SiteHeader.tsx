@@ -10,6 +10,7 @@ import { memberLabel } from "@/lib/memberLabel";
 export default function SiteHeader() {
   const { itemCount, subtotalSek } = useCart();
   const [member, setMember] = useState<Member | null | undefined>(undefined);
+  const [matchCount, setMatchCount] = useState(0);
   const [loggingOut, setLoggingOut] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -27,6 +28,21 @@ export default function SiteHeader() {
       .then((data) => setMember(data.member ?? null))
       .catch(() => setMember(null));
   }, [pathname]);
+
+  // Antal önskekort som just nu har minst en träff — visas som "(3)"
+  // bredvid Mina matchningar. Samma pathname-beroende som ovan: håller
+  // sig uppdaterad t.ex. efter att man kryssat i fler "vill ha"-kort på
+  // portföljen och navigerat vidare därifrån.
+  useEffect(() => {
+    if (!member) {
+      setMatchCount(0);
+      return;
+    }
+    fetch("/api/member/matchningar")
+      .then((res) => res.json())
+      .then((data) => setMatchCount(Array.isArray(data.matches) ? data.matches.length : 0))
+      .catch(() => setMatchCount(0));
+  }, [member, pathname]);
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -72,6 +88,9 @@ export default function SiteHeader() {
               className="focus-ring text-sm text-paper hover:text-gold"
             >
               Mina matchningar
+              {matchCount > 0 && (
+                <span className="text-gold font-mono"> ({matchCount})</span>
+              )}
             </Link>
           )}
         </nav>

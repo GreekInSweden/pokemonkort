@@ -68,20 +68,27 @@ export default async function MasterSetPage({
     }
   }
 
-  // Work out, per card, which variants actually count toward each tier —
-  // driven by rarity, not just "does a row happen to exist": a Rare-tier
-  // card's base print IS the holo row (it never got a plain normal print),
-  // while everything from Double Rare up is single-print with no reverse
-  // holo, regardless of any stray rows a bulk seed may have left behind.
+  // Work out, per card, which variants actually count toward a Master
+  // Set — driven by rarity, not just "does a row happen to exist": a
+  // Rare-tier card's base print IS the holo row (it never got a plain
+  // normal print), while everything from Double Rare up is single-print
+  // with no reverse holo, regardless of any stray rows a bulk seed may
+  // have left behind.
+  //
+  // Definitionsnot: en Master Set räknas som ett av varje nummer i
+  // setet PLUS reverse holo-varianten för de kort som har en — det är
+  // hobbyns egen definition (se t.ex. tcgmartlondon.com/articles/
+  // master-sets-vs-grand-master-sets), inte något extra steg ovanpå.
+  // "Grand Master Set" (promo-stämplar, olika tryckomgångar osv.) finns
+  // inte som spårbar data i det här systemet, så den nivån visas inte
+  // här — den här checklistan mäter bara det som faktiskt går att mäta.
   const checklistCards = cards.map((c) => {
     const hasVariant = (v: Variant) => c.card_variants.some((cv) => cv.variant === v);
     const baseVariant = baseVariantByRarity[c.rarity];
     const reverseEligible = reverseHoloEligibleRarities.includes(c.rarity);
 
     const masterVariants: Variant[] = hasVariant(baseVariant) ? [baseVariant] : [];
-
-    const grandMasterVariants: Variant[] = [...masterVariants];
-    if (reverseEligible && hasVariant("reverse_holo")) grandMasterVariants.push("reverse_holo");
+    if (reverseEligible && hasVariant("reverse_holo")) masterVariants.push("reverse_holo");
 
     const ownedVariants = owned
       .filter((o) => o.card_id === c.id)
@@ -94,7 +101,6 @@ export default async function MasterSetPage({
       rarity: c.rarity,
       imageUrl: c.image_url,
       masterVariants,
-      grandMasterVariants,
       ownedVariants,
     };
   });
@@ -104,11 +110,6 @@ export default async function MasterSetPage({
     (n, c) => n + c.masterVariants.filter((v) => c.ownedVariants.includes(v)).length,
     0
   );
-  const grandTotal = checklistCards.reduce((n, c) => n + c.grandMasterVariants.length, 0);
-  const grandOwned = checklistCards.reduce(
-    (n, c) => n + c.grandMasterVariants.filter((v) => c.ownedVariants.includes(v)).length,
-    0
-  );
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
@@ -116,10 +117,11 @@ export default async function MasterSetPage({
         Master Set
       </h1>
       <p className="text-mute mb-8">
-        Privat checklista för att bygga ett eget master set / grand master
-        set, kort för kort. Helt separat från butikens lager — att kryssa i
-        ett kort här säljer det inte, och att sälja slut ett kort i butiken
-        avkryssar det inte härifrån.
+        Privat checklista för att bygga ett eget master set — ett av varje
+        nummer i setet plus reverse holo-varianten för de kort som har en.
+        Helt separat från butikens lager — att kryssa i ett kort här
+        säljer det inte, och att sälja slut ett kort i butiken avkryssar
+        det inte härifrån.
       </p>
 
       <SetPicker sets={sets} selectedSlug={selectedSlug} baseHref="/admin/masterset" />
@@ -131,7 +133,6 @@ export default async function MasterSetPage({
           setName={selectedSet.name}
           cards={checklistCards}
           masterProgress={{ owned: masterOwned, total: masterTotal }}
-          grandMasterProgress={{ owned: grandOwned, total: grandTotal }}
         />
       )}
     </div>
