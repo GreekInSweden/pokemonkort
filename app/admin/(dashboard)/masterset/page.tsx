@@ -111,6 +111,48 @@ export default async function MasterSetPage({
     0
   );
 
+  // Completion status for EVERY set (not just the one currently open), so
+  // SetPicker can grönmarkera each finished set and guldmarkera a whole
+  // era/kategori (t.ex. "Mega Evolution") once every set inside it —
+  // "Pitch Black", "Perfect Order" osv — is itself complete.
+  const { data: allCardsData } = await supabase
+    .from("cards")
+    .select("id, set_id, rarity, card_variants(variant)");
+  const allCards =
+    (allCardsData as unknown as {
+      id: string;
+      set_id: string;
+      rarity: Rarity;
+      card_variants: { variant: Variant }[];
+    }[]) ?? [];
+
+  const { data: allProgressData } = await supabase
+    .from("master_set_progress")
+    .select("card_id, variant");
+  const ownedKeys = new Set(
+    ((allProgressData as { card_id: string; variant: Variant }[]) ?? []).map(
+      (p) => `${p.card_id}:${p.variant}`
+    )
+  );
+
+  const setTotals = new Map<string, { total: number; owned: number }>();
+  for (const c of allCards) {
+    const hasVariant = (v: Variant) => c.card_variants.some((cv) => cv.variant === v);
+    const baseVariant = baseVariantByRarity[c.rarity];
+    const reverseEligible = reverseHoloEligibleRarities.includes(c.rarity);
+    const need: Variant[] = hasVariant(baseVariant) ? [baseVariant] : [];
+    if (reverseEligible && hasVariant("reverse_holo")) need.push("reverse_holo");
+
+    const entry = setTotals.get(c.set_id) ?? { total: 0, owned: 0 };
+    entry.total += need.length;
+    entry.owned += need.filter((v) => ownedKeys.has(`${c.id}:${v}`)).length;
+    setTotals.set(c.set_id, entry);
+  }
+
+  const completeSetIds = Array.from(setTotals.entries())
+    .filter(([, t]) => t.total > 0 && t.owned === t.total)
+    .map(([id]) => id);
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
       <h1 className="font-display text-2xl font-bold text-paper mb-1">
@@ -124,7 +166,12 @@ export default async function MasterSetPage({
         det inte härifrån.
       </p>
 
-      <SetPicker sets={sets} selectedSlug={selectedSlug} baseHref="/admin/masterset" />
+      <SetPicker
+        sets={sets}
+        selectedSlug={selectedSlug}
+        baseHref="/admin/masterset"
+        completeSetIds={completeSetIds}
+      />
 
       {!selectedSet ? (
         <p className="text-mute">Inga set upplagda ännu.</p>

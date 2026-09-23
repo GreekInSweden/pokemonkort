@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
-import { rarityLabel } from "@/lib/rarity";
+import { rarityLabel, reverseHoloEligibleRarities } from "@/lib/rarity";
 import { variantShortLabel } from "@/lib/variant";
 import { Rarity, Variant } from "@/lib/types";
 import CardZoomImage from "@/components/CardZoomImage";
@@ -65,17 +65,40 @@ export default function MasterSetChecklist({
   const [hideComplete, setHideComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Cards were seeded before reverse holo tracking existed, or an admin
+  // simply never checked "reverse holo" when uploading — so many cards
+  // have no reverse_holo row in card_variants yet, and masterVariants
+  // (computed server-side from what actually exists) won't include it.
+  // Rather than sending people off to the stock editor to add a missing
+  // variant one card at a time, this set tracks which cards we've just
+  // created a reverse_holo row for right here, and folds that into the
+  // effective master-set list below until the page next reloads.
+  const [addedReverseHolo, setAddedReverseHolo] = useState<Set<string>>(new Set());
+  const [addingReverseHolo, setAddingReverseHolo] = useState<string | null>(null);
+
+  function effectiveMasterVariants(c: ChecklistCard): Variant[] {
+    if (
+      addedReverseHolo.has(c.id) &&
+      reverseHoloEligibleRarities.includes(c.rarity) &&
+      !c.masterVariants.includes("reverse_holo")
+    ) {
+      return [...c.masterVariants, "reverse_holo"];
+    }
+    return c.masterVariants;
+  }
+
   // Local, live-recomputed progress so the bars move instantly as you
   // check things off, instead of waiting for a page refresh.
   const liveMaster = useMemo(() => {
     let ownedN = 0;
     let totalN = 0;
     for (const c of cards) {
-      totalN += c.masterVariants.length;
-      ownedN += c.masterVariants.filter((v) => owned[c.id]?.includes(v)).length;
+      const need = effectiveMasterVariants(c);
+      totalN += need.length;
+      ownedN += need.filter((v) => owned[c.id]?.includes(v)).length;
     }
     return { owned: ownedN, total: totalN };
-  }, [cards, owned]);
+  }, [cards, owned, addedReverseHolo]);
 
   const filteredCards = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -89,12 +112,30 @@ export default function MasterSetChecklist({
     }
     if (hideComplete) {
       list = list.filter((c) => {
-        const need = c.masterVariants;
+        const need = effectiveMasterVariants(c);
         return !need.every((v) => owned[c.id]?.includes(v));
       });
     }
     return list;
-  }, [cards, query, hideComplete, owned]);
+  }, [cards, query, hideComplete, owned, addedReverseHolo]);
+
+  async function addReverseHolo(cardId: string) {
+    setAddingReverseHolo(cardId);
+    setError(null);
+    const supabase = createBrowserSupabase();
+    const { error: insErr } = await supabase
+      .from("card_variants")
+      .insert({ card_id: cardId, variant: "reverse_holo", price_sek: 0, stock: 0 });
+    setAddingReverseHolo(null);
+    if (insErr) {
+      // Redan tillagd (t.ex. i en annan flik) räknas inte som ett fel.
+      if (!insErr.message?.toLowerCase().includes("duplicate")) {
+        setError(insErr.message);
+        return;
+      }
+    }
+    setAddedReverseHolo((prev) => new Set(prev).add(cardId));
+  }
 
   async function toggle(cardId: string, variant: Variant, isOwned: boolean) {
     const key = `${cardId}-${variant}`;
@@ -167,6 +208,10 @@ export default function MasterSetChecklist({
       <div className="space-y-2">
         {filteredCards.map((c) => {
           const cardOwned = owned[c.id] ?? [];
+          const needVariants = effectiveMasterVariants(c);
+          const canAddReverseHolo =
+            reverseHoloEligibleRarities.includes(c.rarity) &&
+            !needVariants.includes("reverse_holo");
           return (
             <div
               key={c.id}
@@ -189,7 +234,7 @@ export default function MasterSetChecklist({
                 <div className="text-xs text-mute">{rarityLabel[c.rarity]}</div>
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                {c.masterVariants.map((v) => {
+                {needVariants.map((v) => {
                   const isOwned = cardOwned.includes(v);
                   const key = `${c.id}-${v}`;
                   const isPending = pending === key;
@@ -209,6 +254,17 @@ export default function MasterSetChecklist({
                     </label>
                   );
                 })}
+                {canAddReverseHolo && (
+                  <button
+                    type="button"
+                    onClick={() => addReverseHolo(c.id)}
+                    disabled={addingReverseHolo === c.id}
+                    className="focus-ring text-[10px] text-mute hover:text-gold border border-line hover:border-gold rounded-sm px-2 py-1 disabled:opacity-50 whitespace-nowrap"
+                    title="Lägg till reverse holo-variant för det här kortet"
+                  >
+                    {addingReverseHolo === c.id ? "Lägger till…" : "+ Rev. Holo"}
+                  </button>
+                )}
               </div>
             </div>
           );
