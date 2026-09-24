@@ -78,6 +78,7 @@ export default function MasterSetChecklist({
   });
   const [selectedParallel, setSelectedParallel] = useState<Record<string, string>>({});
   const [parallelPending, setParallelPending] = useState<string | null>(null);
+  const [showParallelGuide, setShowParallelGuide] = useState(false);
 
   // Cards were seeded before reverse holo tracking existed, or an admin
   // simply never checked "reverse holo" when uploading — so many cards
@@ -251,6 +252,75 @@ export default function MasterSetChecklist({
       <div className="flex flex-wrap gap-3 mb-6">
         <ProgressBar label="Master Set" progress={liveMaster} />
       </div>
+
+      {parallelTiers.length > 0 && (
+        <div className="mb-6">
+          <button
+            type="button"
+            onClick={() => setShowParallelGuide((v) => !v)}
+            className="focus-ring text-xs text-mute hover:text-gold border border-line hover:border-gold rounded-sm px-3 py-1.5"
+          >
+            {showParallelGuide ? "Dölj" : "ⓘ Vad är parallels?"} ({parallelTiers.length} st)
+          </button>
+          {showParallelGuide && (
+            <div className="mt-3 border border-line rounded-md p-4 bg-panel">
+              <p className="text-xs text-mute mb-3 max-w-prose">
+                Varje spelare finns i flera färgade/numrerade tryck utöver
+                grundkortet. Namnet beskriver oftast färgen (t.ex. "Gold
+                Rainbow Foil"), och siffran efter "/" är hur många exemplar
+                som finns totalt av just den färgen — lägre siffra betyder
+                mer sällsynt. Onumrerade rader nedan finns i en okänd,
+                större upplaga. "Hobby" och "Retail" är bara vilken sorts
+                paket kortet kommer från.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
+                {(["hobby", "retail"] as const).map((ch) => {
+                  const tiers = parallelTiers.filter((t) => (t.channel ?? null) === ch);
+                  if (tiers.length === 0) return null;
+                  return (
+                    <div key={ch} className="mb-2">
+                      <div className="text-[10px] uppercase tracking-wide text-mute mb-1">
+                        {ch === "hobby" ? "Hobby" : "Retail"}
+                      </div>
+                      {tiers.map((t) => (
+                        <div
+                          key={t.id}
+                          className="flex items-center justify-between text-xs text-paper py-0.5 border-b border-line/50"
+                        >
+                          <span>{t.name}</span>
+                          <span className="font-mono text-mute shrink-0 ml-2">
+                            {t.print_run ? `/${t.print_run}` : "onumrerad"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+                {parallelTiers.some((t) => !t.channel) && (
+                  <div className="mb-2">
+                    <div className="text-[10px] uppercase tracking-wide text-mute mb-1">
+                      Övrigt
+                    </div>
+                    {parallelTiers
+                      .filter((t) => !t.channel)
+                      .map((t) => (
+                        <div
+                          key={t.id}
+                          className="flex items-center justify-between text-xs text-paper py-0.5 border-b border-line/50"
+                        >
+                          <span>{t.name}</span>
+                          <span className="font-mono text-mute shrink-0 ml-2">
+                            {t.print_run ? `/${t.print_run}` : "onumrerad"}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="sticky top-0 z-10 bg-ink py-3 -mx-4 px-4 mb-4 border-b border-line flex items-center gap-3">
         <input
