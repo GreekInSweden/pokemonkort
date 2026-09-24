@@ -19,19 +19,26 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { cardId, variant } = body as { cardId: string; variant: Variant };
+  const { cardId, variant, parallelTierId } = body as {
+    cardId: string;
+    variant: Variant;
+    parallelTierId?: string | null;
+  };
   if (!cardId || !variant) {
     return NextResponse.json({ error: "Något saknas." }, { status: 400 });
   }
 
-  const { data: ownWant } = await supabaseAdmin
+  let ownWantQuery = supabaseAdmin
     .from("member_cards")
     .select("id")
     .eq("member_id", member.id)
     .eq("card_id", cardId)
     .eq("variant", variant)
-    .eq("status", "want")
-    .maybeSingle();
+    .eq("status", "want");
+  ownWantQuery = parallelTierId
+    ? ownWantQuery.eq("parallel_tier_id", parallelTierId)
+    : ownWantQuery.is("parallel_tier_id", null);
+  const { data: ownWant } = await ownWantQuery.maybeSingle();
 
   if (!ownWant) {
     return NextResponse.json(
@@ -40,7 +47,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { data: haves } = await supabaseAdmin
+  let havesQuery = supabaseAdmin
     .from("member_cards")
     .select(
       "member_id, quantity, sellable, tradeable, members(member_number, name, contact_messenger, contact_whatsapp, contact_other)"
@@ -50,6 +57,10 @@ export async function POST(req: NextRequest) {
     .eq("status", "have")
     .or("sellable.eq.true,tradeable.eq.true")
     .neq("member_id", member.id);
+  havesQuery = parallelTierId
+    ? havesQuery.eq("parallel_tier_id", parallelTierId)
+    : havesQuery.is("parallel_tier_id", null);
+  const { data: haves } = await havesQuery;
 
   const contacts = (haves ?? [])
     .filter(

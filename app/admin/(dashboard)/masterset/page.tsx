@@ -1,5 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
-import { Rarity, Variant } from "@/lib/types";
+import { Rarity, Variant, ParallelTier } from "@/lib/types";
 import { baseVariantByRarity, reverseHoloEligibleRarities } from "@/lib/rarity";
 import MasterSetChecklist from "@/components/admin/MasterSetChecklist";
 import SetPicker from "@/components/SetPicker";
@@ -50,6 +50,8 @@ export default async function MasterSetPage({
 
   let cards: CardRow[] = [];
   let owned: { card_id: string; variant: Variant }[] = [];
+  let ownedParallels: { card_id: string; parallel_tier_id: string }[] = [];
+  let parallelTiers: ParallelTier[] = [];
 
   if (selectedSet) {
     const { data: cardsData } = await supabase
@@ -59,12 +61,29 @@ export default async function MasterSetPage({
       .order("number");
     cards = (cardsData as unknown as CardRow[]) ?? [];
 
+    const { data: parallelTiersData } = await supabase
+      .from("parallel_tiers")
+      .select("id, set_id, name, channel, print_run, sort_order")
+      .eq("set_id", selectedSet.id)
+      .order("sort_order");
+    parallelTiers = (parallelTiersData as ParallelTier[]) ?? [];
+
     if (cards.length > 0) {
       const { data: ownedData } = await supabase
         .from("master_set_progress")
-        .select("card_id, variant")
+        .select("card_id, variant, parallel_tier_id")
         .in("card_id", cards.map((c) => c.id));
-      owned = (ownedData as { card_id: string; variant: Variant }[]) ?? [];
+      const allProgressRows =
+        (ownedData as { card_id: string; variant: Variant; parallel_tier_id: string | null }[]) ?? [];
+      // Kravsatt master-progress (parallel_tier_id null) och den valfria
+      // parallel-bonusloggen (parallel_tier_id satt) delar samma tabell
+      // men hålls isär från varandra härifrån och nedåt.
+      owned = allProgressRows
+        .filter((r) => r.parallel_tier_id === null)
+        .map((r) => ({ card_id: r.card_id, variant: r.variant }));
+      ownedParallels = allProgressRows
+        .filter((r) => r.parallel_tier_id !== null)
+        .map((r) => ({ card_id: r.card_id, parallel_tier_id: r.parallel_tier_id as string }));
     }
   }
 
@@ -94,6 +113,10 @@ export default async function MasterSetPage({
       .filter((o) => o.card_id === c.id)
       .map((o) => o.variant);
 
+    const ownedParallelTierIds = ownedParallels
+      .filter((o) => o.card_id === c.id)
+      .map((o) => o.parallel_tier_id);
+
     return {
       id: c.id,
       number: c.number,
@@ -102,6 +125,7 @@ export default async function MasterSetPage({
       imageUrl: c.image_url,
       masterVariants,
       ownedVariants,
+      ownedParallelTierIds,
     };
   });
 
@@ -149,11 +173,17 @@ export default async function MasterSetPage({
     card_variants: { variant: Variant }[];
   }>("cards", "id, set_id, rarity, card_variants(variant)");
 
-  const allProgress = await fetchAllRows<{ card_id: string; variant: Variant }>(
-    "master_set_progress",
-    "card_id, variant"
+  const allProgress = await fetchAllRows<{
+    card_id: string;
+    variant: Variant;
+    parallel_tier_id: string | null;
+  }>("master_set_progress", "card_id, variant, parallel_tier_id");
+  // Bara det kravsatta kravet (parallel_tier_id null) räknas mot
+  // set-completion — parallel-bonusrader ska inte kunna grönmarkera ett
+  // set av misstag.
+  const ownedKeys = new Set(
+    allProgress.filter((p) => p.parallel_tier_id === null).map((p) => `${p.card_id}:${p.variant}`)
   );
-  const ownedKeys = new Set(allProgress.map((p) => `${p.card_id}:${p.variant}`));
 
   const setTotals = new Map<string, { total: number; owned: number }>();
   for (const c of allCards) {
@@ -200,6 +230,7 @@ export default async function MasterSetPage({
           setName={selectedSet.name}
           cards={checklistCards}
           masterProgress={{ owned: masterOwned, total: masterTotal }}
+          parallelTiers={parallelTiers}
         />
       )}
     </div>

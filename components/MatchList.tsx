@@ -10,6 +10,8 @@ interface Match {
   cardName: string;
   setName: string;
   variant: Variant;
+  parallelTierId: string | null;
+  parallelTierName: string | null;
   matchCount: number;
   sellCount: number;
   tradeCount: number;
@@ -63,13 +65,17 @@ export default function MatchList() {
   }, []);
 
   async function handleReveal(m: Match) {
-    const k = `${m.cardId}:${m.variant}`;
+    const k = `${m.cardId}:${m.variant}:${m.parallelTierId ?? ""}`;
     setRevealed((r) => ({ ...r, [k]: "loading" }));
     try {
       const res = await fetch("/api/member/matchningar/reveal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cardId: m.cardId, variant: m.variant }),
+        body: JSON.stringify({
+          cardId: m.cardId,
+          variant: m.variant,
+          parallelTierId: m.parallelTierId,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       setRevealed((r) => ({
@@ -100,7 +106,7 @@ export default function MatchList() {
   return (
     <div className="space-y-3">
       {matches.map((m) => {
-        const k = `${m.cardId}:${m.variant}`;
+        const k = `${m.cardId}:${m.variant}:${m.parallelTierId ?? ""}`;
         const state = revealed[k];
         return (
           <div key={k} className="border border-line rounded-md p-4 bg-panel">
@@ -112,7 +118,7 @@ export default function MatchList() {
                 <div className="font-display font-semibold text-paper">
                   {m.cardName}{" "}
                   <span className="text-mute text-sm font-body">
-                    ({variantLabel[m.variant]})
+                    ({m.parallelTierName ?? variantLabel[m.variant]})
                   </span>
                 </div>
                 <div className="text-xs text-gold mt-1">
