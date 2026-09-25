@@ -24,10 +24,21 @@
 -- -- edit per card once you know actual values.
 -- Only a 'normal' variant is created (no holo) since Topps football cards
 -- don't use that concept.
+--
+-- FIX (2026-09-25): sets.slug är globalt unikt (schema.sql: "slug text
+-- not null unique"), INTE unikt bara inom category_slug. Den här filen
+-- försökte tidigare skapa setet med slug 'grundset' -- samma slug som
+-- 2026/27 Premier League-grundsettet (seed_topps_pl_base.sql) redan
+-- äger. Hade den körts hade den antingen kraschat på unique-constrainten,
+-- eller (om körd FÖRE 26/27-setet) gjort URL:en /admin/masterset?set=
+-- grundset tvetydig mellan två olika säsonger. Bytt till
+-- 'grundset-2025-26' här. Om du redan körde den gamla versionen av den
+-- här filen och satt fast på ett constraint-fel: det är därför, kör om
+-- med den här uppdaterade filen istället.
 
 with s as (
   insert into sets (category_slug, category_name, slug, name, is_visible, product_line)
-  values ('topps-premier-league-25-26', 'Topps Premier League 2025/26', 'grundset', 'Grundset', false, 'sportkort')
+  values ('topps-premier-league-25-26', 'Topps Premier League 2025/26', 'grundset-2025-26', 'Grundset', false, 'sportkort')
   returning id
 ),
 inserted_cards as (
