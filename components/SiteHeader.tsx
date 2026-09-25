@@ -11,6 +11,7 @@ export default function SiteHeader() {
   const { itemCount, subtotalSek } = useCart();
   const [member, setMember] = useState<Member | null | undefined>(undefined);
   const [matchCount, setMatchCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [loggingOut, setLoggingOut] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -42,6 +43,20 @@ export default function SiteHeader() {
       .then((res) => res.json())
       .then((data) => setMatchCount(Array.isArray(data.matches) ? data.matches.length : 0))
       .catch(() => setMatchCount(0));
+  }, [member, pathname]);
+
+  // Samma idé för olästa meddelanden -- egen, skrivskyddad route (se
+  // unread-count/route.ts) så att det här badge-pollandet inte råkar
+  // markera meddelanden som lästa innan medlemmen faktiskt öppnat sidan.
+  useEffect(() => {
+    if (!member) {
+      setUnreadCount(0);
+      return;
+    }
+    fetch("/api/member/messages/unread-count")
+      .then((res) => res.json())
+      .then((data) => setUnreadCount(data.unreadCount ?? 0))
+      .catch(() => setUnreadCount(0));
   }, [member, pathname]);
 
   async function handleLogout() {
@@ -90,6 +105,17 @@ export default function SiteHeader() {
               Mina matchningar
               {matchCount > 0 && (
                 <span className="text-gold font-mono"> ({matchCount})</span>
+              )}
+            </Link>
+          )}
+          {member && (
+            <Link
+              href="/konto/meddelanden"
+              className="focus-ring text-sm text-paper hover:text-gold"
+            >
+              Meddelanden
+              {unreadCount > 0 && (
+                <span className="text-gold font-mono"> ({unreadCount})</span>
               )}
             </Link>
           )}

@@ -199,7 +199,8 @@ export default function MatchList() {
             )}
             {state === "none" && (
               <p className="text-xs text-mute mt-3">
-                De som har kortet har inte fyllt i någon kontaktväg än.
+                Ingen matchning kvar just nu — kortet verkar inte längre
+                finnas tillgängligt.
               </p>
             )}
             {Array.isArray(state) && (
@@ -234,6 +235,12 @@ export default function MatchList() {
                       )}
                       {c.contactMessenger && <div>Messenger: {c.contactMessenger}</div>}
                       {c.contactOther && <div>{c.contactOther}</div>}
+                      {!c.contactWhatsapp && !c.contactMessenger && !c.contactOther && (
+                        <div>
+                          Har inte fyllt i någon extern kontaktväg — skicka ett
+                          meddelande här på sidan istället:
+                        </div>
+                      )}
                     </div>
 
                     {sentIds.has(c.memberId) ? (
