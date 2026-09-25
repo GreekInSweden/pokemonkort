@@ -5,13 +5,19 @@ import { Variant } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-// Reveals contact details for members who have the given card/variant —
-// but only after re-checking, server-side, that the requester actually
-// has a matching "vill ha" entry for it. That stops someone from just
-// calling this for an arbitrary card to fish for other members' contact
-// info; it only ever works for a genuine match. Only members who filled
-// in at least one contact channel are returned — silence means they
-// haven't opted in to being reached yet.
+// Reveals members who have the given card/variant — but only after
+// re-checking, server-side, that the requester actually has a matching
+// "vill ha" entry for it. That stops someone from just calling this for
+// an arbitrary card to fish for other members' info; it only ever works
+// for a genuine match.
+//
+// Every genuine match is returned here, whether or not that member
+// filled in Messenger/WhatsApp/Other — the in-site "Skicka meddelande"
+// button (POST /api/member/messages) piggybacks on this same list and
+// works without any external contact info at all, so filtering here
+// would silently hide the in-site option too, not just the external
+// ones. (This used to filter out contact-less members entirely, which
+// was exactly that bug.)
 export async function POST(req: NextRequest) {
   const member = await getCurrentMember();
   if (!member) {
@@ -63,11 +69,7 @@ export async function POST(req: NextRequest) {
   const { data: haves } = await havesQuery;
 
   const contacts = (haves ?? [])
-    .filter(
-      (h: any) =>
-        h.members &&
-        (h.members.contact_messenger || h.members.contact_whatsapp || h.members.contact_other)
-    )
+    .filter((h: any) => h.members)
     .map((h: any) => ({
       memberId: h.member_id,
       memberNumber: h.members.member_number,
