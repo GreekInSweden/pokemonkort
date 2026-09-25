@@ -47,6 +47,58 @@ function ProgressBar({ label, progress }: { label: string; progress: Progress })
   );
 }
 
+function ParallelGuideRow({
+  tier,
+  imageUrl,
+  uploading,
+  onUpload,
+}: {
+  tier: ParallelTier;
+  imageUrl: string | null;
+  uploading: boolean;
+  onUpload: (file: File) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 text-xs text-paper py-1 border-b border-line/50">
+      <div className="flex items-center gap-2 min-w-0">
+        <label className="shrink-0 cursor-pointer group relative">
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={tier.name}
+              className="w-8 h-11 object-cover rounded-sm border border-line"
+            />
+          ) : (
+            <div className="w-8 h-11 rounded-sm border border-dashed border-line flex items-center justify-center text-mute text-sm">
+              +
+            </div>
+          )}
+          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-sm">
+            <span className="text-[8px] text-paper text-center leading-tight px-0.5">
+              {uploading ? "…" : imageUrl ? "Byt" : "Lägg till"}
+            </span>
+          </div>
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            disabled={uploading}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) onUpload(file);
+              e.target.value = "";
+            }}
+          />
+        </label>
+        <span className="truncate">{tier.name}</span>
+      </div>
+      <span className="font-mono text-mute shrink-0">
+        {tier.print_run ? `/${tier.print_run}` : "onumrerad"}
+      </span>
+    </div>
+  );
+}
+
 export default function MasterSetChecklist({
   setName,
   cards,
@@ -79,6 +131,52 @@ export default function MasterSetChecklist({
   const [selectedParallel, setSelectedParallel] = useState<Record<string, string>>({});
   const [parallelPending, setParallelPending] = useState<string | null>(null);
   const [showParallelGuide, setShowParallelGuide] = useState(false);
+
+  // Ett exempelfoto per parallel (inte per kort — samma foliefärg ser
+  // likadan ut oavsett spelare), så man faktiskt kan se nyansen istället
+  // för att bara läsa namnet. Nyckel: parallel_tier_id.
+  const [tierImages, setTierImages] = useState<Record<string, string | null>>(() => {
+    const map: Record<string, string | null> = {};
+    for (const t of parallelTiers) map[t.id] = t.image_url;
+    return map;
+  });
+  const [uploadingTierId, setUploadingTierId] = useState<string | null>(null);
+
+  async function handleTierImageUpload(tierId: string, file: File) {
+    setError(null);
+    setUploadingTierId(tierId);
+    const supabase = createBrowserSupabase();
+
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `parallel-${tierId}.${ext}`;
+
+    const { error: uploadErr } = await supabase.storage
+      .from("card-images")
+      .upload(path, file, { upsert: true, cacheControl: "3600" });
+
+    if (uploadErr) {
+      setUploadingTierId(null);
+      setError(`Kunde inte ladda upp bilden: ${uploadErr.message}`);
+      return;
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from("card-images")
+      .getPublicUrl(path);
+    const freshUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
+
+    const { error: updateErr } = await supabase
+      .from("parallel_tiers")
+      .update({ image_url: freshUrl })
+      .eq("id", tierId);
+
+    setUploadingTierId(null);
+    if (updateErr) {
+      setError(`Bilden laddades upp men kunde inte sparas: ${updateErr.message}`);
+      return;
+    }
+    setTierImages((prev) => ({ ...prev, [tierId]: freshUrl }));
+  }
 
   // Cards were seeded before reverse holo tracking existed, or an admin
   // simply never checked "reverse holo" when uploading — so many cards
@@ -140,7 +238,7 @@ export default function MasterSetChecklist({
     const supabase = createBrowserSupabase();
     const { error: insErr } = await supabase
       .from("card_variants")
-      .insert({ card_id: cardId, variant: "reverse_holo", price_sek: 0, stock: 0 });
+      .insert({ card_id: cardId, variant: "reverse_holo", price_sek: 4, stock: 0 });
     setAddingReverseHolo(null);
     if (insErr) {
       // Redan tillagd (t.ex. i en annan flik) räknas inte som ett fel.
@@ -271,27 +369,38 @@ export default function MasterSetChecklist({
                 som finns totalt av just den färgen — lägre siffra betyder
                 mer sällsynt. Onumrerade rader nedan finns i en okänd,
                 större upplaga. "Hobby" och "Retail" är bara vilken sorts
-                paket kortet kommer från.
+                paket kortet kommer från. Klicka på en ruta för att ladda
+                upp ett foto av ett riktigt kort i den färgen — det räcker
+                med ett kort per färg, oavsett spelare, så listan fylls på
+                allt eftersom ni stöter på dem.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
-                {(["hobby", "retail"] as const).map((ch) => {
-                  const tiers = parallelTiers.filter((t) => (t.channel ?? null) === ch);
-                  if (tiers.length === 0) return null;
+                {/* Grupperat dynamiskt på vad som faktiskt finns i
+                    channel-kolumnen, istället för en hårdkodad
+                    hobby/retail-lista -- olika säsonger/set har olika
+                    kanaler (t.ex. PL 2025/26 har en tredje "display-box"-
+                    kanal utöver hobby/retail), och en hårdkodad lista
+                    tappade tyst bort allt som inte var exakt "hobby"
+                    eller "retail". "Övrigt" är reserverat för null. */}
+                {Array.from(
+                  new Set(parallelTiers.filter((t) => t.channel).map((t) => t.channel as string))
+                ).map((ch) => {
+                  const tiers = parallelTiers.filter((t) => t.channel === ch);
+                  const chLabel =
+                    ch === "hobby" ? "Hobby" : ch === "retail" ? "Retail" : ch === "display-box" ? "Display Box" : ch;
                   return (
                     <div key={ch} className="mb-2">
                       <div className="text-[10px] uppercase tracking-wide text-mute mb-1">
-                        {ch === "hobby" ? "Hobby" : "Retail"}
+                        {chLabel}
                       </div>
                       {tiers.map((t) => (
-                        <div
+                        <ParallelGuideRow
                           key={t.id}
-                          className="flex items-center justify-between text-xs text-paper py-0.5 border-b border-line/50"
-                        >
-                          <span>{t.name}</span>
-                          <span className="font-mono text-mute shrink-0 ml-2">
-                            {t.print_run ? `/${t.print_run}` : "onumrerad"}
-                          </span>
-                        </div>
+                          tier={t}
+                          imageUrl={tierImages[t.id] ?? null}
+                          uploading={uploadingTierId === t.id}
+                          onUpload={(file) => handleTierImageUpload(t.id, file)}
+                        />
                       ))}
                     </div>
                   );
@@ -304,15 +413,13 @@ export default function MasterSetChecklist({
                     {parallelTiers
                       .filter((t) => !t.channel)
                       .map((t) => (
-                        <div
+                        <ParallelGuideRow
                           key={t.id}
-                          className="flex items-center justify-between text-xs text-paper py-0.5 border-b border-line/50"
-                        >
-                          <span>{t.name}</span>
-                          <span className="font-mono text-mute shrink-0 ml-2">
-                            {t.print_run ? `/${t.print_run}` : "onumrerad"}
-                          </span>
-                        </div>
+                          tier={t}
+                          imageUrl={tierImages[t.id] ?? null}
+                          uploading={uploadingTierId === t.id}
+                          onUpload={(file) => handleTierImageUpload(t.id, file)}
+                        />
                       ))}
                   </div>
                 )}

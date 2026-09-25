@@ -47,6 +47,7 @@ export interface ParallelTier {
   channel: string | null;
   print_run: number | null;
   sort_order: number;
+  image_url: string | null;
 }
 
 export interface CardVariantRow {

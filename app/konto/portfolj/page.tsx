@@ -80,7 +80,7 @@ export default async function PortfolioPage({
     // PortfolioChecklist ingen parallel-väljare alls.
     const { data: tiersData } = await supabase
       .from("parallel_tiers")
-      .select("id, set_id, name, channel, print_run, sort_order")
+      .select("id, set_id, name, channel, print_run, sort_order, image_url")
       .eq("set_id", selectedSet.id)
       .order("sort_order");
     parallelTiers = (tiersData as ParallelTier[]) ?? [];
