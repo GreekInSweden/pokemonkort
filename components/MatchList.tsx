@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Variant } from "@/lib/types";
 import { variantLabel } from "@/lib/variant";
+import MessageImagePicker from "@/components/MessageImagePicker";
 
 interface Match {
   cardId: string;
@@ -28,6 +29,13 @@ interface Contact {
   contactOther: string | null;
 }
 
+// wa.me vill ha ett rent internationellt nummer utan mellanslag/plus/
+// bindestreck -- annars öppnas WhatsApp men chatten hittas inte.
+function waMeHref(rawNumber: string, prefill: string): string {
+  const digits = rawNumber.replace(/[^0-9]/g, "");
+  return `https://wa.me/${digits}?text=${encodeURIComponent(prefill)}`;
+}
+
 export default function MatchList() {
   const [matches, setMatches] = useState<Match[] | null>(null);
   const [revealed, setRevealed] = useState<Record<string, Contact[] | "loading" | "none">>({});
@@ -35,6 +43,49 @@ export default function MatchList() {
   const [reportReason, setReportReason] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportedIds, setReportedIds] = useState<Set<string>>(new Set());
+  const [messagingMemberId, setMessagingMemberId] = useState<string | null>(null);
+  const [messageText, setMessageText] = useState("");
+  const [messageImages, setMessageImages] = useState<{ front: string | null; back: string | null }>({
+    front: null,
+    back: null,
+  });
+  const [messageSubmitting, setMessageSubmitting] = useState(false);
+  const [sentIds, setSentIds] = useState<Set<string>>(new Set());
+  const [messageError, setMessageError] = useState<string | null>(null);
+
+  async function submitMessage(m: Match, memberId: string) {
+    if (!messageText.trim()) return;
+    setMessageSubmitting(true);
+    setMessageError(null);
+    try {
+      const res = await fetch("/api/member/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          toMemberId: memberId,
+          cardId: m.cardId,
+          variant: m.variant,
+          parallelTierId: m.parallelTierId,
+          body: messageText,
+          frontImageUrl: messageImages.front,
+          backImageUrl: messageImages.back,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setSentIds((s) => new Set(s).add(memberId));
+        setMessagingMemberId(null);
+        setMessageText("");
+        setMessageImages({ front: null, back: null });
+      } else {
+        setMessageError(data.error ?? "Kunde inte skicka meddelandet.");
+      }
+    } catch {
+      setMessageError("Kunde inte skicka meddelandet.");
+    } finally {
+      setMessageSubmitting(false);
+    }
+  }
 
   async function submitReport(memberId: string) {
     if (!reportReason.trim()) return;
@@ -164,10 +215,74 @@ export default function MatchList() {
                         .join(" / ")}
                     </span>
                     <div className="text-mute text-xs mt-0.5 space-y-0.5">
+                      {c.contactWhatsapp && (
+                        <div>
+                          <a
+                            href={waMeHref(
+                              c.contactWhatsapp,
+                              `Hej! Jag såg att du har ${m.cardName} (${
+                                m.parallelTierName ?? variantLabel[m.variant]
+                              }) i Kortlagret.`
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="focus-ring text-gold hover:underline"
+                          >
+                            Öppna WhatsApp →
+                          </a>
+                        </div>
+                      )}
                       {c.contactMessenger && <div>Messenger: {c.contactMessenger}</div>}
-                      {c.contactWhatsapp && <div>WhatsApp: {c.contactWhatsapp}</div>}
                       {c.contactOther && <div>{c.contactOther}</div>}
                     </div>
+
+                    {sentIds.has(c.memberId) ? (
+                      <p className="text-xs text-gold mt-1">Meddelande skickat ✓</p>
+                    ) : messagingMemberId === c.memberId ? (
+                      <div className="mt-2 flex flex-col gap-1.5 max-w-sm">
+                        <textarea
+                          value={messageText}
+                          onChange={(e) => setMessageText(e.target.value)}
+                          placeholder="Skriv ett meddelande (t.ex. 'Hej, är det här kortet fortfarande kvar?')…"
+                          rows={2}
+                          className="focus-ring text-xs bg-ink border border-line rounded-sm px-2 py-1.5 text-paper placeholder:text-mute"
+                        />
+                        <MessageImagePicker onChange={setMessageImages} />
+                        {messageError && <p className="text-xs text-red-400">{messageError}</p>}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => submitMessage(m, c.memberId)}
+                            disabled={messageSubmitting || !messageText.trim()}
+                            className="focus-ring text-xs rounded-sm bg-gold text-ink font-semibold px-2 py-1 disabled:opacity-50"
+                          >
+                            {messageSubmitting ? "Skickar…" : "Skicka"}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setMessagingMemberId(null);
+                              setMessageText("");
+                              setMessageImages({ front: null, back: null });
+                              setMessageError(null);
+                            }}
+                            className="focus-ring text-xs rounded-sm border border-line px-2 py-1 text-mute hover:text-paper"
+                          >
+                            Avbryt
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setMessagingMemberId(c.memberId);
+                          setMessageText("");
+                          setMessageImages({ front: null, back: null });
+                          setMessageError(null);
+                        }}
+                        className="focus-ring text-xs text-mute hover:text-gold mt-1 mr-3"
+                      >
+                        Skicka meddelande i Kortlagret
+                      </button>
+                    )}
 
                     {reportedIds.has(c.memberId) ? (
                       <p className="text-xs text-mute mt-1">Anmäld — tack, vi kollar på det.</p>
