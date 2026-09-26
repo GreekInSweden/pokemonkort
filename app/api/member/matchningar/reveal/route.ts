@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getCurrentMember } from "@/lib/currentMember";
 import { Variant } from "@/lib/types";
+import { memberLabel } from "@/lib/memberLabel";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest) {
   let havesQuery = supabaseAdmin
     .from("member_cards")
     .select(
-      "member_id, quantity, sellable, tradeable, members(member_number, name, contact_messenger, contact_whatsapp, contact_other)"
+      "member_id, quantity, sellable, tradeable, members(member_number, username, contact_messenger, contact_whatsapp, contact_other)"
     )
     .eq("card_id", cardId)
     .eq("variant", variant)
@@ -68,12 +69,14 @@ export async function POST(req: NextRequest) {
     : havesQuery.is("parallel_tier_id", null);
   const { data: haves } = await havesQuery;
 
+  // Bara användarnamnet visas för andra medlemmar -- aldrig riktiga namnet
+  // eller medlemsnumret (samma sekretesslinje som memberLabel() redan
+  // driver på headern/auktionerna).
   const contacts = (haves ?? [])
     .filter((h: any) => h.members)
     .map((h: any) => ({
       memberId: h.member_id,
-      memberNumber: h.members.member_number,
-      name: h.members.name,
+      label: memberLabel(h.members.member_number, h.members.username),
       sellable: h.sellable,
       tradeable: h.tradeable,
       contactMessenger: h.members.contact_messenger,

@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getCurrentMember } from "@/lib/currentMember";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { Variant } from "@/lib/types";
+import { memberLabel } from "@/lib/memberLabel";
 
 export const dynamic = "force-dynamic";
 
@@ -18,8 +19,8 @@ export async function GET() {
     .from("member_messages")
     .select(
       "id, from_member_id, to_member_id, card_id, variant, parallel_tier_id, body, front_image_url, back_image_url, created_at, read_at, " +
-        "from_member:members!member_messages_from_member_id_fkey(member_number, name), " +
-        "to_member:members!member_messages_to_member_id_fkey(member_number, name), " +
+        "from_member:members!member_messages_from_member_id_fkey(member_number, username), " +
+        "to_member:members!member_messages_to_member_id_fkey(member_number, username), " +
         "cards(number, name, image_url), parallel_tiers(name)"
     )
     .or(`from_member_id.eq.${member.id},to_member_id.eq.${member.id}`)
@@ -47,9 +48,10 @@ export async function GET() {
     fromMemberId: m.from_member_id,
     toMemberId: m.to_member_id,
     outgoing: m.from_member_id === member.id,
-    otherMemberNumber:
-      m.from_member_id === member.id ? m.to_member?.member_number : m.from_member?.member_number,
-    otherMemberName: m.from_member_id === member.id ? m.to_member?.name : m.from_member?.name,
+    otherMemberLabel: (() => {
+      const other = m.from_member_id === member.id ? m.to_member : m.from_member;
+      return other ? memberLabel(other.member_number, other.username) : "Okänd medlem";
+    })(),
     cardId: m.card_id,
     cardNumber: m.cards?.number ?? null,
     cardName: m.cards?.name ?? null,
