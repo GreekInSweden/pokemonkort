@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentMember } from "@/lib/currentMember";
+import { LAGER_ENABLED } from "@/lib/siteConfig";
 
 export const dynamic = "force-dynamic";
 
@@ -34,10 +35,9 @@ function Hero() {
           Din portfölj, dina byten, dina fynd.
         </h1>
         <p className="text-mute text-lg mb-8 max-w-prose">
-          Kortlagret är stället för lösa Pokémon- och sportkort — köp
-          styckvis ur vårt lager, buda på de sällsynta korten, och bygg
-          din egen portfölj för att hitta andra medlemmar som säljer
-          eller byter precis det du letar efter.
+          {LAGER_ENABLED
+            ? "Kortlagret är stället för lösa Pokémon- och sportkort — köp styckvis ur vårt lager, buda på de sällsynta korten, och bygg din egen portfölj för att hitta andra medlemmar som säljer eller byter precis det du letar efter."
+            : "Kortlagret är stället för Pokémon- och sportkort — buda på de sällsynta korten, och bygg din egen portfölj för att hitta andra medlemmar som säljer eller byter precis det du letar efter."}
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <Link
@@ -63,11 +63,15 @@ function Hero() {
 
 function Features() {
   const items = [
-    {
-      accent: "text-gold",
-      title: "Vårt lager",
-      text: "Bläddra bland lösa Pokémon- och sportkort ur egen samling, sorterade set för set. Välj vilka du vill ha — vi packar och skickar.",
-    },
+    ...(LAGER_ENABLED
+      ? [
+          {
+            accent: "text-gold",
+            title: "Vårt lager",
+            text: "Bläddra bland lösa Pokémon- och sportkort ur egen samling, sorterade set för set. Välj vilka du vill ha — vi packar och skickar.",
+          },
+        ]
+      : []),
     {
       accent: "text-gold",
       title: "Auktioner",
