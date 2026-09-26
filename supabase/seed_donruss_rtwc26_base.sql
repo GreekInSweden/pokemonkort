@@ -1,0 +1,256 @@
+-- Seed data for Panini Donruss Road to FIFA World Cup 26 > Grundset,
+-- 200 cards.
+--
+-- Källa: Football Cartophilic Info Exchange (cartophilic-info-exch.blogspot.com),
+-- en tredjeparts-hobbyblogg som transkriberat Paninis egen checklista --
+-- INTE maskinläsbart hämtat, så räkna med enstaka fel/missade byten.
+-- Namnet innehåller landslaget inom parentes istället för klubblag,
+-- eftersom det här är en landslagsprodukt ("Road to FIFA World Cup 26")
+-- -- spelarna grupperas efter vilket land de representerar, INTE efter
+-- klubblag som i Topps Premier League/UCC. Källan använder landsnamnet
+-- "Cymru" för Wales och "Korea Republic" för Sydkorea -- behållet som i
+-- källan istället för försvenskat, för att undvika att gissa fel.
+--
+-- Rättat en uppenbar OCR-miss i källan: kort #67 stod som "Anthony rdon"
+-- (England) -- rättat till "Anthony Gordon", den enda spelare det rimligen
+-- kan vara (Newcastle/England, känd för att ha spelat i den truppen).
+--
+-- OBS: detta är INTE ett facit på vilka lag som faktiskt kvalificerat sig
+-- till VM 2026 -- produkten trycktes/säljs innan/under kvalspelet och
+-- inkluderar spelare från flera landslag som "tänkbara" kandidater.
+-- Stämmer av mot korten ni faktiskt har i handen innan ni litar helt på
+-- listan.
+--
+-- Insert-set som nämns i samma källa men INTE är utbyggda här ännu
+-- (bara namnen är kända, inga kortlistor hämtade): Animation, Craftsmen,
+-- Dominators, Elite Series, Kaboom, Magicians, Net Marvels, Night Moves,
+-- Pitch Kings, Rookie Kings, Zero Gravity, Kit Kings, Kit Series, Rated
+-- Rookies. Base-setets parallels (Bronze, Silver, Gold, Optic-varianter
+-- m.fl.) är inte heller inlagda ännu -- samma "grundset först"-mönster
+-- som redan använts för Topps PL/UCC.
+--
+-- Run this once in the Supabase SQL editor after schema.sql AND
+-- set_visibility.sql AND topps_rarity.sql AND sets_product_line.sql.
+-- ('base'/'insert' rarity-värdena i topps_rarity.sql används här också,
+-- trots att det är Panini och inte Topps -- samma kolumn, samma modell.)
+-- Stock defaults to 0 -- cards stay greyed out (and the set stays hidden)
+-- until you set real stock in /admin. Price defaults to a flat placeholder
+-- -- edit per card once you know actual values.
+-- Only a 'normal' variant is created (no holo) since these football
+-- cards don't use that concept.
+
+with s as (
+  insert into sets (category_slug, category_name, slug, name, is_visible, product_line)
+  values ('panini-donruss-rtwc26', 'Panini Donruss Road to FIFA World Cup 26', 'grundset-donruss-rtwc26', 'Grundset', false, 'sportkort')
+  returning id
+),
+inserted_cards as (
+  insert into cards (set_id, number, name, rarity)
+  select s.id, v.number, v.name, v.rarity
+  from s, (values
+  (1, 'Brennan Johnson (Cymru)', 'base'),
+  (2, 'Neco Williams (Cymru)', 'base'),
+  (3, 'Daniel James (Cymru)', 'base'),
+  (4, 'Harry Wilson (Cymru)', 'base'),
+  (5, 'Iliman Ndiaye (Senegal)', 'base'),
+  (6, 'Nicolas Jackson (Senegal)', 'base'),
+  (7, 'Sadio Mane (Senegal)', 'base'),
+  (8, 'David Raya (Spain)', 'base'),
+  (9, 'Dean Huijsen (Spain)', 'base'),
+  (10, 'Lamine Yamal (Spain)', 'base'),
+  (11, 'Pedri (Spain)', 'base'),
+  (12, 'Nico Williams (Spain)', 'base'),
+  (13, 'Dani Olmo (Spain)', 'base'),
+  (14, 'Martin Zubimendi (Spain)', 'base'),
+  (15, 'Mikel Oyarzabal (Spain)', 'base'),
+  (16, 'Pau Cubarsi (Spain)', 'base'),
+  (17, 'Fabian Ruiz (Spain)', 'base'),
+  (18, 'Alvaro Morata (Spain)', 'base'),
+  (19, 'Unai Simon (Spain)', 'base'),
+  (20, 'Yunus Musah (United States)', 'base'),
+  (21, 'Timothy Weah (United States)', 'base'),
+  (22, 'Tyler Adams (United States)', 'base'),
+  (23, 'Joe Scally (United States)', 'base'),
+  (24, 'Weston McKennie (United States)', 'base'),
+  (25, 'Christian Pulisic (United States)', 'base'),
+  (26, 'Diego Luna (United States)', 'base'),
+  (27, 'Malik Tillman (United States)', 'base'),
+  (28, 'Matt Freese (United States)', 'base'),
+  (29, 'Antonio Rudiger (Germany)', 'base'),
+  (30, 'Maximilian Beier (Germany)', 'base'),
+  (31, 'Karim Adeyemi (Germany)', 'base'),
+  (32, 'Oliver Baumann (Germany)', 'base'),
+  (33, 'Deniz Undav (Germany)', 'base'),
+  (34, 'Maximilian Mittelstadt (Germany)', 'base'),
+  (35, 'Niclas Fullkrug (Germany)', 'base'),
+  (36, 'Kai Havertz (Germany)', 'base'),
+  (37, 'Leroy Sane (Germany)', 'base'),
+  (38, 'Serge Gnabry (Germany)', 'base'),
+  (39, 'Joshua Kimmich (Germany)', 'base'),
+  (40, 'Jamal Musiala (Germany)', 'base'),
+  (41, 'Marc-Andre ter Stegen (Germany)', 'base'),
+  (42, 'Robert Andrich (Germany)', 'base'),
+  (43, 'Florian Wirtz (Germany)', 'base'),
+  (44, 'Jonathan Burkardt (Germany)', 'base'),
+  (45, 'Jamie Donley (Northern Ireland)', 'base'),
+  (46, 'Trai Hume (Northern Ireland)', 'base'),
+  (47, 'Callum Marshall (Northern Ireland)', 'base'),
+  (48, 'Maximiliano Araujo (Uruguay)', 'base'),
+  (49, 'Manuel Ugarte (Uruguay)', 'base'),
+  (50, 'Federico Valverde (Uruguay)', 'base'),
+  (51, 'Ronald Araujo (Uruguay)', 'base'),
+  (52, 'Darwin Nunez (Uruguay)', 'base'),
+  (53, 'Facundo Pellistri (Uruguay)', 'base'),
+  (54, 'Dusan Vlahovic (Serbia)', 'base'),
+  (55, 'Lazar Samardzic (Serbia)', 'base'),
+  (56, 'Nikola Milenkovic (Serbia)', 'base'),
+  (57, 'Josko Gvardiol (Croatia)', 'base'),
+  (58, 'Ivan Perisic (Croatia)', 'base'),
+  (59, 'Mateo Kovacic (Croatia)', 'base'),
+  (60, 'Josip Stanisic (Croatia)', 'base'),
+  (61, 'Luka Modric (Croatia)', 'base'),
+  (62, 'Harry Kane (England)', 'base'),
+  (63, 'Jude Bellingham (England)', 'base'),
+  (64, 'Jordan Pickford (England)', 'base'),
+  (65, 'Bukayo Saka (England)', 'base'),
+  (66, 'Declan Rice (England)', 'base'),
+  (67, 'Anthony Gordon (England)', 'base'),
+  (68, 'Eberechi Eze (England)', 'base'),
+  (69, 'Phil Foden (England)', 'base'),
+  (70, 'Cole Palmer (England)', 'base'),
+  (71, 'Trent Alexander-Arnold (England)', 'base'),
+  (72, 'Myles Lewis-Skelly (England)', 'base'),
+  (73, 'Jarrod Bowen (England)', 'base'),
+  (74, 'Raul Jimenez (Mexico)', 'base'),
+  (75, 'Santiago Gimenez (Mexico)', 'base'),
+  (76, 'Edson Alvarez (Mexico)', 'base'),
+  (77, 'Cesar Huerta (Mexico)', 'base'),
+  (78, 'Luis Romo (Mexico)', 'base'),
+  (79, 'Johan Vasquez (Mexico)', 'base'),
+  (80, 'Hugo Larsson (Sweden)', 'base'),
+  (81, 'Alexander Isak (Sweden)', 'base'),
+  (82, 'Viktor Gyokeres (Sweden)', 'base'),
+  (83, 'Dejan Kulusevski (Sweden)', 'base'),
+  (84, 'Rafael Leao (Portugal)', 'base'),
+  (85, 'Bernardo Silva (Portugal)', 'base'),
+  (86, 'Joao Neves (Portugal)', 'base'),
+  (87, 'Diogo Costa (Portugal)', 'base'),
+  (88, 'Francisco Conceicao (Portugal)', 'base'),
+  (89, 'Vitinha (Portugal)', 'base'),
+  (90, 'Bruno Fernandes (Portugal)', 'base'),
+  (91, 'Cristiano Ronaldo (Portugal)', 'base'),
+  (92, 'Nuno Mendes (Portugal)', 'base'),
+  (93, 'Ruben Dias (Portugal)', 'base'),
+  (94, 'Pedro Neto (Portugal)', 'base'),
+  (95, 'Goncalo Ramos (Portugal)', 'base'),
+  (96, 'Brahim Diaz (Morocco)', 'base'),
+  (97, 'Bilal El Khannouss (Morocco)', 'base'),
+  (98, 'Eliesse Ben Seghir (Morocco)', 'base'),
+  (99, 'Achraf Hakimi (Morocco)', 'base'),
+  (100, 'Youssef En-Nesyri (Morocco)', 'base'),
+  (101, 'Abde Ezzalzouli (Morocco)', 'base'),
+  (102, 'Heung-Min Son (Korea Republic)', 'base'),
+  (103, 'Hee-chan Hwang (Korea Republic)', 'base'),
+  (104, 'Kang-in Lee (Korea Republic)', 'base'),
+  (105, 'Min-Hyuk Yang (Korea Republic)', 'base'),
+  (106, 'Edrick Menjivar (Honduras)', 'base'),
+  (107, 'Joseph Rosales (Honduras)', 'base'),
+  (108, 'Romell Quioto (Honduras)', 'base'),
+  (109, 'Kervin Arriaga (Honduras)', 'base'),
+  (110, 'Sandro Tonali (Italy)', 'base'),
+  (111, 'Moise Kean (Italy)', 'base'),
+  (112, 'Gianluigi Donnarumma (Italy)', 'base'),
+  (113, 'Davide Frattesi (Italy)', 'base'),
+  (114, 'Nicolo Barella (Italy)', 'base'),
+  (115, 'Mateo Retegui (Italy)', 'base'),
+  (116, 'Riccardo Calafiori (Italy)', 'base'),
+  (117, 'Giovanni Di Lorenzo (Italy)', 'base'),
+  (118, 'Giacomo Raspadori (Italy)', 'base'),
+  (119, 'Alessandro Bastoni (Italy)', 'base'),
+  (120, 'Samuele Ricci (Italy)', 'base'),
+  (121, 'Destiny Udogie (Italy)', 'base'),
+  (122, 'Luis Suarez (COL) (Colombia)', 'base'),
+  (123, 'James Rodriguez (Colombia)', 'base'),
+  (124, 'Jhon Arias (Colombia)', 'base'),
+  (125, 'Luis Diaz (Colombia)', 'base'),
+  (126, 'Richard Rios (Colombia)', 'base'),
+  (127, 'Mohammed Kudus (Ghana)', 'base'),
+  (128, 'Jordan Ayew (Ghana)', 'base'),
+  (129, 'Ernest Nuamah (Ghana)', 'base'),
+  (130, 'Inaki Williams (Ghana)', 'base'),
+  (131, 'Antoine Semenyo (Ghana)', 'base'),
+  (132, 'Scott McTominay (Scotland)', 'base'),
+  (133, 'John McGinn (Scotland)', 'base'),
+  (134, 'Billy Gilmour (Scotland)', 'base'),
+  (135, 'Bradley Barcola (France)', 'base'),
+  (136, 'Manu Kone (France)', 'base'),
+  (137, 'Ousmane Dembele (France)', 'base'),
+  (138, 'Jules Kounde (France)', 'base'),
+  (139, 'Mike Maignan (France)', 'base'),
+  (140, 'Michael Olise (France)', 'base'),
+  (141, 'Eduardo Camavinga (France)', 'base'),
+  (142, 'William Saliba (France)', 'base'),
+  (143, 'Desire Doue (France)', 'base'),
+  (144, 'Matteo Guendouzi (France)', 'base'),
+  (145, 'Kylian Mbappe (France)', 'base'),
+  (146, 'Randal Kolo Muani (France)', 'base'),
+  (147, 'Theo Hernandez (France)', 'base'),
+  (148, 'Marcus Thuram (France)', 'base'),
+  (149, 'Warren Zaire-Emery (France)', 'base'),
+  (150, 'Aurelien Tchouameni (France)', 'base'),
+  (151, 'Ramon Sosa (Paraguay)', 'base'),
+  (152, 'Julio Enciso (Paraguay)', 'base'),
+  (153, 'Diego Gomez (Paraguay)', 'base'),
+  (154, 'Lionel Messi (Argentina)', 'base'),
+  (155, 'Thiago Almada (Argentina)', 'base'),
+  (156, 'Alexis Mac Allister (Argentina)', 'base'),
+  (157, 'Julian Alvarez (Argentina)', 'base'),
+  (158, 'Enzo Fernandez (Argentina)', 'base'),
+  (159, 'Nico Gonzalez (Argentina)', 'base'),
+  (160, 'Emiliano Martinez (Argentina)', 'base'),
+  (161, 'Rodrigo de Paul (Argentina)', 'base'),
+  (162, 'Cristian Romero (Argentina)', 'base'),
+  (163, 'Lautaro Martinez (Argentina)', 'base'),
+  (164, 'Nico Paz (Argentina)', 'base'),
+  (165, 'Giuliano (Argentina)', 'base'),
+  (166, 'Martin Odegaard (Norway)', 'base'),
+  (167, 'Andreas Schjelderup (Norway)', 'base'),
+  (168, 'Antonio Nusa (Norway)', 'base'),
+  (169, 'Alexander Sorloth (Norway)', 'base'),
+  (170, 'Erling Haaland (Norway)', 'base'),
+  (171, 'Sander Berge (Norway)', 'base'),
+  (172, 'Caoimhin Kelleher (Republic of Ireland)', 'base'),
+  (173, 'Nathan Collins (Republic of Ireland)', 'base'),
+  (174, 'Evan Ferguson (Republic of Ireland)', 'base'),
+  (175, 'Gregor Kobel (Switzerland)', 'base'),
+  (176, 'Manuel Akanji (Switzerland)', 'base'),
+  (177, 'Granit Xhaka (Switzerland)', 'base'),
+  (178, 'Breel Embolo (Switzerland)', 'base'),
+  (179, 'Vini Jr. (Brazil)', 'base'),
+  (180, 'Gabriel (Brazil)', 'base'),
+  (181, 'Bruno Guimaraes (Brazil)', 'base'),
+  (182, 'Matheus Cunha (Brazil)', 'base'),
+  (183, 'Rodrygo (Brazil)', 'base'),
+  (184, 'Gabriel Martinelli (Brazil)', 'base'),
+  (185, 'Alisson Becker (Brazil)', 'base'),
+  (186, 'Savinho (Brazil)', 'base'),
+  (187, 'Vanderson (Brazil)', 'base'),
+  (188, 'Endrick (Brazil)', 'base'),
+  (189, 'Calvin Bassey (Nigeria)', 'base'),
+  (190, 'Victor Osimhen (Nigeria)', 'base'),
+  (191, 'Ademola Lookman (Nigeria)', 'base'),
+  (192, 'Victor Boniface (Nigeria)', 'base'),
+  (193, 'Alex Iwobi (Nigeria)', 'base'),
+  (194, 'Samuel Chukwueze (Nigeria)', 'base'),
+  (195, 'Piotr Zielinski (Poland)', 'base'),
+  (196, 'Jakub Kiwior (Poland)', 'base'),
+  (197, 'Robert Lewandowski (Poland)', 'base'),
+  (198, 'Kacper Urbanski (Poland)', 'base'),
+  (199, 'Sebastian Szymanski (Poland)', 'base'),
+  (200, 'Nicola Zalewski (Poland)', 'base')
+  ) as v(number, name, rarity)
+  returning id
+)
+insert into card_variants (card_id, variant, price_sek, stock)
+select ic.id, 'normal', 10, 0
+from inserted_cards ic;
