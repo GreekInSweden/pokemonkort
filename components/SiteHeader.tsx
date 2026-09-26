@@ -84,6 +84,12 @@ export default function SiteHeader() {
             bara studsar vidare till inloggningen. Mest eftertraktade är
             publik och visas alltid. */}
         <nav className="hidden md:flex items-center gap-4 flex-1">
+          <Link
+            href="/sa-funkar-det"
+            className="focus-ring text-sm text-paper hover:text-gold"
+          >
+            Så funkar det
+          </Link>
           {member && (
             <Link
               href="/konto/portfolj"
