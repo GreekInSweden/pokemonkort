@@ -45,6 +45,7 @@ export default function MessageInbox() {
   const [replySubmitting, setReplySubmitting] = useState(false);
   const [replyError, setReplyError] = useState<string | null>(null);
   const [sentReplyFor, setSentReplyFor] = useState<Set<string>>(new Set());
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   function load() {
     fetch("/api/member/messages")
@@ -89,6 +90,22 @@ export default function MessageInbox() {
       setReplyError("Kunde inte skicka svaret.");
     } finally {
       setReplySubmitting(false);
+    }
+  }
+
+  async function deleteMessage(id: string) {
+    setDeletingId(id);
+    try {
+      const res = await fetch("/api/member/messages", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) {
+        setMessages((prev) => (prev ?? []).filter((m) => m.id !== id));
+      }
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -139,9 +156,19 @@ export default function MessageInbox() {
                 </>
               )}
             </div>
-            <span className="text-[10px] text-mute font-mono shrink-0">
-              {formatWhen(m.createdAt)}
-            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[10px] text-mute font-mono">
+                {formatWhen(m.createdAt)}
+              </span>
+              <button
+                onClick={() => deleteMessage(m.id)}
+                disabled={deletingId === m.id}
+                title="Radera meddelandet (bara ur din egen brevlåda)"
+                className="focus-ring text-[11px] text-mute hover:text-red-400 disabled:opacity-50"
+              >
+                {deletingId === m.id ? "Raderar…" : "Radera"}
+              </button>
+            </div>
           </div>
           <p className="text-sm text-paper whitespace-pre-wrap">{m.body}</p>
           {(m.frontImageUrl || m.backImageUrl) && (
