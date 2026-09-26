@@ -46,6 +46,7 @@ export default function MessageInbox() {
   const [replyError, setReplyError] = useState<string | null>(null);
   const [sentReplyFor, setSentReplyFor] = useState<Set<string>>(new Set());
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   function load() {
     fetch("/api/member/messages")
@@ -93,7 +94,22 @@ export default function MessageInbox() {
     }
   }
 
+  // Optimistisk radering -- meddelandet försvinner ur listan direkt när
+  // man klickar, istället för att vänta på svar från servern (det
+  // väntandet är precis det som gjorde att det kändes som knappen inte
+  // reagerade och man klickade flera gånger). Misslyckas anropet mot
+  // förmodan läggs meddelandet tillbaka på samma plats igen.
   async function deleteMessage(id: string) {
+    setDeleteError(null);
+    let removedAt = -1;
+    let removedMessage: Message | null = null;
+    setMessages((prev) => {
+      const list = prev ?? [];
+      removedAt = list.findIndex((m) => m.id === id);
+      removedMessage = removedAt >= 0 ? list[removedAt] : null;
+      return list.filter((m) => m.id !== id);
+    });
+
     setDeletingId(id);
     try {
       const res = await fetch("/api/member/messages", {
@@ -101,9 +117,27 @@ export default function MessageInbox() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       });
-      if (res.ok) {
-        setMessages((prev) => (prev ?? []).filter((m) => m.id !== id));
+      if (!res.ok && removedMessage) {
+        const restore = removedMessage;
+        const atIndex = removedAt;
+        setMessages((prev) => {
+          const list = [...(prev ?? [])];
+          list.splice(Math.min(atIndex, list.length), 0, restore);
+          return list;
+        });
+        setDeleteError("Kunde inte radera meddelandet. Försök igen.");
       }
+    } catch {
+      if (removedMessage) {
+        const restore = removedMessage;
+        const atIndex = removedAt;
+        setMessages((prev) => {
+          const list = [...(prev ?? [])];
+          list.splice(Math.min(atIndex, list.length), 0, restore);
+          return list;
+        });
+      }
+      setDeleteError("Kunde inte radera meddelandet. Försök igen.");
     } finally {
       setDeletingId(null);
     }
@@ -132,6 +166,7 @@ export default function MessageInbox() {
         Det här är inte en chatt i realtid — meddelanden dyker upp nästa
         gång du eller den andra laddar om sidan, inte direkt.
       </p>
+      {deleteError && <p className="text-xs text-red-400">{deleteError}</p>}
       {messages.map((m) => (
         <div
           key={m.id}
@@ -162,11 +197,10 @@ export default function MessageInbox() {
               </span>
               <button
                 onClick={() => deleteMessage(m.id)}
-                disabled={deletingId === m.id}
                 title="Radera meddelandet (bara ur din egen brevlåda)"
-                className="focus-ring text-[11px] text-mute hover:text-red-400 disabled:opacity-50"
+                className="focus-ring text-[11px] text-mute hover:text-red-400"
               >
-                {deletingId === m.id ? "Raderar…" : "Radera"}
+                Radera
               </button>
             </div>
           </div>
