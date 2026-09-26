@@ -6,6 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useCart } from "@/lib/CartContext";
 import { Member } from "@/lib/types";
 import { memberLabel } from "@/lib/memberLabel";
+import { LAGER_ENABLED } from "@/lib/siteConfig";
 
 export default function SiteHeader() {
   const { itemCount, subtotalSek } = useCart();
@@ -66,7 +67,7 @@ export default function SiteHeader() {
     } finally {
       setLoggingOut(false);
       setMember(null);
-      router.push("/lager");
+      router.push(LAGER_ENABLED ? "/lager" : "/");
       router.refresh();
     }
   }
@@ -129,12 +130,14 @@ export default function SiteHeader() {
           >
             Auktioner
           </Link>
-          <Link
-            href="/lager"
-            className="focus-ring text-sm text-paper hover:text-gold"
-          >
-            Vårt lager
-          </Link>
+          {LAGER_ENABLED && (
+            <Link
+              href="/lager"
+              className="focus-ring text-sm text-paper hover:text-gold"
+            >
+              Vårt lager
+            </Link>
+          )}
           {member === undefined ? null : member ? (
             <>
               <Link
