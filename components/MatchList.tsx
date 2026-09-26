@@ -20,8 +20,7 @@ interface Match {
 
 interface Contact {
   memberId: string;
-  memberNumber: number;
-  name: string;
+  label: string;
   sellable: boolean;
   tradeable: boolean;
   contactMessenger: string | null;
@@ -207,9 +206,7 @@ export default function MatchList() {
               <div className="mt-3 space-y-2 border-t border-line pt-3">
                 {state.map((c, i) => (
                   <div key={i} className="text-sm">
-                    <span className="text-gold font-medium">
-                      Medlem #{c.memberNumber} ({c.name})
-                    </span>{" "}
+                    <span className="text-gold font-medium">{c.label}</span>{" "}
                     <span className="text-xs text-mute">
                       {[c.sellable ? "säljer" : null, c.tradeable ? "byter" : null]
                         .filter(Boolean)
@@ -243,95 +240,97 @@ export default function MatchList() {
                       )}
                     </div>
 
-                    {sentIds.has(c.memberId) ? (
-                      <p className="text-xs text-gold mt-1">Meddelande skickat ✓</p>
-                    ) : messagingMemberId === c.memberId ? (
-                      <div className="mt-2 flex flex-col gap-1.5 max-w-sm">
-                        <textarea
-                          value={messageText}
-                          onChange={(e) => setMessageText(e.target.value)}
-                          placeholder="Skriv ett meddelande (t.ex. 'Hej, är det här kortet fortfarande kvar?')…"
-                          rows={2}
-                          className="focus-ring text-xs bg-ink border border-line rounded-sm px-2 py-1.5 text-paper placeholder:text-mute"
-                        />
-                        <MessageImagePicker onChange={setMessageImages} />
-                        {messageError && <p className="text-xs text-red-400">{messageError}</p>}
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => submitMessage(m, c.memberId)}
-                            disabled={messageSubmitting || !messageText.trim()}
-                            className="focus-ring text-xs rounded-sm bg-gold text-ink font-semibold px-2 py-1 disabled:opacity-50"
-                          >
-                            {messageSubmitting ? "Skickar…" : "Skicka"}
-                          </button>
-                          <button
-                            onClick={() => {
-                              setMessagingMemberId(null);
-                              setMessageText("");
-                              setMessageImages({ front: null, back: null });
-                              setMessageError(null);
-                            }}
-                            className="focus-ring text-xs rounded-sm border border-line px-2 py-1 text-mute hover:text-paper"
-                          >
-                            Avbryt
-                          </button>
+                    <div className="mt-2 flex items-start justify-between gap-3 flex-wrap">
+                      {sentIds.has(c.memberId) ? (
+                        <p className="text-xs text-gold">Meddelande skickat ✓</p>
+                      ) : messagingMemberId === c.memberId ? (
+                        <div className="flex flex-col gap-1.5 max-w-sm w-full">
+                          <textarea
+                            value={messageText}
+                            onChange={(e) => setMessageText(e.target.value)}
+                            placeholder="Skriv ett meddelande (t.ex. 'Hej, är det här kortet fortfarande kvar?')…"
+                            rows={2}
+                            className="focus-ring text-xs bg-ink border border-line rounded-sm px-2 py-1.5 text-paper placeholder:text-mute"
+                          />
+                          <MessageImagePicker onChange={setMessageImages} />
+                          {messageError && <p className="text-xs text-red-400">{messageError}</p>}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => submitMessage(m, c.memberId)}
+                              disabled={messageSubmitting || !messageText.trim()}
+                              className="focus-ring text-xs rounded-sm bg-gold text-ink font-semibold px-2 py-1 disabled:opacity-50"
+                            >
+                              {messageSubmitting ? "Skickar…" : "Skicka"}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setMessagingMemberId(null);
+                                setMessageText("");
+                                setMessageImages({ front: null, back: null });
+                                setMessageError(null);
+                              }}
+                              className="focus-ring text-xs rounded-sm border border-line px-2 py-1 text-mute hover:text-paper"
+                            >
+                              Avbryt
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setMessagingMemberId(c.memberId);
-                          setMessageText("");
-                          setMessageImages({ front: null, back: null });
-                          setMessageError(null);
-                        }}
-                        className="focus-ring text-xs text-mute hover:text-gold mt-1 mr-3"
-                      >
-                        Skicka meddelande i Kortlagret
-                      </button>
-                    )}
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setMessagingMemberId(c.memberId);
+                            setMessageText("");
+                            setMessageImages({ front: null, back: null });
+                            setMessageError(null);
+                          }}
+                          className="focus-ring text-xs rounded-sm bg-gold text-ink font-semibold px-3 py-1.5"
+                        >
+                          Skicka meddelande i Kortlagret
+                        </button>
+                      )}
 
-                    {reportedIds.has(c.memberId) ? (
-                      <p className="text-xs text-mute mt-1">Anmäld — tack, vi kollar på det.</p>
-                    ) : reportingMemberId === c.memberId ? (
-                      <div className="mt-2 flex flex-col gap-1.5 max-w-sm">
-                        <textarea
-                          value={reportReason}
-                          onChange={(e) => setReportReason(e.target.value)}
-                          placeholder="Vad hände? (t.ex. svarar inte, verkar vara bluff, oschysst byte…)"
-                          rows={2}
-                          className="focus-ring text-xs bg-ink border border-line rounded-sm px-2 py-1.5 text-paper placeholder:text-mute"
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => submitReport(c.memberId)}
-                            disabled={reportSubmitting || !reportReason.trim()}
-                            className="focus-ring text-xs rounded-sm bg-red-400 text-ink font-semibold px-2 py-1 disabled:opacity-50"
-                          >
-                            {reportSubmitting ? "Skickar…" : "Skicka anmälan"}
-                          </button>
-                          <button
-                            onClick={() => {
-                              setReportingMemberId(null);
-                              setReportReason("");
-                            }}
-                            className="focus-ring text-xs rounded-sm border border-line px-2 py-1 text-mute hover:text-paper"
-                          >
-                            Avbryt
-                          </button>
+                      {reportedIds.has(c.memberId) ? (
+                        <p className="text-xs text-mute">Anmäld — tack, vi kollar på det.</p>
+                      ) : reportingMemberId === c.memberId ? (
+                        <div className="flex flex-col gap-1.5 max-w-sm w-full ml-auto">
+                          <textarea
+                            value={reportReason}
+                            onChange={(e) => setReportReason(e.target.value)}
+                            placeholder="Vad hände? (t.ex. svarar inte, verkar vara bluff, oschysst byte…)"
+                            rows={2}
+                            className="focus-ring text-xs bg-ink border border-line rounded-sm px-2 py-1.5 text-paper placeholder:text-mute"
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => submitReport(c.memberId)}
+                              disabled={reportSubmitting || !reportReason.trim()}
+                              className="focus-ring text-xs rounded-sm bg-red-400 text-ink font-semibold px-2 py-1 disabled:opacity-50"
+                            >
+                              {reportSubmitting ? "Skickar…" : "Skicka anmälan"}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setReportingMemberId(null);
+                                setReportReason("");
+                              }}
+                              className="focus-ring text-xs rounded-sm border border-line px-2 py-1 text-mute hover:text-paper"
+                            >
+                              Avbryt
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setReportingMemberId(c.memberId);
-                          setReportReason("");
-                        }}
-                        className="focus-ring text-xs text-mute hover:text-red-400 mt-1"
-                      >
-                        Anmäl medlem
-                      </button>
-                    )}
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setReportingMemberId(c.memberId);
+                            setReportReason("");
+                          }}
+                          className="focus-ring text-[11px] text-mute hover:text-red-400 ml-auto shrink-0"
+                        >
+                          Anmäl medlem
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

@@ -10,8 +10,7 @@ interface Message {
   fromMemberId: string;
   toMemberId: string;
   outgoing: boolean;
-  otherMemberNumber: number | null;
-  otherMemberName: string | null;
+  otherMemberLabel: string;
   cardId: string | null;
   cardNumber: number | null;
   cardName: string | null;
@@ -126,9 +125,7 @@ export default function MessageInbox() {
           <div className="flex items-center justify-between gap-3 flex-wrap mb-1.5">
             <div className="text-xs text-mute">
               {m.outgoing ? "Till" : "Från"}{" "}
-              <span className="text-paper">
-                {m.otherMemberName ? `${m.otherMemberName} (#${m.otherMemberNumber})` : "Okänd medlem"}
-              </span>
+              <span className="text-paper">{m.otherMemberLabel}</span>
               {m.cardName && (
                 <>
                   {" "}
