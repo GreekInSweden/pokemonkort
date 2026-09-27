@@ -80,9 +80,32 @@ export default function PortfolioChecklist({
   );
   const [pending, setPending] = useState<Set<EntryKey>>(new Set());
   const [query, setQuery] = useState("");
+  const [error, setError] = useState<string | null>(null);
   // Vilken parallel som just nu är vald per kort+variant, innan man
   // klickar Har/Vill ha — "" = standardkortet, ingen parallel.
-  const [selectedParallel, setSelectedParallel] = useState<Map<string, string>>(new Map());
+  //
+  // VIKTIGT: måste initieras från initialEntries, inte bara tom Map().
+  // Annars visar rullgardinen "Standard" igen efter en omladdning även
+  // för ett kort som faktiskt sparats med en specifik parallel — då
+  // pekar Har/Vill ha-knapparna på fel rad (parallelTierId=""), och ett
+  // klick för att "ta bort" en sådan post skapar av misstag en NY,
+  // separat standard-rad istället för att ta bort den riktiga (som blir
+  // osynlig och kvarstår i databasen, t.ex. fortsätter synas på Mest
+  // eftertraktade trots att kortet ser avbockat ut här).
+  const [selectedParallel, setSelectedParallel] = useState<Map<string, string>>(() => {
+    const map = new Map<string, string>();
+    for (const e of initialEntries) {
+      if (!e.parallel_tier_id) continue;
+      const pk = `${e.card_id}:${e.variant}`;
+      // "want" vinner över "have" om kortet av någon anledning har olika
+      // parallel på de två (ovanligt, men dropdownen kan bara visa en
+      // åt gången) -- det är oftast "vill ha"-sidan man aktivt jobbar med.
+      if (e.status === "want" || !map.has(pk)) {
+        map.set(pk, e.parallel_tier_id);
+      }
+    }
+    return map;
+  });
 
   const filteredCards = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -101,50 +124,70 @@ export default function PortfolioChecklist({
     const k = key(cardId, variant, parallelTierId, status);
     const isActive = entries.has(k);
     setPending((p) => new Set(p).add(k));
+    setError(null);
 
-    if (isActive) {
-      await fetch("/api/member/portfolio", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          cardId,
-          variant,
-          status,
-          parallelTierId: parallelTierId || null,
-        }),
-      });
-      setEntries((e) => {
-        const next = new Set(e);
-        next.delete(k);
-        return next;
-      });
-      if (status === "have") {
-        setIntents((m) => {
-          const next = new Map(m);
-          next.delete(intentKey(cardId, variant, parallelTierId));
+    let ok = false;
+    try {
+      const res = isActive
+        ? await fetch("/api/member/portfolio", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              cardId,
+              variant,
+              status,
+              parallelTierId: parallelTierId || null,
+            }),
+          })
+        : await fetch("/api/member/portfolio", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              cardId,
+              variant,
+              status,
+              parallelTierId: parallelTierId || null,
+            }),
+          });
+      ok = res.ok;
+    } catch {
+      ok = false;
+    }
+
+    // Uppdatera bara den lokala vyn om servern faktiskt lyckades --
+    // annars ser det ut som att det gick bra fast raden ligger kvar
+    // (eller aldrig skapades) i databasen.
+    if (ok) {
+      if (isActive) {
+        setEntries((e) => {
+          const next = new Set(e);
+          next.delete(k);
           return next;
         });
+        if (status === "have") {
+          setIntents((m) => {
+            const next = new Map(m);
+            next.delete(intentKey(cardId, variant, parallelTierId));
+            return next;
+          });
+        }
+      } else {
+        setEntries((e) => new Set(e).add(k));
+        if (status === "have") {
+          setIntents((m) =>
+            new Map(m).set(intentKey(cardId, variant, parallelTierId), {
+              sellable: false,
+              tradeable: false,
+            })
+          );
+        }
       }
     } else {
-      await fetch("/api/member/portfolio", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          cardId,
-          variant,
-          status,
-          parallelTierId: parallelTierId || null,
-        }),
-      });
-      setEntries((e) => new Set(e).add(k));
-      if (status === "have") {
-        setIntents((m) =>
-          new Map(m).set(intentKey(cardId, variant, parallelTierId), {
-            sellable: false,
-            tradeable: false,
-          })
-        );
-      }
+      setError(
+        isActive
+          ? "Kunde inte ta bort kortet -- försök igen."
+          : "Kunde inte spara kortet -- försök igen."
+      );
     }
 
     setPending((p) => {
@@ -163,18 +206,27 @@ export default function PortfolioChecklist({
     const ik = intentKey(cardId, variant, parallelTierId);
     const current = intents.get(ik) ?? { sellable: false, tradeable: false };
     const next = { ...current, [field]: !current[field] };
+    setError(null);
     setIntents((m) => new Map(m).set(ik, next));
-    await fetch("/api/member/portfolio", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        cardId,
-        variant,
-        status: "have",
-        parallelTierId: parallelTierId || null,
-        ...next,
-      }),
-    });
+    try {
+      const res = await fetch("/api/member/portfolio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cardId,
+          variant,
+          status: "have",
+          parallelTierId: parallelTierId || null,
+          ...next,
+        }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      // Servern misslyckades -- backa den optimistiska ändringen så
+      // knappen inte visar ett läge som aldrig sparades.
+      setIntents((m) => new Map(m).set(ik, current));
+      setError("Kunde inte spara ändringen -- försök igen.");
+    }
   }
 
   return (
@@ -192,6 +244,8 @@ export default function PortfolioChecklist({
         Sälja/Byta = öppen för det nu. Annars är kortet bara med i din
         egen översikt.
       </p>
+
+      {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
 
       <input
         type="text"
