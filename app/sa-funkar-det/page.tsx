@@ -33,7 +33,7 @@ const steps = [
   {
     number: 4,
     title: "Byt eller sälj er emellan",
-    text: "Kom överens om pris eller byte direkt med den andra medlemmen. Kortlagret är mötesplatsen -- själva affären gör ni upp om sinsemellan.",
+    text: "Kom överens om pris eller byte direkt med den andra medlemmen. Kortmarknad är mötesplatsen -- själva affären gör ni upp om sinsemellan.",
   },
   {
     number: 5,
@@ -58,7 +58,7 @@ export default function SaFungarDetPage() {
         Så funkar det
       </h1>
       <p className="text-mute mb-12 max-w-prose">
-        Kortlagret är en mötesplats för dig som samlar på Pokémon- och
+        Kortmarknad är en mötesplats för dig som samlar på Pokémon- och
         sportkort -- så här går det till, steg för steg.
       </p>
 

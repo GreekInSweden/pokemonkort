@@ -29,15 +29,15 @@ function Hero() {
     <div className="max-w-6xl mx-auto px-4 pt-16 pb-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
       <div>
         <div className="font-display text-lg font-semibold text-gold mb-2">
-          Kortlagret
+          Kortmarknad
         </div>
         <h1 className="font-display text-base sm:text-2xl md:text-3xl lg:text-xl xl:text-2xl font-bold text-paper leading-tight mb-5 whitespace-nowrap">
           Din portfölj, dina byten, dina fynd.
         </h1>
         <p className="text-mute text-lg mb-8 max-w-prose">
           {LAGER_ENABLED
-            ? "Kortlagret är stället för lösa Pokémon- och sportkort — köp styckvis ur vårt lager, buda på de sällsynta korten, och bygg din egen portfölj för att hitta andra medlemmar som säljer eller byter precis det du letar efter."
-            : "Kortlagret är stället för Pokémon- och sportkort — buda på de sällsynta korten, och bygg din egen portfölj för att hitta andra medlemmar som säljer eller byter precis det du letar efter."}
+            ? "Kortmarknad är stället för lösa Pokémon- och sportkort — köp styckvis ur vårt lager, buda på de sällsynta korten, och bygg din egen portfölj för att hitta andra medlemmar som säljer eller byter precis det du letar efter."
+            : "Kortmarknad är stället för Pokémon- och sportkort — buda på de sällsynta korten, och bygg din egen portfölj för att hitta andra medlemmar som säljer eller byter precis det du letar efter."}
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <Link

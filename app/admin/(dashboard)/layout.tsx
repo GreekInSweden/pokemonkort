@@ -14,7 +14,7 @@ export default function AdminLayout({
             href="/admin"
             className="font-display font-semibold text-paper"
           >
-            Kortlagret — Admin
+            Kortmarknad — Admin
           </Link>
           <nav className="flex items-center gap-4">
             <Link href="/admin" className="focus-ring text-sm text-paper hover:text-gold">
