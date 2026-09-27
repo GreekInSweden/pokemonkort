@@ -1,8 +1,14 @@
-import Link from "next/link";
+"use client";
 
-// Statisk förklaringssida -- ingen data att hämta, bara en samlad plats
-// som förklarar flödet steg för steg. Länkad från headern (synlig även
-// för utloggade besökare, precis som "Mest eftertraktade").
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Member } from "@/lib/types";
+
+// Statisk förklaringssida -- länkad från headern (synlig även för
+// utloggade besökare, precis som "Mest eftertraktade"). "use client" +
+// en /api/member/me-koll bara för att kunna dölja "Skapa konto"/"Logga
+// in"-raden när man redan är inloggad -- annars var den uppmaningen kvar
+// även för inloggade medlemmar, vilket inte gör någon nytta.
 //
 // OBS: nämner medvetet INTE att bläddra/köpa ur "Vårt lager" som ett
 // steg -- den funktionen är tillfälligt pausad (se lib/siteConfig.ts,
@@ -37,6 +43,15 @@ const steps = [
 ];
 
 export default function SaFungarDetPage() {
+  const [member, setMember] = useState<Member | null | undefined>(undefined);
+
+  useEffect(() => {
+    fetch("/api/member/me")
+      .then((res) => res.json())
+      .then((data) => setMember(data.member ?? null))
+      .catch(() => setMember(null));
+  }, []);
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-14">
       <h1 className="font-display text-4xl font-bold text-paper mb-3">
@@ -66,20 +81,22 @@ export default function SaFungarDetPage() {
         ))}
       </div>
 
-      <div className="mt-12 border-t border-line pt-8 flex flex-wrap items-center gap-4">
-        <Link
-          href="/konto/registrera"
-          className="focus-ring rounded-md bg-gold text-ink font-semibold px-6 py-3 hover:bg-gold/90 transition-colors"
-        >
-          Skapa konto
-        </Link>
-        <Link
-          href="/konto/logga-in"
-          className="focus-ring rounded-md border border-line px-6 py-3 text-paper hover:border-gold transition-colors"
-        >
-          Logga in
-        </Link>
-      </div>
+      {member === null && (
+        <div className="mt-12 border-t border-line pt-8 flex flex-wrap items-center gap-4">
+          <Link
+            href="/konto/registrera"
+            className="focus-ring rounded-md bg-gold text-ink font-semibold px-6 py-3 hover:bg-gold/90 transition-colors"
+          >
+            Skapa konto
+          </Link>
+          <Link
+            href="/konto/logga-in"
+            className="focus-ring rounded-md border border-line px-6 py-3 text-paper hover:border-gold transition-colors"
+          >
+            Logga in
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
