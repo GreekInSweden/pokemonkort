@@ -76,7 +76,7 @@ export default function SiteHeader() {
     <header className="border-b border-line sticky top-0 z-30 bg-ink/95 backdrop-blur">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
         <Link href="/" className="font-display text-xl font-bold tracking-tight text-paper shrink-0">
-          Kortlagret
+          Kortmarknad
         </Link>
 
         {/* Vänster grupp: sånt man jobbar med som medlem — döljs tills du

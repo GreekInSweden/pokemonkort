@@ -220,7 +220,7 @@ export default function MatchList() {
                               c.contactWhatsapp,
                               `Hej! Jag såg att du har ${m.cardName} (${
                                 m.parallelTierName ?? variantLabel[m.variant]
-                              }) i Kortlagret.`
+                              }) i Kortmarknad.`
                             )}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -285,7 +285,7 @@ export default function MatchList() {
                           }}
                           className="focus-ring text-xs rounded-sm bg-gold text-ink font-semibold px-3 py-1.5"
                         >
-                          Skicka meddelande i Kortlagret
+                          Skicka meddelande i Kortmarknad
                         </button>
                       )}
 
