@@ -51,6 +51,7 @@ export default async function MasterSetPage({
   let cards: CardRow[] = [];
   let owned: { card_id: string; variant: Variant }[] = [];
   let ownedParallels: { card_id: string; parallel_tier_id: string }[] = [];
+  let wanted: { card_id: string; variant: Variant }[] = [];
   let parallelTiers: ParallelTier[] = [];
 
   if (selectedSet) {
@@ -84,6 +85,12 @@ export default async function MasterSetPage({
       ownedParallels = allProgressRows
         .filter((r) => r.parallel_tier_id !== null)
         .map((r) => ({ card_id: r.card_id, parallel_tier_id: r.parallel_tier_id as string }));
+
+      const { data: wantedData } = await supabase
+        .from("master_set_wants")
+        .select("card_id, variant")
+        .in("card_id", cards.map((c) => c.id));
+      wanted = (wantedData as { card_id: string; variant: Variant }[]) ?? [];
     }
   }
 
@@ -117,6 +124,10 @@ export default async function MasterSetPage({
       .filter((o) => o.card_id === c.id)
       .map((o) => o.parallel_tier_id);
 
+    const wantedVariants = wanted
+      .filter((w) => w.card_id === c.id)
+      .map((w) => w.variant);
+
     return {
       id: c.id,
       number: c.number,
@@ -126,6 +137,7 @@ export default async function MasterSetPage({
       masterVariants,
       ownedVariants,
       ownedParallelTierIds,
+      wantedVariants,
     };
   });
 
