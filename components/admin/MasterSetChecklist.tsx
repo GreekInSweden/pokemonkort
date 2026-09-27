@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { rarityLabel, reverseHoloEligibleRarities } from "@/lib/rarity";
 import { variantShortLabel } from "@/lib/variant";
@@ -17,6 +18,7 @@ interface ChecklistCard {
   ownedVariants: Variant[];
   ownedParallelTierIds: string[];
   wantedVariants: Variant[];
+  duplicateVariants: Variant[];
 }
 
 interface Progress {
@@ -105,12 +107,17 @@ export default function MasterSetChecklist({
   cards,
   masterProgress,
   parallelTiers = [],
+  duplicateSellerUsername = null,
+  duplicateSellerMemberId = null,
 }: {
   setName: string;
   cards: ChecklistCard[];
   masterProgress: Progress;
   parallelTiers?: ParallelTier[];
+  duplicateSellerUsername?: string | null;
+  duplicateSellerMemberId?: string | null;
 }) {
+  const router = useRouter();
   const [owned, setOwned] = useState<Record<string, Variant[]>>(() => {
     const map: Record<string, Variant[]> = {};
     for (const c of cards) map[c.id] = c.ownedVariants;
@@ -131,6 +138,121 @@ export default function MasterSetChecklist({
     return map;
   });
   const [wantPending, setWantPending] = useState<string | null>(null);
+
+  // Dubbletter till salu -- skrivs till member_cards (samma tabell som
+  // medlemmarnas egen portfölj) kopplat till det säljkonto admin har
+  // valt nedan, så de dyker upp för medlemmar via det vanliga
+  // matchningssystemet utan något eget UI för det.
+  const [duplicates, setDuplicates] = useState<Record<string, Variant[]>>(() => {
+    const map: Record<string, Variant[]> = {};
+    for (const c of cards) map[c.id] = c.duplicateVariants;
+    return map;
+  });
+  const [duplicatePending, setDuplicatePending] = useState<string | null>(null);
+  const [usernameInput, setUsernameInput] = useState(duplicateSellerUsername ?? "");
+  const [savingUsername, setSavingUsername] = useState(false);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [usernameSaved, setUsernameSaved] = useState(false);
+
+  async function saveSellerUsername() {
+    const trimmed = usernameInput.trim();
+    setUsernameError(null);
+    setUsernameSaved(false);
+    if (!trimmed) {
+      setUsernameError("Ange ett användarnamn.");
+      return;
+    }
+    setSavingUsername(true);
+    const supabase = createBrowserSupabase();
+    const { data: memberRow, error: lookupErr } = await supabase
+      .from("members")
+      .select("id")
+      .ilike("username", trimmed)
+      .maybeSingle();
+    if (lookupErr || !memberRow) {
+      setSavingUsername(false);
+      setUsernameError(
+        "Hittar ingen medlem med det användarnamnet. Kontot måste redan finnas (registrera det som vanligt via Skapa konto först, med det användarnamnet)."
+      );
+      return;
+    }
+    const { error: upsertErr } = await supabase
+      .from("admin_settings")
+      .upsert({ key: "duplicate_seller_username", value: trimmed }, { onConflict: "key" });
+    setSavingUsername(false);
+    if (upsertErr) {
+      setUsernameError(upsertErr.message);
+      return;
+    }
+    setUsernameSaved(true);
+    router.refresh();
+  }
+
+  async function toggleDuplicate(cardId: string, variant: Variant, isDuplicate: boolean) {
+    if (!duplicateSellerMemberId) return;
+    const key = `${cardId}-${variant}`;
+    setDuplicatePending(key);
+    setError(null);
+    const supabase = createBrowserSupabase();
+
+    if (isDuplicate) {
+      const { error: delErr } = await supabase
+        .from("member_cards")
+        .delete()
+        .eq("member_id", duplicateSellerMemberId)
+        .eq("card_id", cardId)
+        .eq("variant", variant)
+        .eq("status", "have")
+        .is("parallel_tier_id", null);
+      setDuplicatePending(null);
+      if (delErr) {
+        setError(delErr.message);
+        return;
+      }
+      setDuplicates((d) => ({
+        ...d,
+        [cardId]: (d[cardId] ?? []).filter((v) => v !== variant),
+      }));
+    } else {
+      // NULL parallel_tier_id räknas inte som samma värde av sig själv i
+      // en unique-constraint, så en ren upsert kan skapa dubbletter av
+      // dubbletten -- kolla om raden redan finns (t.ex. om medlemmen
+      // själv råkat lägga in samma "har"-rad) och uppdatera den istället.
+      const { data: existing } = await supabase
+        .from("member_cards")
+        .select("id")
+        .eq("member_id", duplicateSellerMemberId)
+        .eq("card_id", cardId)
+        .eq("variant", variant)
+        .eq("status", "have")
+        .is("parallel_tier_id", null)
+        .maybeSingle();
+
+      const { error: writeErr } = existing
+        ? await supabase
+            .from("member_cards")
+            .update({ sellable: true })
+            .eq("id", existing.id)
+        : await supabase.from("member_cards").insert({
+            member_id: duplicateSellerMemberId,
+            card_id: cardId,
+            variant,
+            status: "have",
+            quantity: 1,
+            sellable: true,
+            tradeable: false,
+          });
+      setDuplicatePending(null);
+      if (writeErr) {
+        setError(writeErr.message);
+        return;
+      }
+      setDuplicates((d) => ({
+        ...d,
+        [cardId]: [...(d[cardId] ?? []), variant],
+      }));
+    }
+  }
 
   // Parallels är ett fristående bonuslager -- vilka Topps-färger/tryck du
   // råkar äga av ett kort -- som INTE räknas in i masterVariants/liveMaster
@@ -330,6 +452,10 @@ export default function MasterSetChecklist({
         ...o,
         [cardId]: (o[cardId] ?? []).filter((v) => v !== variant),
       }));
+      // Inte längre ägt -- ingen dubblett kvar att sälja.
+      if ((duplicates[cardId] ?? []).includes(variant)) {
+        toggleDuplicate(cardId, variant, true);
+      }
     } else {
       const { error: insErr } = await supabase
         .from("master_set_progress")
@@ -416,6 +542,50 @@ export default function MasterSetChecklist({
           <span className="text-sm font-medium text-paper">Önskelista</span>
           <span className="text-xs font-mono text-mute">{totalWanted} kort</span>
         </div>
+      </div>
+
+      <div className="mb-6 border border-line rounded-md p-4 bg-panel">
+        <div className="text-sm font-medium text-paper mb-1">Dubbletter till salu</div>
+        <p className="text-xs text-mute mb-3 max-w-prose">
+          Kort du markerar som dubblett här läggs upp som "har, till salu"
+          på det medlemskonto du väljer nedan -- så dyker de upp för andra
+          medlemmar via Mina matchningar, precis som om kontot självt hade
+          kryssat i det i sin portfölj. Kontot måste redan finnas (skapa
+          det som vanligt via Skapa konto, med det användarnamn du anger
+          här).
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="text"
+            value={usernameInput}
+            onChange={(e) => {
+              setUsernameInput(e.target.value);
+              setUsernameSaved(false);
+            }}
+            placeholder="Användarnamn, t.ex. Kortmarknad"
+            className="focus-ring bg-panelLight border border-line rounded-sm px-3 py-1.5 text-sm text-paper"
+          />
+          <button
+            type="button"
+            onClick={saveSellerUsername}
+            disabled={savingUsername}
+            className="focus-ring text-xs rounded-sm bg-gold text-ink font-semibold px-3 py-1.5 disabled:opacity-50"
+          >
+            {savingUsername ? "Sparar…" : "Spara"}
+          </button>
+          {duplicateSellerMemberId && (
+            <span className="text-xs text-gold">
+              ✓ Aktivt konto: {duplicateSellerUsername}
+            </span>
+          )}
+          {duplicateSellerUsername && !duplicateSellerMemberId && (
+            <span className="text-xs text-red-400">
+              Hittar inget konto med användarnamnet "{duplicateSellerUsername}" längre.
+            </span>
+          )}
+          {usernameSaved && <span className="text-xs text-gold">Sparat ✓</span>}
+        </div>
+        {usernameError && <p className="text-xs text-red-400 mt-2">{usernameError}</p>}
       </div>
 
       {parallelTiers.length > 0 && (
@@ -538,6 +708,7 @@ export default function MasterSetChecklist({
             (t) => !cardOwnedParallels.includes(t.id)
           );
           const cardWanted = wanted[c.id] ?? [];
+          const cardDuplicates = duplicates[c.id] ?? [];
           return (
             <div
               key={c.id}
@@ -564,9 +735,11 @@ export default function MasterSetChecklist({
                   {needVariants.map((v) => {
                     const isOwned = cardOwned.includes(v);
                     const isWanted = cardWanted.includes(v);
+                    const isDuplicate = cardDuplicates.includes(v);
                     const key = `${c.id}-${v}`;
                     const isPending = pending === key;
                     const isWantPending = wantPending === key;
+                    const isDuplicatePending = duplicatePending === key;
                     return (
                       <div key={v} className="flex flex-col items-center gap-1">
                         <label className="flex flex-col items-center gap-1 text-[10px] text-mute cursor-pointer">
@@ -592,6 +765,25 @@ export default function MasterSetChecklist({
                             }`}
                           >
                             {isWanted ? "★ Vill ha" : "☆ Vill ha"}
+                          </button>
+                        )}
+                        {isOwned && duplicateSellerMemberId && (
+                          <button
+                            type="button"
+                            onClick={() => toggleDuplicate(c.id, v, isDuplicate)}
+                            disabled={isDuplicatePending}
+                            title={
+                              isDuplicate
+                                ? "Ta bort från salu"
+                                : "Markera som dubblett -- till salu för medlemmar"
+                            }
+                            className={`focus-ring text-[9px] rounded-sm border px-1 py-0.5 whitespace-nowrap disabled:opacity-50 ${
+                              isDuplicate
+                                ? "bg-sport-pitch/20 text-sport-pitch border-sport-pitch/60"
+                                : "text-mute border-line hover:border-sport-pitch hover:text-sport-pitch"
+                            }`}
+                          >
+                            {isDuplicate ? "✓ Till salu" : "Dubblett?"}
                           </button>
                         )}
                       </div>
