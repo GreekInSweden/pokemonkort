@@ -52,6 +52,7 @@ export default async function MasterSetPage({
   let owned: { card_id: string; variant: Variant }[] = [];
   let ownedParallels: { card_id: string; parallel_tier_id: string }[] = [];
   let wanted: { card_id: string; variant: Variant }[] = [];
+  let wantedParallels: { card_id: string; parallel_tier_id: string }[] = [];
   let duplicatesForSale: { card_id: string; variant: Variant }[] = [];
   let parallelTiers: ParallelTier[] = [];
 
@@ -110,9 +111,16 @@ export default async function MasterSetPage({
 
       const { data: wantedData } = await supabase
         .from("master_set_wants")
-        .select("card_id, variant")
+        .select("card_id, variant, parallel_tier_id")
         .in("card_id", cards.map((c) => c.id));
-      wanted = (wantedData as { card_id: string; variant: Variant }[]) ?? [];
+      const allWantedRows =
+        (wantedData as { card_id: string; variant: Variant; parallel_tier_id: string | null }[]) ?? [];
+      wanted = allWantedRows
+        .filter((r) => r.parallel_tier_id === null)
+        .map((r) => ({ card_id: r.card_id, variant: r.variant }));
+      wantedParallels = allWantedRows
+        .filter((r) => r.parallel_tier_id !== null)
+        .map((r) => ({ card_id: r.card_id, parallel_tier_id: r.parallel_tier_id as string }));
 
       if (duplicateSellerMemberId) {
         const { data: duplicatesData } = await supabase
@@ -169,6 +177,10 @@ export default async function MasterSetPage({
       .filter((d) => d.card_id === c.id)
       .map((d) => d.variant);
 
+    const wantedParallelTierIds = wantedParallels
+      .filter((w) => w.card_id === c.id)
+      .map((w) => w.parallel_tier_id);
+
     return {
       id: c.id,
       number: c.number,
@@ -179,6 +191,7 @@ export default async function MasterSetPage({
       ownedVariants,
       ownedParallelTierIds,
       wantedVariants,
+      wantedParallelTierIds,
       duplicateVariants,
     };
   });

@@ -37,6 +37,9 @@ export default function AdminLayout({
             <Link href="/admin/masterset" className="focus-ring text-sm text-paper hover:text-gold">
               Master Set
             </Link>
+            <Link href="/admin/dubbletter" className="focus-ring text-sm text-paper hover:text-gold">
+              Dubbletter
+            </Link>
             <Link href="/admin/auktioner" className="focus-ring text-sm text-paper hover:text-gold">
               Auktioner
             </Link>
