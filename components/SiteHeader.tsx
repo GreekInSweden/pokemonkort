@@ -168,15 +168,17 @@ export default function SiteHeader() {
               Logga in
             </Link>
           )}
-          <Link
-            href="/kassa"
-            className="focus-ring flex items-center gap-3 rounded-md border border-line px-4 py-2 hover:border-gold transition-colors"
-          >
-            <span className="font-mono text-sm text-mute">{itemCount} kort</span>
-            <span className="font-mono text-sm font-medium text-gold">
-              {subtotalSek} kr
-            </span>
-          </Link>
+          {LAGER_ENABLED && (
+            <Link
+              href="/kassa"
+              className="focus-ring flex items-center gap-3 rounded-md border border-line px-4 py-2 hover:border-gold transition-colors"
+            >
+              <span className="font-mono text-sm text-mute">{itemCount} kort</span>
+              <span className="font-mono text-sm font-medium text-gold">
+                {subtotalSek} kr
+              </span>
+            </Link>
+          )}
         </nav>
       </div>
     </header>

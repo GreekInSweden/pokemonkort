@@ -16,6 +16,7 @@ interface ChecklistCard {
   masterVariants: Variant[];
   ownedVariants: Variant[];
   ownedParallelTierIds: string[];
+  wantedVariants: Variant[];
 }
 
 interface Progress {
@@ -118,7 +119,18 @@ export default function MasterSetChecklist({
   const [pending, setPending] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [hideComplete, setHideComplete] = useState(false);
+  const [showWantedOnly, setShowWantedOnly] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Egen önskelista -- "jag letar aktivt efter det här kortet/den här
+  // varianten" -- helt separat från owned ovan och lagras i sin egen
+  // tabell (master_set_wants) så den aldrig krockar med ägande-statusen.
+  const [wanted, setWanted] = useState<Record<string, Variant[]>>(() => {
+    const map: Record<string, Variant[]> = {};
+    for (const c of cards) map[c.id] = c.wantedVariants;
+    return map;
+  });
+  const [wantPending, setWantPending] = useState<string | null>(null);
 
   // Parallels är ett fristående bonuslager -- vilka Topps-färger/tryck du
   // råkar äga av ett kort -- som INTE räknas in i masterVariants/liveMaster
@@ -213,6 +225,11 @@ export default function MasterSetChecklist({
     return { owned: ownedN, total: totalN };
   }, [cards, owned, addedReverseHolo]);
 
+  const totalWanted = useMemo(
+    () => Object.values(wanted).reduce((n, vs) => n + vs.length, 0),
+    [wanted]
+  );
+
   const filteredCards = useMemo(() => {
     const q = query.trim().toLowerCase();
     let list = cards;
@@ -229,8 +246,50 @@ export default function MasterSetChecklist({
         return !need.every((v) => owned[c.id]?.includes(v));
       });
     }
+    if (showWantedOnly) {
+      list = list.filter((c) => (wanted[c.id]?.length ?? 0) > 0);
+    }
     return list;
-  }, [cards, query, hideComplete, owned, addedReverseHolo]);
+  }, [cards, query, hideComplete, showWantedOnly, owned, wanted, addedReverseHolo]);
+
+  async function toggleWant(cardId: string, variant: Variant, isWanted: boolean) {
+    const key = `${cardId}-${variant}`;
+    setWantPending(key);
+    setError(null);
+    const supabase = createBrowserSupabase();
+
+    if (isWanted) {
+      const { error: delErr } = await supabase
+        .from("master_set_wants")
+        .delete()
+        .eq("card_id", cardId)
+        .eq("variant", variant);
+      setWantPending(null);
+      if (delErr) {
+        setError(delErr.message);
+        return;
+      }
+      setWanted((w) => ({
+        ...w,
+        [cardId]: (w[cardId] ?? []).filter((v) => v !== variant),
+      }));
+    } else {
+      const { error: insErr } = await supabase
+        .from("master_set_wants")
+        .insert({ card_id: cardId, variant });
+      setWantPending(null);
+      if (insErr) {
+        if (!insErr.message?.toLowerCase().includes("duplicate")) {
+          setError(insErr.message);
+          return;
+        }
+      }
+      setWanted((w) => ({
+        ...w,
+        [cardId]: [...(w[cardId] ?? []), variant],
+      }));
+    }
+  }
 
   async function addReverseHolo(cardId: string) {
     setAddingReverseHolo(cardId);
@@ -284,6 +343,10 @@ export default function MasterSetChecklist({
         ...o,
         [cardId]: [...(o[cardId] ?? []), variant],
       }));
+      // Nu ägt -- ingen anledning att fortfarande stå på önskelistan.
+      if ((wanted[cardId] ?? []).includes(variant)) {
+        toggleWant(cardId, variant, true);
+      }
     }
   }
 
@@ -349,6 +412,10 @@ export default function MasterSetChecklist({
 
       <div className="flex flex-wrap gap-3 mb-6">
         <ProgressBar label="Master Set" progress={liveMaster} />
+        <div className="border border-line rounded-md p-4 bg-panel flex-1 min-w-[200px] flex items-center justify-between">
+          <span className="text-sm font-medium text-paper">Önskelista</span>
+          <span className="text-xs font-mono text-mute">{totalWanted} kort</span>
+        </div>
       </div>
 
       {parallelTiers.length > 0 && (
@@ -446,6 +513,15 @@ export default function MasterSetChecklist({
           />
           Dölj klara
         </label>
+        <label className="flex items-center gap-2 text-xs text-mute shrink-0">
+          <input
+            type="checkbox"
+            checked={showWantedOnly}
+            onChange={(e) => setShowWantedOnly(e.target.checked)}
+            className="focus-ring accent-gold w-4 h-4"
+          />
+          Endast önskelista
+        </label>
       </div>
 
       {error && <p className="text-sm text-red-400 mb-4">{error}</p>}
@@ -461,6 +537,7 @@ export default function MasterSetChecklist({
           const availableParallels = parallelTiers.filter(
             (t) => !cardOwnedParallels.includes(t.id)
           );
+          const cardWanted = wanted[c.id] ?? [];
           return (
             <div
               key={c.id}
@@ -486,22 +563,38 @@ export default function MasterSetChecklist({
                 <div className="flex items-center gap-3 shrink-0">
                   {needVariants.map((v) => {
                     const isOwned = cardOwned.includes(v);
+                    const isWanted = cardWanted.includes(v);
                     const key = `${c.id}-${v}`;
                     const isPending = pending === key;
+                    const isWantPending = wantPending === key;
                     return (
-                      <label
-                        key={v}
-                        className="flex flex-col items-center gap-1 text-[10px] text-mute cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isOwned}
-                          disabled={isPending}
-                          onChange={() => toggle(c.id, v, isOwned)}
-                          className="focus-ring accent-gold w-4 h-4"
-                        />
-                        {variantShortLabel[v]}
-                      </label>
+                      <div key={v} className="flex flex-col items-center gap-1">
+                        <label className="flex flex-col items-center gap-1 text-[10px] text-mute cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isOwned}
+                            disabled={isPending}
+                            onChange={() => toggle(c.id, v, isOwned)}
+                            className="focus-ring accent-gold w-4 h-4"
+                          />
+                          {variantShortLabel[v]}
+                        </label>
+                        {!isOwned && (
+                          <button
+                            type="button"
+                            onClick={() => toggleWant(c.id, v, isWanted)}
+                            disabled={isWantPending}
+                            title={isWanted ? "Ta bort från önskelistan" : "Lägg till på önskelistan"}
+                            className={`focus-ring text-[9px] rounded-sm border px-1 py-0.5 whitespace-nowrap disabled:opacity-50 ${
+                              isWanted
+                                ? "bg-gold/20 text-gold border-gold/60"
+                                : "text-mute border-line hover:border-gold hover:text-gold"
+                            }`}
+                          >
+                            {isWanted ? "★ Vill ha" : "☆ Vill ha"}
+                          </button>
+                        )}
+                      </div>
                     );
                   })}
                   {canAddReverseHolo && (
