@@ -52,7 +52,29 @@ export default async function MasterSetPage({
   let owned: { card_id: string; variant: Variant }[] = [];
   let ownedParallels: { card_id: string; parallel_tier_id: string }[] = [];
   let wanted: { card_id: string; variant: Variant }[] = [];
+  let duplicatesForSale: { card_id: string; variant: Variant }[] = [];
   let parallelTiers: ParallelTier[] = [];
+
+  // Vilket medlemskonto dubbletter-till-salu ska bokas på -- satt via
+  // inställningsrutan högst upp i checklistan (admin_settings-tabellen).
+  // Inget konto valt än betyder bara att "Dubblett – till salu"-knappen
+  // inte visas förrän ett är valt.
+  const { data: sellerSetting } = await supabase
+    .from("admin_settings")
+    .select("value")
+    .eq("key", "duplicate_seller_username")
+    .maybeSingle();
+  const duplicateSellerUsername = (sellerSetting?.value as string | null) ?? null;
+
+  let duplicateSellerMemberId: string | null = null;
+  if (duplicateSellerUsername) {
+    const { data: sellerMember } = await supabase
+      .from("members")
+      .select("id")
+      .ilike("username", duplicateSellerUsername)
+      .maybeSingle();
+    duplicateSellerMemberId = (sellerMember?.id as string | undefined) ?? null;
+  }
 
   if (selectedSet) {
     const { data: cardsData } = await supabase
@@ -91,6 +113,21 @@ export default async function MasterSetPage({
         .select("card_id, variant")
         .in("card_id", cards.map((c) => c.id));
       wanted = (wantedData as { card_id: string; variant: Variant }[]) ?? [];
+
+      if (duplicateSellerMemberId) {
+        const { data: duplicatesData } = await supabase
+          .from("member_cards")
+          .select("card_id, variant, parallel_tier_id")
+          .eq("member_id", duplicateSellerMemberId)
+          .eq("status", "have")
+          .eq("sellable", true)
+          .in("card_id", cards.map((c) => c.id));
+        duplicatesForSale = (
+          (duplicatesData as { card_id: string; variant: Variant; parallel_tier_id: string | null }[]) ?? []
+        )
+          .filter((r) => r.parallel_tier_id === null)
+          .map((r) => ({ card_id: r.card_id, variant: r.variant }));
+      }
     }
   }
 
@@ -128,6 +165,10 @@ export default async function MasterSetPage({
       .filter((w) => w.card_id === c.id)
       .map((w) => w.variant);
 
+    const duplicateVariants = duplicatesForSale
+      .filter((d) => d.card_id === c.id)
+      .map((d) => d.variant);
+
     return {
       id: c.id,
       number: c.number,
@@ -138,6 +179,7 @@ export default async function MasterSetPage({
       ownedVariants,
       ownedParallelTierIds,
       wantedVariants,
+      duplicateVariants,
     };
   });
 
@@ -243,6 +285,8 @@ export default async function MasterSetPage({
           cards={checklistCards}
           masterProgress={{ owned: masterOwned, total: masterTotal }}
           parallelTiers={parallelTiers}
+          duplicateSellerUsername={duplicateSellerUsername}
+          duplicateSellerMemberId={duplicateSellerMemberId}
         />
       )}
     </div>
