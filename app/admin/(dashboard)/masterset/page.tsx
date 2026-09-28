@@ -55,6 +55,7 @@ export default async function MasterSetPage({
   let wantedParallels: { card_id: string; parallel_tier_id: string }[] = [];
   let duplicatesForSale: { card_id: string; variant: Variant }[] = [];
   let parallelTiers: ParallelTier[] = [];
+  let parallelTiersLoadError: string | null = null;
 
   // Vilket medlemskonto dubbletter-till-salu ska bokas på -- satt via
   // inställningsrutan högst upp i checklistan (admin_settings-tabellen).
@@ -85,11 +86,18 @@ export default async function MasterSetPage({
       .order("number");
     cards = (cardsData as unknown as CardRow[]) ?? [];
 
-    const { data: parallelTiersData } = await supabase
+    const { data: parallelTiersData, error: parallelTiersError } = await supabase
       .from("parallel_tiers")
       .select("id, set_id, name, channel, print_run, sort_order, image_url")
       .eq("set_id", selectedSet.id)
       .order("sort_order");
+    if (parallelTiersError) {
+      // Tidigare hände det här helt tyst (parallelTiers blev bara [])
+      // om t.ex. en kolumn som image_url saknades -- hela
+      // Parallels-sektionen försvann då spårlöst utan förklaring. Nu
+      // syns felet i UI:t istället (se sidans return-block nedan).
+      parallelTiersLoadError = parallelTiersError.message;
+    }
     parallelTiers = (parallelTiersData as ParallelTier[]) ?? [];
 
     if (cards.length > 0) {
@@ -289,6 +297,15 @@ export default async function MasterSetPage({
         baseHref="/admin/masterset"
         completeSetIds={completeSetIds}
       />
+
+      {parallelTiersLoadError && (
+        <p className="text-sm text-red-400 border border-red-400/40 rounded-md p-3 mb-6">
+          Kunde inte hämta parallels för det här setet, så
+          Parallels-sektionen visas inte just nu: {parallelTiersLoadError}.
+          Har du kört <code className="font-mono">parallel_tiers_image.sql</code> i
+          Supabase SQL Editor?
+        </p>
+      )}
 
       {!selectedSet ? (
         <p className="text-mute">Inga set upplagda ännu.</p>
