@@ -51,32 +51,8 @@ export default async function MasterSetPage({
   let cards: CardRow[] = [];
   let owned: { card_id: string; variant: Variant }[] = [];
   let ownedParallels: { card_id: string; parallel_tier_id: string }[] = [];
-  let wanted: { card_id: string; variant: Variant }[] = [];
-  let wantedParallels: { card_id: string; parallel_tier_id: string }[] = [];
-  let duplicatesForSale: { card_id: string; variant: Variant }[] = [];
   let parallelTiers: ParallelTier[] = [];
   let parallelTiersLoadError: string | null = null;
-
-  // Vilket medlemskonto dubbletter-till-salu ska bokas på -- satt via
-  // inställningsrutan högst upp i checklistan (admin_settings-tabellen).
-  // Inget konto valt än betyder bara att "Dubblett – till salu"-knappen
-  // inte visas förrän ett är valt.
-  const { data: sellerSetting } = await supabase
-    .from("admin_settings")
-    .select("value")
-    .eq("key", "duplicate_seller_username")
-    .maybeSingle();
-  const duplicateSellerUsername = (sellerSetting?.value as string | null) ?? null;
-
-  let duplicateSellerMemberId: string | null = null;
-  if (duplicateSellerUsername) {
-    const { data: sellerMember } = await supabase
-      .from("members")
-      .select("id")
-      .ilike("username", duplicateSellerUsername)
-      .maybeSingle();
-    duplicateSellerMemberId = (sellerMember?.id as string | undefined) ?? null;
-  }
 
   if (selectedSet) {
     const { data: cardsData } = await supabase
@@ -116,34 +92,6 @@ export default async function MasterSetPage({
       ownedParallels = allProgressRows
         .filter((r) => r.parallel_tier_id !== null)
         .map((r) => ({ card_id: r.card_id, parallel_tier_id: r.parallel_tier_id as string }));
-
-      const { data: wantedData } = await supabase
-        .from("master_set_wants")
-        .select("card_id, variant, parallel_tier_id")
-        .in("card_id", cards.map((c) => c.id));
-      const allWantedRows =
-        (wantedData as { card_id: string; variant: Variant; parallel_tier_id: string | null }[]) ?? [];
-      wanted = allWantedRows
-        .filter((r) => r.parallel_tier_id === null)
-        .map((r) => ({ card_id: r.card_id, variant: r.variant }));
-      wantedParallels = allWantedRows
-        .filter((r) => r.parallel_tier_id !== null)
-        .map((r) => ({ card_id: r.card_id, parallel_tier_id: r.parallel_tier_id as string }));
-
-      if (duplicateSellerMemberId) {
-        const { data: duplicatesData } = await supabase
-          .from("member_cards")
-          .select("card_id, variant, parallel_tier_id")
-          .eq("member_id", duplicateSellerMemberId)
-          .eq("status", "have")
-          .eq("sellable", true)
-          .in("card_id", cards.map((c) => c.id));
-        duplicatesForSale = (
-          (duplicatesData as { card_id: string; variant: Variant; parallel_tier_id: string | null }[]) ?? []
-        )
-          .filter((r) => r.parallel_tier_id === null)
-          .map((r) => ({ card_id: r.card_id, variant: r.variant }));
-      }
     }
   }
 
@@ -177,18 +125,6 @@ export default async function MasterSetPage({
       .filter((o) => o.card_id === c.id)
       .map((o) => o.parallel_tier_id);
 
-    const wantedVariants = wanted
-      .filter((w) => w.card_id === c.id)
-      .map((w) => w.variant);
-
-    const duplicateVariants = duplicatesForSale
-      .filter((d) => d.card_id === c.id)
-      .map((d) => d.variant);
-
-    const wantedParallelTierIds = wantedParallels
-      .filter((w) => w.card_id === c.id)
-      .map((w) => w.parallel_tier_id);
-
     return {
       id: c.id,
       number: c.number,
@@ -198,9 +134,6 @@ export default async function MasterSetPage({
       masterVariants,
       ownedVariants,
       ownedParallelTierIds,
-      wantedVariants,
-      wantedParallelTierIds,
-      duplicateVariants,
     };
   });
 
@@ -216,7 +149,7 @@ export default async function MasterSetPage({
   // "Pitch Black", "Perfect Order" osv — is itself complete.
   //
   // Both tables are bigger than PostgREST's default 1000-row response
-  // cap — the catalogimporten alone is ~19 250 kort — so a plain
+  // cap — the catalogimporten alone is ~19 250 kort — så a plain
   // .select() silently truncates and sets whose cards happen to sort
   // past row 1000 would never show as complete no matter how many
   // cards you check off. Page through with .range() until a page comes
@@ -285,10 +218,12 @@ export default async function MasterSetPage({
       </h1>
       <p className="text-mute mb-8">
         Privat checklista för att bygga ett eget master set — ett av varje
-        nummer i setet plus reverse holo-varianten för de kort som har en.
-        Helt separat från butikens lager — att kryssa i ett kort här
-        säljer det inte, och att sälja slut ett kort i butiken avkryssar
-        det inte härifrån.
+        nummer i setet plus reverse holo-varianten för de kort som har en,
+        plus eventuella parallels du äger. Helt separat från butikens
+        lager — att kryssa i ett kort här säljer det inte, och att sälja
+        slut ett kort i butiken avkryssar det inte härifrån. Vill du sälja
+        eller byta ett kort, eller söka efter ett du saknar, gör du det på
+        ditt vanliga medlemskonto istället.
       </p>
 
       <SetPicker
@@ -315,8 +250,6 @@ export default async function MasterSetPage({
           cards={checklistCards}
           masterProgress={{ owned: masterOwned, total: masterTotal }}
           parallelTiers={parallelTiers}
-          duplicateSellerUsername={duplicateSellerUsername}
-          duplicateSellerMemberId={duplicateSellerMemberId}
         />
       )}
     </div>
