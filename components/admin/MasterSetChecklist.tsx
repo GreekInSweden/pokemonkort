@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { rarityLabel, reverseHoloEligibleRarities } from "@/lib/rarity";
 import { variantShortLabel } from "@/lib/variant";
@@ -17,9 +16,6 @@ interface ChecklistCard {
   masterVariants: Variant[];
   ownedVariants: Variant[];
   ownedParallelTierIds: string[];
-  wantedVariants: Variant[];
-  wantedParallelTierIds: string[];
-  duplicateVariants: Variant[];
 }
 
 interface Progress {
@@ -103,22 +99,50 @@ function ParallelGuideRow({
   );
 }
 
+// En parallel som en enda klickbar pill -- ägd (fylld, grön kant) eller
+// inte (tunn kant) -- ett klick växlar direkt, inget mellansteg med
+// dropdown+"Lägg till" längre.
+function ParallelChip({
+  tier,
+  owned,
+  pending,
+  onClick,
+}: {
+  tier: ParallelTier;
+  owned: boolean;
+  pending: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={pending}
+      title={tier.name}
+      className={`focus-ring text-[10px] rounded-full border px-2 py-0.5 whitespace-nowrap disabled:opacity-50 transition-colors ${
+        owned
+          ? "bg-sport-pitch/20 text-sport-pitch border-sport-pitch/60"
+          : "text-mute border-line hover:border-sport-pitch hover:text-sport-pitch"
+      }`}
+    >
+      {owned ? "✓ " : ""}
+      {tier.name}
+      {tier.print_run ? ` /${tier.print_run}` : ""}
+    </button>
+  );
+}
+
 export default function MasterSetChecklist({
   setName,
   cards,
   masterProgress,
   parallelTiers = [],
-  duplicateSellerUsername = null,
-  duplicateSellerMemberId = null,
 }: {
   setName: string;
   cards: ChecklistCard[];
   masterProgress: Progress;
   parallelTiers?: ParallelTier[];
-  duplicateSellerUsername?: string | null;
-  duplicateSellerMemberId?: string | null;
 }) {
-  const router = useRouter();
   const [owned, setOwned] = useState<Record<string, Variant[]>>(() => {
     const map: Record<string, Variant[]> = {};
     for (const c of cards) map[c.id] = c.ownedVariants;
@@ -127,133 +151,7 @@ export default function MasterSetChecklist({
   const [pending, setPending] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [hideComplete, setHideComplete] = useState(false);
-  const [showWantedOnly, setShowWantedOnly] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Egen önskelista -- "jag letar aktivt efter det här kortet/den här
-  // varianten" -- helt separat från owned ovan och lagras i sin egen
-  // tabell (master_set_wants) så den aldrig krockar med ägande-statusen.
-  const [wanted, setWanted] = useState<Record<string, Variant[]>>(() => {
-    const map: Record<string, Variant[]> = {};
-    for (const c of cards) map[c.id] = c.wantedVariants;
-    return map;
-  });
-  const [wantPending, setWantPending] = useState<string | null>(null);
-
-  // Dubbletter till salu -- skrivs till member_cards (samma tabell som
-  // medlemmarnas egen portfölj) kopplat till det säljkonto admin har
-  // valt nedan, så de dyker upp för medlemmar via det vanliga
-  // matchningssystemet utan något eget UI för det.
-  const [duplicates, setDuplicates] = useState<Record<string, Variant[]>>(() => {
-    const map: Record<string, Variant[]> = {};
-    for (const c of cards) map[c.id] = c.duplicateVariants;
-    return map;
-  });
-  const [duplicatePending, setDuplicatePending] = useState<string | null>(null);
-  const [usernameInput, setUsernameInput] = useState(duplicateSellerUsername ?? "");
-  const [savingUsername, setSavingUsername] = useState(false);
-  const [usernameError, setUsernameError] = useState<string | null>(null);
-  const [usernameSaved, setUsernameSaved] = useState(false);
-
-  async function saveSellerUsername() {
-    const trimmed = usernameInput.trim();
-    setUsernameError(null);
-    setUsernameSaved(false);
-    if (!trimmed) {
-      setUsernameError("Ange ett användarnamn.");
-      return;
-    }
-    setSavingUsername(true);
-    const supabase = createBrowserSupabase();
-    const { data: memberRow, error: lookupErr } = await supabase
-      .from("members")
-      .select("id")
-      .ilike("username", trimmed)
-      .maybeSingle();
-    if (lookupErr || !memberRow) {
-      setSavingUsername(false);
-      setUsernameError(
-        "Hittar ingen medlem med det användarnamnet. Kontot måste redan finnas (registrera det som vanligt via Skapa konto först, med det användarnamnet)."
-      );
-      return;
-    }
-    const { error: upsertErr } = await supabase
-      .from("admin_settings")
-      .upsert({ key: "duplicate_seller_username", value: trimmed }, { onConflict: "key" });
-    setSavingUsername(false);
-    if (upsertErr) {
-      setUsernameError(upsertErr.message);
-      return;
-    }
-    setUsernameSaved(true);
-    router.refresh();
-  }
-
-  async function toggleDuplicate(cardId: string, variant: Variant, isDuplicate: boolean) {
-    if (!duplicateSellerMemberId) return;
-    const key = `${cardId}-${variant}`;
-    setDuplicatePending(key);
-    setError(null);
-    const supabase = createBrowserSupabase();
-
-    if (isDuplicate) {
-      const { error: delErr } = await supabase
-        .from("member_cards")
-        .delete()
-        .eq("member_id", duplicateSellerMemberId)
-        .eq("card_id", cardId)
-        .eq("variant", variant)
-        .eq("status", "have")
-        .is("parallel_tier_id", null);
-      setDuplicatePending(null);
-      if (delErr) {
-        setError(delErr.message);
-        return;
-      }
-      setDuplicates((d) => ({
-        ...d,
-        [cardId]: (d[cardId] ?? []).filter((v) => v !== variant),
-      }));
-    } else {
-      // NULL parallel_tier_id räknas inte som samma värde av sig själv i
-      // en unique-constraint, så en ren upsert kan skapa dubbletter av
-      // dubbletten -- kolla om raden redan finns (t.ex. om medlemmen
-      // själv råkat lägga in samma "har"-rad) och uppdatera den istället.
-      const { data: existing } = await supabase
-        .from("member_cards")
-        .select("id")
-        .eq("member_id", duplicateSellerMemberId)
-        .eq("card_id", cardId)
-        .eq("variant", variant)
-        .eq("status", "have")
-        .is("parallel_tier_id", null)
-        .maybeSingle();
-
-      const { error: writeErr } = existing
-        ? await supabase
-            .from("member_cards")
-            .update({ sellable: true })
-            .eq("id", existing.id)
-        : await supabase.from("member_cards").insert({
-            member_id: duplicateSellerMemberId,
-            card_id: cardId,
-            variant,
-            status: "have",
-            quantity: 1,
-            sellable: true,
-            tradeable: false,
-          });
-      setDuplicatePending(null);
-      if (writeErr) {
-        setError(writeErr.message);
-        return;
-      }
-      setDuplicates((d) => ({
-        ...d,
-        [cardId]: [...(d[cardId] ?? []), variant],
-      }));
-    }
-  }
 
   // Parallels är ett fristående bonuslager -- vilka Topps-färger/tryck du
   // råkar äga av ett kort -- som INTE räknas in i masterVariants/liveMaster
@@ -263,21 +161,12 @@ export default function MasterSetChecklist({
     for (const c of cards) map[c.id] = c.ownedParallelTierIds;
     return map;
   });
-  const [selectedParallel, setSelectedParallel] = useState<Record<string, string>>({});
   const [parallelPending, setParallelPending] = useState<string | null>(null);
   const [showParallelGuide, setShowParallelGuide] = useState(false);
-
-  // Samma sak fast för önskelistan -- vilka parallel-färger man aktivt
-  // letar efter, skrivna till master_set_wants med parallel_tier_id
-  // satt istället för null. Håller sig undan cardOwnedParallels ovan så
-  // en redan ägd färg inte samtidigt kan stå som önskad.
-  const [wantedParallels, setWantedParallels] = useState<Record<string, string[]>>(() => {
-    const map: Record<string, string[]> = {};
-    for (const c of cards) map[c.id] = c.wantedParallelTierIds;
-    return map;
-  });
-  const [selectedWantedParallel, setSelectedWantedParallel] = useState<Record<string, string>>({});
-  const [wantedParallelPending, setWantedParallelPending] = useState<string | null>(null);
+  // Vilka kort som just nu har hela parallel-listan expanderad -- annars
+  // visas bara de redan ägda som chips, så listan inte blir 39 knappar
+  // långt per kort som standard.
+  const [expandedParallels, setExpandedParallels] = useState<Set<string>>(new Set());
 
   // Ett exempelfoto per parallel (inte per kort — samma foliefärg ser
   // likadan ut oavsett spelare), så man faktiskt kan se nyansen istället
@@ -360,13 +249,6 @@ export default function MasterSetChecklist({
     return { owned: ownedN, total: totalN };
   }, [cards, owned, addedReverseHolo]);
 
-  const totalWanted = useMemo(
-    () =>
-      Object.values(wanted).reduce((n, vs) => n + vs.length, 0) +
-      Object.values(wantedParallels).reduce((n, vs) => n + vs.length, 0),
-    [wanted, wantedParallels]
-  );
-
   const filteredCards = useMemo(() => {
     const q = query.trim().toLowerCase();
     let list = cards;
@@ -383,52 +265,8 @@ export default function MasterSetChecklist({
         return !need.every((v) => owned[c.id]?.includes(v));
       });
     }
-    if (showWantedOnly) {
-      list = list.filter(
-        (c) => (wanted[c.id]?.length ?? 0) > 0 || (wantedParallels[c.id]?.length ?? 0) > 0
-      );
-    }
     return list;
-  }, [cards, query, hideComplete, showWantedOnly, owned, wanted, wantedParallels, addedReverseHolo]);
-
-  async function toggleWant(cardId: string, variant: Variant, isWanted: boolean) {
-    const key = `${cardId}-${variant}`;
-    setWantPending(key);
-    setError(null);
-    const supabase = createBrowserSupabase();
-
-    if (isWanted) {
-      const { error: delErr } = await supabase
-        .from("master_set_wants")
-        .delete()
-        .eq("card_id", cardId)
-        .eq("variant", variant);
-      setWantPending(null);
-      if (delErr) {
-        setError(delErr.message);
-        return;
-      }
-      setWanted((w) => ({
-        ...w,
-        [cardId]: (w[cardId] ?? []).filter((v) => v !== variant),
-      }));
-    } else {
-      const { error: insErr } = await supabase
-        .from("master_set_wants")
-        .insert({ card_id: cardId, variant });
-      setWantPending(null);
-      if (insErr) {
-        if (!insErr.message?.toLowerCase().includes("duplicate")) {
-          setError(insErr.message);
-          return;
-        }
-      }
-      setWanted((w) => ({
-        ...w,
-        [cardId]: [...(w[cardId] ?? []), variant],
-      }));
-    }
-  }
+  }, [cards, query, hideComplete, owned, addedReverseHolo]);
 
   async function addReverseHolo(cardId: string) {
     setAddingReverseHolo(cardId);
@@ -469,10 +307,6 @@ export default function MasterSetChecklist({
         ...o,
         [cardId]: (o[cardId] ?? []).filter((v) => v !== variant),
       }));
-      // Inte längre ägt -- ingen dubblett kvar att sälja.
-      if ((duplicates[cardId] ?? []).includes(variant)) {
-        toggleDuplicate(cardId, variant, true);
-      }
     } else {
       const { error: insErr } = await supabase
         .from("master_set_progress")
@@ -486,10 +320,6 @@ export default function MasterSetChecklist({
         ...o,
         [cardId]: [...(o[cardId] ?? []), variant],
       }));
-      // Nu ägt -- ingen anledning att fortfarande stå på önskelistan.
-      if ((wanted[cardId] ?? []).includes(variant)) {
-        toggleWant(cardId, variant, true);
-      }
     }
   }
 
@@ -500,106 +330,55 @@ export default function MasterSetChecklist({
   // Variant sätts till setets bas-variant (masterVariants[0]) rent
   // bokföringsmässigt -- parallels är en färg/tryck-variant av kortet,
   // inte en egen "normal/holo/reverse_holo"-status.
-  async function addParallel(card: ChecklistCard) {
-    const tierId = selectedParallel[card.id];
-    if (!tierId) return;
-    const baseVariant: Variant = card.masterVariants[0] ?? "normal";
-    setParallelPending(`${card.id}-add`);
-    setError(null);
-    const supabase = createBrowserSupabase();
-    const { error: insErr } = await supabase.from("master_set_progress").insert({
-      card_id: card.id,
-      variant: baseVariant,
-      parallel_tier_id: tierId,
-    });
-    setParallelPending(null);
-    if (insErr) {
-      if (!insErr.message?.toLowerCase().includes("duplicate")) {
-        setError(insErr.message);
-        return;
-      }
-    }
-    setOwnedParallels((o) => ({
-      ...o,
-      [card.id]: [...(o[card.id] ?? []), tierId],
-    }));
-    setSelectedParallel((s) => ({ ...s, [card.id]: "" }));
-    // Nu ägd -- ingen anledning att fortfarande stå på önskelistan.
-    if ((wantedParallels[card.id] ?? []).includes(tierId)) {
-      removeWantedParallel(card.id, tierId);
-    }
-  }
-
-  async function removeParallel(cardId: string, tierId: string) {
-    const key = `${cardId}-${tierId}`;
+  async function toggleParallel(card: ChecklistCard, tierId: string, isOwned: boolean) {
+    const key = `${card.id}-${tierId}`;
     setParallelPending(key);
     setError(null);
     const supabase = createBrowserSupabase();
-    const { error: delErr } = await supabase
-      .from("master_set_progress")
-      .delete()
-      .eq("card_id", cardId)
-      .eq("parallel_tier_id", tierId);
-    setParallelPending(null);
-    if (delErr) {
-      setError(delErr.message);
-      return;
-    }
-    setOwnedParallels((o) => ({
-      ...o,
-      [cardId]: (o[cardId] ?? []).filter((id) => id !== tierId),
-    }));
-  }
 
-  // Samma modell som addParallel/removeParallel ovan, fast mot
-  // master_set_wants (parallel_tier_id satt) istället för
-  // master_set_progress -- "jag letar efter den här färgen", inte "jag
-  // äger den".
-  async function addWantedParallel(card: ChecklistCard) {
-    const tierId = selectedWantedParallel[card.id];
-    if (!tierId) return;
-    const baseVariant: Variant = card.masterVariants[0] ?? "normal";
-    setWantedParallelPending(`${card.id}-add`);
-    setError(null);
-    const supabase = createBrowserSupabase();
-    const { error: insErr } = await supabase.from("master_set_wants").insert({
-      card_id: card.id,
-      variant: baseVariant,
-      parallel_tier_id: tierId,
-    });
-    setWantedParallelPending(null);
-    if (insErr) {
-      if (!insErr.message?.toLowerCase().includes("duplicate")) {
-        setError(insErr.message);
+    if (isOwned) {
+      const { error: delErr } = await supabase
+        .from("master_set_progress")
+        .delete()
+        .eq("card_id", card.id)
+        .eq("parallel_tier_id", tierId);
+      setParallelPending(null);
+      if (delErr) {
+        setError(delErr.message);
         return;
       }
+      setOwnedParallels((o) => ({
+        ...o,
+        [card.id]: (o[card.id] ?? []).filter((id) => id !== tierId),
+      }));
+    } else {
+      const baseVariant: Variant = card.masterVariants[0] ?? "normal";
+      const { error: insErr } = await supabase.from("master_set_progress").insert({
+        card_id: card.id,
+        variant: baseVariant,
+        parallel_tier_id: tierId,
+      });
+      setParallelPending(null);
+      if (insErr) {
+        if (!insErr.message?.toLowerCase().includes("duplicate")) {
+          setError(insErr.message);
+          return;
+        }
+      }
+      setOwnedParallels((o) => ({
+        ...o,
+        [card.id]: [...(o[card.id] ?? []), tierId],
+      }));
     }
-    setWantedParallels((w) => ({
-      ...w,
-      [card.id]: [...(w[card.id] ?? []), tierId],
-    }));
-    setSelectedWantedParallel((s) => ({ ...s, [card.id]: "" }));
   }
 
-  async function removeWantedParallel(cardId: string, tierId: string) {
-    const key = `${cardId}-${tierId}`;
-    setWantedParallelPending(key);
-    setError(null);
-    const supabase = createBrowserSupabase();
-    const { error: delErr } = await supabase
-      .from("master_set_wants")
-      .delete()
-      .eq("card_id", cardId)
-      .eq("parallel_tier_id", tierId);
-    setWantedParallelPending(null);
-    if (delErr) {
-      setError(delErr.message);
-      return;
-    }
-    setWantedParallels((w) => ({
-      ...w,
-      [cardId]: (w[cardId] ?? []).filter((id) => id !== tierId),
-    }));
+  function toggleExpanded(cardId: string) {
+    setExpandedParallels((prev) => {
+      const next = new Set(prev);
+      if (next.has(cardId)) next.delete(cardId);
+      else next.add(cardId);
+      return next;
+    });
   }
 
   return (
@@ -610,54 +389,6 @@ export default function MasterSetChecklist({
 
       <div className="flex flex-wrap gap-3 mb-6">
         <ProgressBar label="Master Set" progress={liveMaster} />
-        <div className="border border-line rounded-md p-4 bg-panel flex-1 min-w-[200px] flex items-center justify-between">
-          <span className="text-sm font-medium text-paper">Önskelista</span>
-          <span className="text-xs font-mono text-mute">{totalWanted} kort</span>
-        </div>
-      </div>
-
-      <div className="mb-6 border border-line rounded-md p-4 bg-panel">
-        <div className="text-sm font-medium text-paper mb-1">Dubbletter till salu</div>
-        <p className="text-xs text-mute mb-3 max-w-prose">
-          Kort du markerar som dubblett här läggs upp som "har, till salu"
-          på det medlemskonto du väljer nedan -- så dyker de upp för andra
-          medlemmar via Mina matchningar, precis som om kontot självt hade
-          kryssat i det i sin portfölj. Kontot måste redan finnas (skapa
-          det som vanligt via Skapa konto, med det användarnamn du anger
-          här).
-        </p>
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            type="text"
-            value={usernameInput}
-            onChange={(e) => {
-              setUsernameInput(e.target.value);
-              setUsernameSaved(false);
-            }}
-            placeholder="Användarnamn, t.ex. Kortmarknad"
-            className="focus-ring bg-panelLight border border-line rounded-sm px-3 py-1.5 text-sm text-paper"
-          />
-          <button
-            type="button"
-            onClick={saveSellerUsername}
-            disabled={savingUsername}
-            className="focus-ring text-xs rounded-sm bg-gold text-ink font-semibold px-3 py-1.5 disabled:opacity-50"
-          >
-            {savingUsername ? "Sparar…" : "Spara"}
-          </button>
-          {duplicateSellerMemberId && (
-            <span className="text-xs text-gold">
-              ✓ Aktivt konto: {duplicateSellerUsername}
-            </span>
-          )}
-          {duplicateSellerUsername && !duplicateSellerMemberId && (
-            <span className="text-xs text-red-400">
-              Hittar inget konto med användarnamnet "{duplicateSellerUsername}" längre.
-            </span>
-          )}
-          {usernameSaved && <span className="text-xs text-gold">Sparat ✓</span>}
-        </div>
-        {usernameError && <p className="text-xs text-red-400 mt-2">{usernameError}</p>}
       </div>
 
       {parallelTiers.length > 0 && (
@@ -755,15 +486,6 @@ export default function MasterSetChecklist({
           />
           Dölj klara
         </label>
-        <label className="flex items-center gap-2 text-xs text-mute shrink-0">
-          <input
-            type="checkbox"
-            checked={showWantedOnly}
-            onChange={(e) => setShowWantedOnly(e.target.checked)}
-            className="focus-ring accent-gold w-4 h-4"
-          />
-          Endast önskelista
-        </label>
       </div>
 
       {error && <p className="text-sm text-red-400 mb-4">{error}</p>}
@@ -776,15 +498,8 @@ export default function MasterSetChecklist({
             reverseHoloEligibleRarities.includes(c.rarity) &&
             !needVariants.includes("reverse_holo");
           const cardOwnedParallels = ownedParallels[c.id] ?? [];
-          const availableParallels = parallelTiers.filter(
-            (t) => !cardOwnedParallels.includes(t.id)
-          );
-          const cardWantedParallels = wantedParallels[c.id] ?? [];
-          const availableWantedParallels = parallelTiers.filter(
-            (t) => !cardOwnedParallels.includes(t.id) && !cardWantedParallels.includes(t.id)
-          );
-          const cardWanted = wanted[c.id] ?? [];
-          const cardDuplicates = duplicates[c.id] ?? [];
+          const isExpanded = expandedParallels.has(c.id);
+          const unownedCount = parallelTiers.length - cardOwnedParallels.length;
           return (
             <div
               key={c.id}
@@ -810,59 +525,22 @@ export default function MasterSetChecklist({
                 <div className="flex items-center gap-3 shrink-0">
                   {needVariants.map((v) => {
                     const isOwned = cardOwned.includes(v);
-                    const isWanted = cardWanted.includes(v);
-                    const isDuplicate = cardDuplicates.includes(v);
                     const key = `${c.id}-${v}`;
                     const isPending = pending === key;
-                    const isWantPending = wantPending === key;
-                    const isDuplicatePending = duplicatePending === key;
                     return (
-                      <div key={v} className="flex flex-col items-center gap-1">
-                        <label className="flex flex-col items-center gap-1 text-[10px] text-mute cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={isOwned}
-                            disabled={isPending}
-                            onChange={() => toggle(c.id, v, isOwned)}
-                            className="focus-ring accent-gold w-4 h-4"
-                          />
-                          {variantShortLabel[v]}
-                        </label>
-                        {!isOwned && (
-                          <button
-                            type="button"
-                            onClick={() => toggleWant(c.id, v, isWanted)}
-                            disabled={isWantPending}
-                            title={isWanted ? "Ta bort från önskelistan" : "Lägg till på önskelistan"}
-                            className={`focus-ring text-[9px] rounded-sm border px-1 py-0.5 whitespace-nowrap disabled:opacity-50 ${
-                              isWanted
-                                ? "bg-gold/20 text-gold border-gold/60"
-                                : "text-mute border-line hover:border-gold hover:text-gold"
-                            }`}
-                          >
-                            {isWanted ? "★ Vill ha" : "☆ Vill ha"}
-                          </button>
-                        )}
-                        {isOwned && duplicateSellerMemberId && (
-                          <button
-                            type="button"
-                            onClick={() => toggleDuplicate(c.id, v, isDuplicate)}
-                            disabled={isDuplicatePending}
-                            title={
-                              isDuplicate
-                                ? "Ta bort från salu"
-                                : "Markera som dubblett -- till salu för medlemmar"
-                            }
-                            className={`focus-ring text-[9px] rounded-sm border px-1 py-0.5 whitespace-nowrap disabled:opacity-50 ${
-                              isDuplicate
-                                ? "bg-sport-pitch/20 text-sport-pitch border-sport-pitch/60"
-                                : "text-mute border-line hover:border-sport-pitch hover:text-sport-pitch"
-                            }`}
-                          >
-                            {isDuplicate ? "✓ Till salu" : "Dubblett?"}
-                          </button>
-                        )}
-                      </div>
+                      <label
+                        key={v}
+                        className="flex flex-col items-center gap-1 text-[10px] text-mute cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isOwned}
+                          disabled={isPending}
+                          onChange={() => toggle(c.id, v, isOwned)}
+                          className="focus-ring accent-gold w-4 h-4"
+                        />
+                        {variantShortLabel[v]}
+                      </label>
                     );
                   })}
                   {canAddReverseHolo && (
@@ -880,128 +558,107 @@ export default function MasterSetChecklist({
               </div>
 
               {parallelTiers.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2 pl-[6.5rem] border-t border-line pt-2">
-                  <span className="text-[10px] uppercase tracking-wide text-mute shrink-0">
-                    Parallels:
-                  </span>
-                  {cardOwnedParallels.length === 0 && (
-                    <span className="text-[10px] text-mute">Inga registrerade</span>
-                  )}
-                  {cardOwnedParallels.map((tierId) => {
-                    const tier = parallelTiers.find((t) => t.id === tierId);
-                    if (!tier) return null;
-                    const key = `${c.id}-${tierId}`;
-                    return (
-                      <span
-                        key={tierId}
-                        className="inline-flex items-center gap-1 text-[10px] bg-sport-pitch/10 text-sport-pitch border border-sport-pitch/40 rounded-full px-2 py-0.5"
-                      >
-                        {tier.name}
-                        {tier.print_run ? ` /${tier.print_run}` : ""}
-                        <button
-                          type="button"
-                          onClick={() => removeParallel(c.id, tierId)}
-                          disabled={parallelPending === key}
-                          className="focus-ring text-sport-pitch/70 hover:text-red-400 disabled:opacity-50"
-                          title="Ta bort"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    );
-                  })}
-                  {availableParallels.length > 0 && (
-                    <span className="flex items-center gap-1 ml-auto">
-                      <select
-                        value={selectedParallel[c.id] ?? ""}
-                        onChange={(e) =>
-                          setSelectedParallel((s) => ({ ...s, [c.id]: e.target.value }))
-                        }
-                        className="focus-ring bg-panelLight border border-line rounded-sm px-2 py-1 text-[10px] text-paper"
-                      >
-                        <option value="">Välj parallel…</option>
-                        {availableParallels.map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.name}
-                            {t.print_run ? ` /${t.print_run}` : ""}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        onClick={() => addParallel(c)}
-                        disabled={
-                          !selectedParallel[c.id] || parallelPending === `${c.id}-add`
-                        }
-                        className="focus-ring text-[10px] text-mute hover:text-gold border border-line hover:border-gold rounded-sm px-2 py-1 disabled:opacity-50 whitespace-nowrap"
-                      >
-                        + Lägg till
-                      </button>
+                <div className="pl-[6.5rem] border-t border-line pt-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] uppercase tracking-wide text-mute shrink-0 mr-1">
+                      Parallels:
                     </span>
-                  )}
-                </div>
-              )}
+                    {cardOwnedParallels.length === 0 && !isExpanded && (
+                      <span className="text-[10px] text-mute">Inga registrerade</span>
+                    )}
+                    {!isExpanded &&
+                      cardOwnedParallels.map((tierId) => {
+                        const tier = parallelTiers.find((t) => t.id === tierId);
+                        if (!tier) return null;
+                        const key = `${c.id}-${tierId}`;
+                        return (
+                          <ParallelChip
+                            key={tierId}
+                            tier={tier}
+                            owned
+                            pending={parallelPending === key}
+                            onClick={() => toggleParallel(c, tierId, true)}
+                          />
+                        );
+                      })}
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(c.id)}
+                      className="focus-ring text-[10px] text-mute hover:text-gold border border-line hover:border-gold rounded-sm px-2 py-0.5 whitespace-nowrap ml-auto"
+                    >
+                      {isExpanded
+                        ? "Dölj"
+                        : unownedCount > 0
+                        ? `+ Visa alla (${unownedCount} kvar)`
+                        : "Visa alla"}
+                    </button>
+                  </div>
 
-              {parallelTiers.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2 pl-[6.5rem]">
-                  <span className="text-[10px] uppercase tracking-wide text-mute shrink-0">
-                    Vill ha parallels:
-                  </span>
-                  {cardWantedParallels.length === 0 && (
-                    <span className="text-[10px] text-mute">Inga önskade</span>
-                  )}
-                  {cardWantedParallels.map((tierId) => {
-                    const tier = parallelTiers.find((t) => t.id === tierId);
-                    if (!tier) return null;
-                    const key = `${c.id}-${tierId}`;
-                    return (
-                      <span
-                        key={tierId}
-                        className="inline-flex items-center gap-1 text-[10px] bg-gold/20 text-gold border border-gold/40 rounded-full px-2 py-0.5"
-                      >
-                        {tier.name}
-                        {tier.print_run ? ` /${tier.print_run}` : ""}
-                        <button
-                          type="button"
-                          onClick={() => removeWantedParallel(c.id, tierId)}
-                          disabled={wantedParallelPending === key}
-                          className="focus-ring text-gold/70 hover:text-red-400 disabled:opacity-50"
-                          title="Ta bort från önskelistan"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    );
-                  })}
-                  {availableWantedParallels.length > 0 && (
-                    <span className="flex items-center gap-1 ml-auto">
-                      <select
-                        value={selectedWantedParallel[c.id] ?? ""}
-                        onChange={(e) =>
-                          setSelectedWantedParallel((s) => ({ ...s, [c.id]: e.target.value }))
-                        }
-                        className="focus-ring bg-panelLight border border-line rounded-sm px-2 py-1 text-[10px] text-paper"
-                      >
-                        <option value="">Välj parallel…</option>
-                        {availableWantedParallels.map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.name}
-                            {t.print_run ? ` /${t.print_run}` : ""}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        onClick={() => addWantedParallel(c)}
-                        disabled={
-                          !selectedWantedParallel[c.id] ||
-                          wantedParallelPending === `${c.id}-add`
-                        }
-                        className="focus-ring text-[10px] text-mute hover:text-gold border border-line hover:border-gold rounded-sm px-2 py-1 disabled:opacity-50 whitespace-nowrap"
-                      >
-                        + Vill ha
-                      </button>
-                    </span>
+                  {isExpanded && (
+                    <div className="mt-2 space-y-2">
+                      {/* Grupperat på channel precis som infoboxen ovan --
+                          håller varje rad kort istället för en vägg av
+                          39 chips i en enda lång rad. */}
+                      {Array.from(
+                        new Set(parallelTiers.filter((t) => t.channel).map((t) => t.channel as string))
+                      ).map((ch) => {
+                        const tiers = parallelTiers.filter((t) => t.channel === ch);
+                        const chLabel =
+                          ch === "hobby"
+                            ? "Hobby"
+                            : ch === "retail"
+                            ? "Retail"
+                            : ch === "display-box"
+                            ? "Display Box"
+                            : ch;
+                        return (
+                          <div key={ch}>
+                            <div className="text-[9px] uppercase tracking-wide text-mute mb-1">
+                              {chLabel}
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {tiers.map((t) => {
+                                const key = `${c.id}-${t.id}`;
+                                const isOwned = cardOwnedParallels.includes(t.id);
+                                return (
+                                  <ParallelChip
+                                    key={t.id}
+                                    tier={t}
+                                    owned={isOwned}
+                                    pending={parallelPending === key}
+                                    onClick={() => toggleParallel(c, t.id, isOwned)}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {parallelTiers.some((t) => !t.channel) && (
+                        <div>
+                          <div className="text-[9px] uppercase tracking-wide text-mute mb-1">
+                            Övrigt
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {parallelTiers
+                              .filter((t) => !t.channel)
+                              .map((t) => {
+                                const key = `${c.id}-${t.id}`;
+                                const isOwned = cardOwnedParallels.includes(t.id);
+                                return (
+                                  <ParallelChip
+                                    key={t.id}
+                                    tier={t}
+                                    owned={isOwned}
+                                    pending={parallelPending === key}
+                                    onClick={() => toggleParallel(c, t.id, isOwned)}
+                                  />
+                                );
+                              })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
