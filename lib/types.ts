@@ -99,6 +99,10 @@ export interface AuctionListing {
   endsAt: string;
   status: "open" | "closed";
   reserveMet: boolean;
+  // Besökarens egen status på auktionen -- sätts bara om hen är inloggad.
+  viewerStatus: "leading" | "outbid" | "none";
+  // Det egna dolda maxbudet, bara medan besökaren leder (annars null).
+  viewerMaxSek: number | null;
 }
 
 export interface AuctionWin {

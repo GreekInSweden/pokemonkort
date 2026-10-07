@@ -33,7 +33,7 @@ export default function NewAuctionForm({ sets }: { sets: SetOption[] }) {
   const [variantId, setVariantId] = useState("");
   const [startingPrice, setStartingPrice] = useState(100);
   const [reservePrice, setReservePrice] = useState<number | "">("");
-  const [minIncrement, setMinIncrement] = useState(10);
+  const [minIncrement, setMinIncrement] = useState(15);
   const [endsAt, setEndsAt] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

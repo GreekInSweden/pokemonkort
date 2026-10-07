@@ -24,6 +24,15 @@ interface Message {
   wasUnread: boolean;
 }
 
+interface Notification {
+  id: string;
+  auctionId: string | null;
+  kind: string;
+  body: string;
+  createdAt: string;
+  wasUnread: boolean;
+}
+
 function formatWhen(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleString("sv-SE", {
@@ -36,6 +45,7 @@ function formatWhen(iso: string): string {
 
 export default function MessageInbox() {
   const [messages, setMessages] = useState<Message[] | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [replyOpenId, setReplyOpenId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
   const [replyImages, setReplyImages] = useState<{ front: string | null; back: string | null }>({
@@ -53,7 +63,65 @@ export default function MessageInbox() {
       .then((res) => res.json())
       .then((data) => setMessages(data.messages ?? []))
       .catch(() => setMessages([]));
+    fetch("/api/member/notifications")
+      .then((res) => res.json())
+      .then((data) => setNotifications(data.notifications ?? []))
+      .catch(() => setNotifications([]));
   }
+
+  // Systembesked (t.ex. "du har blivit överbjuden") -- raderas optimistiskt
+  // på samma sätt som vanliga meddelanden.
+  function deleteNotification(id: string) {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    fetch("/api/member/notifications", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    }).catch(() => {
+      // Misslyckas det dyker beskedet upp igen nästa gång sidan laddas.
+    });
+  }
+
+  const notificationList =
+    notifications.length > 0 ? (
+      <div className="space-y-2 mb-6">
+        <div className="text-xs text-mute uppercase tracking-wide">Notiser</div>
+        {notifications.map((n) => (
+          <div
+            key={n.id}
+            className={`border rounded-md p-3 bg-panel ${
+              n.wasUnread ? "border-gold" : "border-line"
+            }`}
+          >
+            <div className="flex items-center justify-between gap-3 mb-1">
+              <span className="text-xs text-gold">
+                {n.kind === "outbid" ? "Överbjuden på auktion" : "Notis"}
+              </span>
+              <span className="flex items-center gap-2 shrink-0">
+                <span className="text-[10px] text-mute font-mono">
+                  {formatWhen(n.createdAt)}
+                </span>
+                <button
+                  onClick={() => deleteNotification(n.id)}
+                  className="focus-ring text-[11px] text-mute hover:text-red-400"
+                >
+                  Radera
+                </button>
+              </span>
+            </div>
+            <p className="text-sm text-paper">{n.body}</p>
+            {n.auctionId && (
+              <a
+                href="/auktioner"
+                className="focus-ring inline-block mt-2 text-xs text-gold hover:underline"
+              >
+                Gå till auktionerna
+              </a>
+            )}
+          </div>
+        ))}
+      </div>
+    ) : null;
 
   useEffect(() => {
     load();
@@ -149,19 +217,23 @@ export default function MessageInbox() {
 
   if (messages.length === 0) {
     return (
-      <p className="text-mute text-sm">
-        Inga meddelanden än. De dyker upp här när du eller någon du matchat
-        med skickar ett meddelande om ett kort — se{" "}
-        <a href="/konto/matchningar" className="text-gold hover:underline">
-          Mina matchningar
-        </a>
-        .
-      </p>
+      <div>
+        {notificationList}
+        <p className="text-mute text-sm">
+          Inga meddelanden än. De dyker upp här när du eller någon du matchat
+          med skickar ett meddelande om ett kort — se{" "}
+          <a href="/konto/matchningar" className="text-gold hover:underline">
+            Mina matchningar
+          </a>
+          .
+        </p>
+      </div>
     );
   }
 
   return (
     <div className="space-y-3">
+      {notificationList}
       <p className="text-xs text-mute">
         Det här är inte en chatt i realtid — meddelanden dyker upp nästa
         gång du eller den andra laddar om sidan, inte direkt.
