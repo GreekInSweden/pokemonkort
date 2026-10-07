@@ -20,5 +20,13 @@ export async function GET() {
     .eq("to_member_id", member.id)
     .is("read_at", null);
 
-  return NextResponse.json({ unreadCount: count ?? 0 });
+  // Olästa systembesked (t.ex. "du har blivit överbjuden") räknas med i
+  // samma siffra. Saknas tabellen ännu räknas de bara som 0.
+  const { count: notifCount } = await supabaseAdmin
+    .from("member_notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("member_id", member.id)
+    .is("read_at", null);
+
+  return NextResponse.json({ unreadCount: (count ?? 0) + (notifCount ?? 0) });
 }

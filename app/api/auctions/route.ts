@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { getCurrentMember } from "@/lib/currentMember";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -27,6 +28,9 @@ async function closeExpiredAuctions() {
       .select("amount_sek, member_id")
       .eq("auction_id", a.id)
       .order("amount_sek", { ascending: false })
+      // Vid lika belopp (maxbud som slår exakt lika) leder den senast
+      // lagda raden -- se /api/bid.
+      .order("created_at", { ascending: false })
       .limit(1);
 
     const reservePrice =
@@ -67,6 +71,16 @@ async function closeExpiredAuctions() {
 export async function GET() {
   await closeExpiredAuctions();
 
+  // Vem tittar? Används bara för att markera "Du leder" / "Du har blivit
+  // överbjuden" på just den här besökarens auktioner -- aldrig för att
+  // exponera något om andra. Utloggad = ingen markering.
+  let viewerId: string | null = null;
+  try {
+    viewerId = (await getCurrentMember())?.id ?? null;
+  } catch {
+    viewerId = null;
+  }
+
   const { data: auctions, error } = await supabaseAdmin
     .from("auctions")
     .select(
@@ -87,15 +101,39 @@ export async function GET() {
     // leder" without exposing any real identity or contact details.
     const { data: bidRows } = await supabaseAdmin
       .from("bids")
-      .select("amount_sek, created_at, members(member_number, username)")
+      .select("amount_sek, created_at, member_id, members(member_number, username)")
       .eq("auction_id", a.id)
-      .order("amount_sek", { ascending: false });
+      .order("amount_sek", { ascending: false })
+      .order("created_at", { ascending: false });
 
     const bidHistory = (bidRows ?? []).map((b: any) => ({
       memberNumber: b.members?.member_number ?? null,
       username: b.members?.username ?? null,
       amountSek: Number(b.amount_sek),
     }));
+
+    // Besökarens egen status på den här auktionen: leder, har blivit
+    // överbjuden (har lagt bud men leder inte), eller ingenting.
+    let viewerStatus: "leading" | "outbid" | "none" = "none";
+    let viewerMaxSek: number | null = null;
+    if (viewerId) {
+      const leaderId = (bidRows ?? [])[0]?.member_id ?? null;
+      const hasBid = (bidRows ?? []).some((b: any) => b.member_id === viewerId);
+      if (leaderId === viewerId) viewerStatus = "leading";
+      else if (hasBid) viewerStatus = "outbid";
+
+      // Det egna dolda maxbudet visas bara för medlemmen själv, och bara
+      // medan hen leder (då är det relevant att kunna höja det).
+      if (viewerStatus === "leading") {
+        const { data: myMax } = await supabaseAdmin
+          .from("auction_max_bids")
+          .select("max_amount_sek")
+          .eq("auction_id", a.id)
+          .eq("member_id", viewerId)
+          .maybeSingle();
+        viewerMaxSek = myMax ? Number(myMax.max_amount_sek) : null;
+      }
+    }
 
     const card = a.card_variants?.cards;
     const reservePrice = a.reserve_price_sek !== null ? Number(a.reserve_price_sek) : null;
@@ -124,6 +162,8 @@ export async function GET() {
       // Never send the actual reserve_price_sek to the client — only
       // whether it's been reached, so the number itself stays private.
       reserveMet: reservePrice === null || currentHighSek >= reservePrice,
+      viewerStatus,
+      viewerMaxSek,
     });
   }
 

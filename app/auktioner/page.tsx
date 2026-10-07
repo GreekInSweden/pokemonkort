@@ -12,7 +12,10 @@ import CountdownTimer from "@/components/CountdownTimer";
 export default function AuktionerPage() {
   const [auctions, setAuctions] = useState<AuctionListing[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeAuction, setActiveAuction] = useState<AuctionListing | null>(null);
+  // Id istället för en hel kopia av auktionen -- då följer den öppna
+  // budrutan med när sidan hämtar ny data var 20:e sekund (nytt högsta bud,
+  // "du har blivit överbjuden" osv) istället för att visa gammal data.
+  const [activeAuctionId, setActiveAuctionId] = useState<string | null>(null);
   const [win, setWin] = useState<AuctionWin | null>(null);
   const [member, setMember] = useState<Member | null | undefined>(undefined);
 
@@ -59,6 +62,9 @@ export default function AuktionerPage() {
     return () => clearInterval(interval);
   }, [load, checkWin, loadMember]);
 
+  const activeAuction = auctions.find((a) => a.auctionId === activeAuctionId) ?? null;
+  const outbidAuctions = auctions.filter((a) => a.viewerStatus === "outbid");
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-14">
       <h1 className="font-display text-4xl font-bold text-paper mb-2">
@@ -92,6 +98,20 @@ export default function AuktionerPage() {
         </Link>
       )}
 
+      {outbidAuctions.length > 0 && (
+        <div className="border border-amber-400/60 rounded-md p-4 bg-amber-400/10 mb-8">
+          <p className="font-display font-semibold text-amber-400 mb-1">
+            Du har blivit överbjuden på {outbidAuctions.length}{" "}
+            {outbidAuctions.length === 1 ? "auktion" : "auktioner"}
+          </p>
+          <p className="text-sm text-paper">
+            {outbidAuctions.map((a) => a.cardName).join(", ")}. Klicka på
+            kortet och lägg ett högre maxbud om du vill ta tillbaka
+            ledningen.
+          </p>
+        </div>
+      )}
+
       {loading ? (
         <p className="text-mute">Laddar…</p>
       ) : auctions.length === 0 ? (
@@ -103,7 +123,7 @@ export default function AuktionerPage() {
           {auctions.map((a) => (
             <button
               key={a.auctionId}
-              onClick={() => setActiveAuction(a)}
+              onClick={() => setActiveAuctionId(a.auctionId)}
               className="focus-ring text-left border border-line rounded-md overflow-hidden bg-panel hover:border-gold transition-colors"
             >
               <CardImage
@@ -132,10 +152,20 @@ export default function AuktionerPage() {
                     {a.bidCount} bud
                   </span>
                 </div>
-                {a.leadingMemberNumber !== null && (
-                  <div className="text-xs text-mute mt-1">
-                    Leder: {memberLabel(a.leadingMemberNumber, a.leadingUsername)}
+                {a.viewerStatus === "leading" ? (
+                  <div className="text-xs font-semibold text-gold mt-1">
+                    ✓ Du leder
                   </div>
+                ) : a.viewerStatus === "outbid" ? (
+                  <div className="text-xs font-semibold text-amber-400 mt-1">
+                    ⚠ Du har blivit överbjuden
+                  </div>
+                ) : (
+                  a.leadingMemberNumber !== null && (
+                    <div className="text-xs text-mute mt-1">
+                      Leder: {memberLabel(a.leadingMemberNumber, a.leadingUsername)}
+                    </div>
+                  )
                 )}
                 {!a.reserveMet && a.bidCount > 0 && (
                   <div className="text-xs text-amber-400/90 mt-1">
@@ -155,7 +185,7 @@ export default function AuktionerPage() {
         <BidModal
           auction={activeAuction}
           member={member ?? null}
-          onClose={() => setActiveAuction(null)}
+          onClose={() => setActiveAuctionId(null)}
           onBidPlaced={() => {
             load();
             checkWin();
@@ -177,11 +207,21 @@ function BidModal({
   onClose: () => void;
   onBidPlaced: () => void;
 }) {
-  const minBid = auction.currentHighSek + auction.minIncrementSek;
+  const isLeading = auction.viewerStatus === "leading";
+  const isOutbid = auction.viewerStatus === "outbid";
+  // Utan bud än är första budet exakt startpriset (inte ett steg över).
+  // Leder man själv gäller istället att man bara kan HÖJA sitt maxbud.
+  const minBid = isLeading
+    ? Math.max(auction.viewerMaxSek ?? 0, auction.currentHighSek) + 1
+    : auction.bidCount === 0
+    ? auction.startingPriceSek
+    : auction.currentHighSek + auction.minIncrementSek;
   const [amount, setAmount] = useState(minBid);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [result, setResult] = useState<
+    { outcome: "leading" | "outbid" | "raised"; yourMaxSek: number; currentHighSek: number } | null
+  >(null);
   const [showBack, setShowBack] = useState(false);
   const [endsAt, setEndsAt] = useState(auction.endsAt);
   const [extended, setExtended] = useState(false);
@@ -189,6 +229,7 @@ function BidModal({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setResult(null);
     setSubmitting(true);
     try {
       const res = await fetch("/api/bid", {
@@ -209,9 +250,15 @@ function BidModal({
         setEndsAt(data.extendedEndsAt);
         setExtended(true);
       }
-      setSuccess(true);
+      setResult({
+        outcome: data.outcome,
+        yourMaxSek: data.yourMaxSek ?? amount,
+        currentHighSek: data.currentHighSek ?? auction.currentHighSek,
+      });
       onBidPlaced();
-      setTimeout(onClose, 1200);
+      // Lyckat bud stänger rutan efter en stund. Blir man direkt
+      // överbjuden lämnas den öppen så beskedet hinner läsas.
+      if (data.outcome !== "outbid") setTimeout(onClose, 2500);
     } catch {
       setSubmitting(false);
       setError("Kunde inte nå servern. Kontrollera internetuppkopplingen och försök igen.");
@@ -272,10 +319,28 @@ function BidModal({
         <div className="mb-2">
           <CountdownTimer endsAt={endsAt} size="lg" />
         </div>
-        <p className="text-sm text-mute mb-4">
-          Högsta bud just nu: <span className="text-gold">{auction.currentHighSek} kr</span>{" "}
-          · Minsta bud: {minBid} kr
+        <p className="text-sm text-mute mb-3">
+          Högsta bud just nu: <span className="text-gold">{auction.currentHighSek} kr</span>
+          {!isLeading && (
+            <>
+              {" "}
+              · Lägsta maxbud: {minBid} kr
+            </>
+          )}
         </p>
+
+        {isLeading && (
+          <p className="text-sm text-gold border border-gold/50 bg-gold/10 rounded-md p-3 mb-4">
+            ✓ Du leder just nu
+            {auction.viewerMaxSek ? <> · Ditt högsta bud: {auction.viewerMaxSek} kr</> : null}
+          </p>
+        )}
+        {isOutbid && (
+          <p className="text-sm text-amber-400 border border-amber-400/50 bg-amber-400/10 rounded-md p-3 mb-4">
+            ⚠ Du har blivit överbjuden. Lägg ett högre maxbud nedan om du
+            vill ta tillbaka ledningen.
+          </p>
+        )}
 
         {auction.bidHistory.length > 0 && (
           <div className="border border-line rounded-md mb-4 max-h-32 overflow-y-auto divide-y divide-line">
@@ -314,8 +379,37 @@ function BidModal({
           minuter.
         </p>
 
-        {success ? (
-          <p className="text-gold">Bud lagt! Håll koll på sidan om du vinner.</p>
+        {result ? (
+          result.outcome === "outbid" ? (
+            <div>
+              <p className="text-sm text-amber-400 mb-3">
+                Någon har redan ett högre maxbud, så du blev överbjuden
+                direkt. Högsta bud är nu {result.currentHighSek} kr. Lägg
+                ett högre maxbud om du vill ha kortet.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setResult(null);
+                  setAmount(result.currentHighSek + auction.minIncrementSek);
+                }}
+                className="focus-ring w-full rounded-sm bg-gold text-ink font-semibold py-3"
+              >
+                Buda igen
+              </button>
+            </div>
+          ) : result.outcome === "raised" ? (
+            <p className="text-gold">
+              Ditt högsta bud är höjt till {result.yourMaxSek} kr. Du leder
+              fortfarande.
+            </p>
+          ) : (
+            <p className="text-gold">
+              Du leder med {result.currentHighSek} kr! Vi bjuder åt dig
+              automatiskt upp till {result.yourMaxSek} kr om någon bjuder
+              över.
+            </p>
+          )
         ) : !member ? (
           <div className="text-center">
             <p className="text-sm text-mute mb-3">
@@ -331,7 +425,9 @@ function BidModal({
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
             <label className="block">
-              <span className="text-sm text-mute mb-1 block">Ditt bud (kr)</span>
+              <span className="text-sm text-mute mb-1 block">
+                {isLeading ? "Höj ditt högsta bud (kr)" : "Ditt högsta bud (kr)"}
+              </span>
               <input
                 type="number"
                 min={minBid}
@@ -341,6 +437,12 @@ function BidModal({
                 className="focus-ring w-full bg-ink border border-line rounded-sm px-3 py-2 text-paper"
               />
             </label>
+            <p className="text-xs text-mute">
+              Ange det högsta du är beredd att betala. Vi bjuder åt dig
+              automatiskt, {auction.minIncrementSek} kr i taget, bara så
+              mycket som behövs för att du ska leda — upp till ditt högsta
+              bud. Det beloppet syns aldrig för andra.
+            </p>
             {error && <p className="text-sm text-red-400">{error}</p>}
             <button
               type="submit"
@@ -349,6 +451,8 @@ function BidModal({
             >
               {submitting
                 ? "Skickar…"
+                : isLeading
+                ? "Höj mitt högsta bud"
                 : `Buda som ${memberLabel(member.memberNumber, member.username)}`}
             </button>
           </form>

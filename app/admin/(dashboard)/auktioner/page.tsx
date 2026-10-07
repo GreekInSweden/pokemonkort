@@ -34,7 +34,8 @@ export default async function AdminAuktionerPage() {
         .from("bids")
         .select("amount_sek, created_at, members(member_number, name)")
         .eq("auction_id", a.id)
-        .order("amount_sek", { ascending: false });
+        .order("amount_sek", { ascending: false })
+        .order("created_at", { ascending: false });
       const win = Array.isArray(a.auction_wins) ? a.auction_wins[0] ?? null : a.auction_wins;
       return { ...a, bids: bids ?? [], win };
     })

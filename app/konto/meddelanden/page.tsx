@@ -16,7 +16,7 @@ export default async function MeddelandenPage() {
         Meddelanden
       </h1>
       <p className="text-mute mb-8">
-        Meddelanden du skickat och fått, kopplade till dina matchningar.
+        Meddelanden du skickat och fått, kopplade till dina matchningar, samt notiser, t.ex. när du blivit överbjuden på en auktion.
       </p>
 
       <MessageInbox />

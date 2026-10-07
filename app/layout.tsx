@@ -24,7 +24,8 @@ const mono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "Kortmarknad",
-  description: "Köp lösa Pokémonkort — välj kort, betala med Swish, vi skickar.",
+  description:
+    "Mötesplatsen för samlarkort — matcha dig med andra medlemmar för köp, sälj och byte, eller bjud på auktioner.",
 };
 
 export default function RootLayout({
@@ -40,7 +41,10 @@ export default function RootLayout({
           <main className="flex-1">{children}</main>
           <footer className="border-t border-line py-8 mt-16">
             <div className="max-w-6xl mx-auto px-4 flex items-center justify-between text-sm text-mute">
-              <span>Kortmarknad — köp lösa samlarkort. Frakt tillkommer, betalning via Swish.</span>
+              <span>
+                Kortmarknad — mötesplats för samlarkort. Medlemmar matchas för köp, sälj
+                och byte sinsemellan; auktioner sköts via Swish.
+              </span>
               <Link
                 href={LAGER_ENABLED ? "/admin" : "/admin/masterset"}
                 className="focus-ring hover:text-paper shrink-0 ml-4"
