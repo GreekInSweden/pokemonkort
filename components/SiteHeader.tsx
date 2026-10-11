@@ -13,6 +13,7 @@ export default function SiteHeader() {
   const [member, setMember] = useState<Member | null | undefined>(undefined);
   const [matchCount, setMatchCount] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [memberCount, setMemberCount] = useState<number | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -59,6 +60,14 @@ export default function SiteHeader() {
       .then((data) => setUnreadCount(data.unreadCount ?? 0))
       .catch(() => setUnreadCount(0));
   }, [member, pathname]);
+
+  // Antal registrerade medlemmar -- visas där kassasumman satt förut.
+  useEffect(() => {
+    fetch("/api/member-count")
+      .then((res) => res.json())
+      .then((data) => setMemberCount(typeof data.count === "number" ? data.count : null))
+      .catch(() => setMemberCount(null));
+  }, [pathname]);
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -178,6 +187,17 @@ export default function SiteHeader() {
                 {subtotalSek} kr
               </span>
             </Link>
+          )}
+          {memberCount !== null && (
+            <div
+              className="flex items-center gap-2 rounded-md border border-line px-3 py-2"
+              title="Antal registrerade medlemmar"
+            >
+              <span className="font-mono text-sm font-medium text-gold">{memberCount}</span>
+              <span className="font-mono text-sm text-mute">
+                {memberCount === 1 ? "medlem" : "medlemmar"}
+              </span>
+            </div>
           )}
         </nav>
       </div>
