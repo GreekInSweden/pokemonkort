@@ -81,6 +81,7 @@ export default function PortfolioChecklist({
   const [pending, setPending] = useState<Set<EntryKey>>(new Set());
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
   // Vilken parallel som just nu är vald per kort+variant, innan man
   // klickar Har/Vill ha — "" = standardkortet, ingen parallel.
   //
@@ -172,7 +173,12 @@ export default function PortfolioChecklist({
           });
         }
       } else {
-        setEntries((e) => new Set(e).add(k));
+        setEntries((e) => {
+          const next = new Set(e).add(k);
+          // Server tar bort ev. "Vill ha" när man markerar Har.
+          if (status === "have") next.delete(key(cardId, variant, parallelTierId, "want"));
+          return next;
+        });
         if (status === "have") {
           setIntents((m) =>
             new Map(m).set(intentKey(cardId, variant, parallelTierId), {
@@ -195,6 +201,55 @@ export default function PortfolioChecklist({
       next.delete(k);
       return next;
     });
+  }
+
+  async function bulk(action: "have_all" | "clear_have") {
+    const msg =
+      action === "have_all"
+        ? `Markera alla kort i ${setName} som Har? Eventuella "Vill ha" på korten tas bort. Du kan sedan klicka bort de du saknar.`
+        : `Ta bort alla "Har" i ${setName}? "Vill ha" påverkas inte.`;
+    if (!window.confirm(msg)) return;
+    setBulkBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/member/portfolio/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cardIds: cards.map((c) => c.id), action }),
+      });
+      if (!res.ok) throw new Error();
+      if (action === "have_all") {
+        setEntries((e) => {
+          const next = new Set(e);
+          for (const c of cards)
+            for (const v of c.card_variants) {
+              next.add(key(c.id, v.variant, "", "have"));
+              next.delete(key(c.id, v.variant, "", "want"));
+            }
+          return next;
+        });
+        setIntents((m) => {
+          const next = new Map(m);
+          for (const c of cards)
+            for (const v of c.card_variants) {
+              const ik = intentKey(c.id, v.variant, "");
+              if (!next.has(ik)) next.set(ik, { sellable: false, tradeable: false });
+            }
+          return next;
+        });
+      } else {
+        setEntries((e) => new Set(Array.from(e).filter((k) => !(k.endsWith(":have") && k.split(":")[2] === ""))));
+        setIntents((m) => {
+          const next = new Map(m);
+          for (const k of Array.from(next.keys())) if (k.split(":")[2] === "") next.delete(k);
+          return next;
+        });
+      }
+    } catch {
+      setError("Kunde inte genomföra ändringen -- försök igen.");
+    } finally {
+      setBulkBusy(false);
+    }
   }
 
   async function toggleIntent(
@@ -246,6 +301,25 @@ export default function PortfolioChecklist({
       </p>
 
       {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
+
+      {parallelTiers.length === 0 && (
+        <div className="flex gap-2 mb-3 flex-wrap">
+          <button
+            onClick={() => bulk("have_all")}
+            disabled={bulkBusy}
+            className="focus-ring text-xs rounded-sm border border-gold text-gold px-3 py-1.5 hover:bg-gold/10 disabled:opacity-50"
+          >
+            Markera hela setet som Har
+          </button>
+          <button
+            onClick={() => bulk("clear_have")}
+            disabled={bulkBusy}
+            className="focus-ring text-xs rounded-sm border border-line text-mute px-3 py-1.5 hover:text-paper disabled:opacity-50"
+          >
+            Rensa alla Har
+          </button>
+        </div>
+      )}
 
       <input
         type="text"
@@ -350,8 +424,16 @@ export default function PortfolioChecklist({
                       )}
                       <button
                         onClick={() => toggle(card.id, v.variant, parallelTierId, "want")}
-                        disabled={pending.has(key(card.id, v.variant, parallelTierId, "want"))}
-                        className={`focus-ring text-xs rounded-sm px-2 py-0.5 disabled:opacity-50 ${
+                        disabled={
+                          pending.has(key(card.id, v.variant, parallelTierId, "want")) ||
+                          (hasIt && !entries.has(key(card.id, v.variant, parallelTierId, "want")))
+                        }
+                        title={
+                          hasIt && !entries.has(key(card.id, v.variant, parallelTierId, "want"))
+                            ? "Du har redan kortet -- klicka bort Har först om du vill ha det igen"
+                            : undefined
+                        }
+                        className={`focus-ring text-xs rounded-sm px-2 py-0.5 disabled:opacity-40 disabled:cursor-not-allowed ${
                           entries.has(key(card.id, v.variant, parallelTierId, "want"))
                             ? "bg-gold/20 text-gold font-semibold border border-gold"
                             : "border border-line text-mute hover:border-gold"
