@@ -59,6 +59,40 @@ export async function POST(req: NextRequest) {
   }
 
   const normalizedParallelTierId = parallelTierId ?? null;
+
+  // Har och Vill ha utesluter varandra för samma kort+variant+parallel:
+  // - "Vill ha" nekas om man redan har kortet (klicka bort Har först).
+  // - "Har" tar automatiskt bort ett ev. "Vill ha" på samma kort.
+  {
+    const other = status === "have" ? "want" : "have";
+    let q = supabaseAdmin
+      .from("member_cards")
+      .select("id")
+      .eq("member_id", member.id)
+      .eq("card_id", cardId)
+      .eq("variant", variant)
+      .eq("status", other);
+    q = normalizedParallelTierId
+      ? q.eq("parallel_tier_id", normalizedParallelTierId)
+      : q.is("parallel_tier_id", null);
+    const { data: otherRows } = await q;
+    if (otherRows && otherRows.length > 0) {
+      if (status === "want") {
+        return NextResponse.json(
+          { error: "Du har redan det här kortet -- klicka bort Har först." },
+          { status: 409 }
+        );
+      }
+      await supabaseAdmin
+        .from("member_cards")
+        .delete()
+        .in(
+          "id",
+          otherRows.map((r: any) => r.id)
+        );
+    }
+  }
+
   const row = {
     member_id: member.id,
     card_id: cardId,
