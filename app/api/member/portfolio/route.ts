@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getCurrentMember } from "@/lib/currentMember";
 import { Variant } from "@/lib/types";
+import { getMembershipState, canUseSet } from "@/lib/membership";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +60,27 @@ export async function POST(req: NextRequest) {
   }
 
   const normalizedParallelTierId = parallelTierId ?? null;
+
+  // Betalnivå (om påslagen i admin): gratis medlemmar får bara fylla i
+  // sina första 3 set. Se lib/membership.ts.
+  const membership = await getMembershipState(member.id);
+  if (membership.enabled && !membership.paid) {
+    const { data: cardRow } = await supabaseAdmin
+      .from("cards")
+      .select("set_id")
+      .eq("id", cardId)
+      .maybeSingle();
+    if (cardRow && !canUseSet(membership, cardRow.set_id)) {
+      return NextResponse.json(
+        {
+          error:
+            "Du har använt dina 3 gratis set. Bli medlem för att fylla i fler.",
+          code: "paywall",
+        },
+        { status: 402 }
+      );
+    }
+  }
 
   // Har och Vill ha utesluter varandra för samma kort+variant+parallel:
   // - "Vill ha" nekas om man redan har kortet (klicka bort Har först).

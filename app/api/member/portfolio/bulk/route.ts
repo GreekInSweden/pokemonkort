@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getCurrentMember } from "@/lib/currentMember";
+import { getMembershipState, canUseSet } from "@/lib/membership";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Kunde inte rensa." }, { status: 500 });
     }
     return NextResponse.json({ ok: true });
+  }
+
+  // Betalnivå: "Har alla" i ett set man inte får använda nekas.
+  const membership = await getMembershipState(member.id);
+  if (membership.enabled && !membership.paid) {
+    const { data: setRows } = await supabaseAdmin
+      .from("cards")
+      .select("set_id")
+      .in("id", cardIds);
+    const setIds = Array.from(new Set((setRows ?? []).map((r: any) => r.set_id)));
+    if (setIds.some((id) => !canUseSet(membership, id))) {
+      return NextResponse.json(
+        {
+          error: "Du har använt dina 3 gratis set. Bli medlem för att fylla i fler.",
+          code: "paywall",
+        },
+        { status: 402 }
+      );
+    }
   }
 
   const { data: variants, error: vErr } = await supabaseAdmin

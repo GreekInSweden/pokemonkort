@@ -5,6 +5,13 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { Variant, Rarity, ParallelTier } from "@/lib/types";
 import PortfolioChecklist from "@/components/PortfolioChecklist";
 import SetPicker from "@/components/SetPicker";
+import {
+  getMembershipState,
+  canUseSet,
+  FREE_SET_LIMIT,
+  PRICE_MONTH_SEK,
+  PRICE_YEAR_SEK,
+} from "@/lib/membership";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +62,15 @@ export default async function PortfolioPage({
 
   const selectedSlug = searchParams.set ?? sets[0]?.slug;
   const selectedSet = sets.find((s) => s.slug === selectedSlug) ?? null;
+
+  // Betalnivå (av som standard -- slås på i Admin -> Medlemskap).
+  const membership = await getMembershipState(member.id);
+  const limited = membership.enabled && !membership.paid;
+  const lockedSetIds = limited
+    ? sets.filter((s) => !canUseSet(membership, s.id)).map((s) => s.id)
+    : [];
+  const selectedLocked = !!selectedSet && lockedSetIds.includes(selectedSet.id);
+  const swishNumber = process.env.NEXT_PUBLIC_SWISH_NUMBER || "";
 
   let cards: CardRow[] = [];
   let ownEntries: {
@@ -114,10 +130,40 @@ export default async function PortfolioPage({
         .
       </p>
 
-      <SetPicker sets={sets} selectedSlug={selectedSlug} baseHref="/konto/portfolj" />
+      {limited && (
+        <p className="text-xs text-mute font-mono mb-3">
+          Gratis: {membership.freeSetIds.length} av {FREE_SET_LIMIT} set använda
+        </p>
+      )}
+
+      <SetPicker
+        sets={sets}
+        selectedSlug={selectedSlug}
+        baseHref="/konto/portfolj"
+        lockedSetIds={lockedSetIds}
+      />
 
       {!selectedSet ? (
         <p className="text-mute">Inga set upplagda ännu.</p>
+      ) : selectedLocked ? (
+        <div className="border border-gold/40 bg-gold/5 rounded-md p-5 max-w-lg">
+          <div className="font-display font-semibold text-paper mb-1">
+            🔒 {selectedSet.name} kräver medlemskap
+          </div>
+          <p className="text-sm text-mute mb-3">
+            Du har använt dina {FREE_SET_LIMIT} gratis set. Med medlemskap får du
+            fri access till alla set: {PRICE_MONTH_SEK} kr/månad eller{" "}
+            {PRICE_YEAR_SEK} kr/år.
+          </p>
+          <p className="text-sm text-paper">
+            Swisha {PRICE_YEAR_SEK} kr till{" "}
+            <span className="font-mono text-gold">
+              {swishNumber || "[Swish-nummer]"}
+            </span>{" "}
+            och skriv ditt medlemsnummer (#{member.memberNumber}) i meddelandet.
+            Din access aktiveras så snart betalningen har setts.
+          </p>
+        </div>
       ) : (
         <PortfolioChecklist
           setName={selectedSet.name}
