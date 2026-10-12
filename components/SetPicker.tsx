@@ -72,6 +72,7 @@ export default function SetPicker({
   selectedSlug,
   baseHref,
   completeSetIds,
+  lockedSetIds,
 }: {
   sets: SetOption[];
   selectedSlug: string | undefined;
@@ -80,6 +81,8 @@ export default function SetPicker({
   // finns markeras varje helt klart set grönt, och en hel era/kategori
   // (mappen) guld när ALLA set i den är klara.
   completeSetIds?: string[];
+  // Set som är låsta bakom betalnivån (bara portföljen skickar in det).
+  lockedSetIds?: string[];
 }) {
   const [query, setQuery] = useState("");
   const completeSet = useMemo(() => new Set(completeSetIds ?? []), [completeSetIds]);
@@ -234,6 +237,9 @@ export default function SetPicker({
                                   className={`focus-ring text-xs rounded-sm border px-3 py-1.5 inline-flex items-center gap-1 ${colorClasses} ${selectedRing}`}
                                 >
                                   {isComplete && <span aria-hidden>✓</span>}
+                                  {lockedSetIds?.includes(s.id) && (
+                                    <span aria-hidden title="Kräver medlemskap">🔒</span>
+                                  )}
                                   {s.name}
                                 </a>
                               );

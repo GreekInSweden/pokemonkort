@@ -128,6 +128,7 @@ export default function PortfolioChecklist({
     setError(null);
 
     let ok = false;
+    let paywalled = false;
     try {
       const res = isActive
         ? await fetch("/api/member/portfolio", {
@@ -151,6 +152,7 @@ export default function PortfolioChecklist({
             }),
           });
       ok = res.ok;
+      if (res.status === 402) paywalled = true;
     } catch {
       ok = false;
     }
@@ -188,6 +190,8 @@ export default function PortfolioChecklist({
           );
         }
       }
+    } else if (paywalled) {
+      setError("Du har använt dina 3 gratis set. Bli medlem för att fylla i fler.");
     } else {
       setError(
         isActive
@@ -217,6 +221,10 @@ export default function PortfolioChecklist({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cardIds: cards.map((c) => c.id), action }),
       });
+      if (res.status === 402) {
+        setError("Du har använt dina 3 gratis set. Bli medlem för att fylla i fler.");
+        return;
+      }
       if (!res.ok) throw new Error();
       if (action === "have_all") {
         setEntries((e) => {
