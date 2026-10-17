@@ -31,6 +31,7 @@ export default async function ButikPage({
       "id, name, category, set_name, description, price_sek, stock, weight_g, image_url, is_active, sort_order"
     )
     .eq("is_active", true)
+    .gt("stock", 0)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
   if (active) query = query.eq("category", active);
