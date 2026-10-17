@@ -118,8 +118,23 @@ export default function PortfolioChecklist({
     );
   }, [cards, query]);
 
-  const haveCount = Array.from(entries).filter((k) => k.endsWith(":have")).length;
-  const wantCount = Array.from(entries).filter((k) => k.endsWith(":want")).length;
+  // Räkna bara poster på kort+variant som faktiskt finns kvar i listan.
+  // Gamla rader på borttagna varianter (t.ex. Vanligt/Reverse Holo på
+  // 30th Celebration) ligger kvar i member_cards tills de städas, men
+  // ska inte blåsa upp siffran.
+  const validPrefixes = useMemo(() => {
+    const s = new Set<string>();
+    for (const c of cards) for (const v of c.card_variants) s.add(`${c.id}:${v.variant}:`);
+    return s;
+  }, [cards]);
+  const countStatus = (status: Status) =>
+    Array.from(entries).filter((k) => {
+      if (!k.endsWith(`:${status}`)) return false;
+      const parts = k.split(":");
+      return validPrefixes.has(`${parts[0]}:${parts[1]}:`);
+    }).length;
+  const haveCount = countStatus("have");
+  const wantCount = countStatus("want");
 
   async function toggle(cardId: string, variant: Variant, parallelTierId: string, status: Status) {
     const k = key(cardId, variant, parallelTierId, status);
