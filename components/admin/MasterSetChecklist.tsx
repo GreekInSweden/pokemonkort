@@ -14,6 +14,8 @@ interface ChecklistCard {
   rarity: Rarity;
   imageUrl: string | null;
   masterVariants: Variant[];
+  // Foil-only (t.ex. 30th Celebration): bara holo-tryck, ingen reverse holo.
+  foilOnly?: boolean;
   ownedVariants: Variant[];
   ownedParallelTierIds: string[];
 }
@@ -228,6 +230,7 @@ export default function MasterSetChecklist({
   function effectiveMasterVariants(c: ChecklistCard): Variant[] {
     if (
       addedReverseHolo.has(c.id) &&
+      !c.foilOnly &&
       reverseHoloEligibleRarities.includes(c.rarity) &&
       !c.masterVariants.includes("reverse_holo")
     ) {
@@ -496,6 +499,7 @@ export default function MasterSetChecklist({
           const needVariants = effectiveMasterVariants(c);
           const canAddReverseHolo =
             reverseHoloEligibleRarities.includes(c.rarity) &&
+            !c.foilOnly &&
             !needVariants.includes("reverse_holo");
           const cardOwnedParallels = ownedParallels[c.id] ?? [];
           const isExpanded = expandedParallels.has(c.id);
