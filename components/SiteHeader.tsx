@@ -14,6 +14,7 @@ export default function SiteHeader() {
   const [matchCount, setMatchCount] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
   const [memberCount, setMemberCount] = useState<number | null>(null);
+  const [shopEnabled, setShopEnabled] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -69,6 +70,14 @@ export default function SiteHeader() {
       .catch(() => setMemberCount(null));
   }, [pathname]);
 
+  // Butik-länken visas bara när butiken är påslagen i admin.
+  useEffect(() => {
+    fetch("/api/shop-enabled")
+      .then((res) => res.json())
+      .then((data) => setShopEnabled(!!data.enabled))
+      .catch(() => setShopEnabled(false));
+  }, [pathname]);
+
   async function handleLogout() {
     setLoggingOut(true);
     try {
@@ -76,7 +85,7 @@ export default function SiteHeader() {
     } finally {
       setLoggingOut(false);
       setMember(null);
-      router.push(LAGER_ENABLED ? "/lager" : "/");
+      router.push("/");
       router.refresh();
     }
   }
@@ -145,6 +154,14 @@ export default function SiteHeader() {
           >
             Auktioner
           </Link>
+          {shopEnabled && (
+            <Link
+              href="/butik"
+              className="focus-ring text-sm text-paper hover:text-gold"
+            >
+              Butik
+            </Link>
+          )}
           {LAGER_ENABLED && (
             <Link
               href="/lager"
@@ -177,12 +194,12 @@ export default function SiteHeader() {
               Logga in
             </Link>
           )}
-          {LAGER_ENABLED && (
+          {itemCount > 0 && (
             <Link
               href="/kassa"
               className="focus-ring flex items-center gap-3 rounded-md border border-line px-4 py-2 hover:border-gold transition-colors"
             >
-              <span className="font-mono text-sm text-mute">{itemCount} kort</span>
+              <span className="font-mono text-sm text-mute">{itemCount} st</span>
               <span className="font-mono text-sm font-medium text-gold">
                 {subtotalSek} kr
               </span>

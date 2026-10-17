@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 interface OrderItemRef {
-  cardVariantId: string;
+  cardVariantId: string | null;
+  productId?: string | null;
   quantity: number;
 }
 
@@ -39,7 +40,7 @@ export default function OrderActions({
   async function handleCancel() {
     if (
       !confirm(
-        "Avbryta ordern och lägga tillbaka korten i lager? Gör bara det här om du är säker på att kunden aldrig betalade."
+        "Avbryta ordern och lägga tillbaka varorna i lager? Gör bara det här om du är säker på att kunden aldrig betalade."
       )
     ) {
       return;
@@ -50,6 +51,29 @@ export default function OrderActions({
 
     // Restore stock for every item in the order before cancelling it.
     for (const item of items) {
+      if (item.productId) {
+        const { data: prod, error: pErr } = await supabase
+          .from("products")
+          .select("stock")
+          .eq("id", item.productId)
+          .single();
+        if (pErr || !prod) {
+          setError(`Kunde inte återställa lager för en produkt: ${pErr?.message}`);
+          setLoading(null);
+          return;
+        }
+        const { error: pRestoreErr } = await supabase
+          .from("products")
+          .update({ stock: prod.stock + item.quantity })
+          .eq("id", item.productId);
+        if (pRestoreErr) {
+          setError(`Kunde inte återställa lager: ${pRestoreErr.message}`);
+          setLoading(null);
+          return;
+        }
+        continue;
+      }
+      if (!item.cardVariantId) continue;
       const { data: variant, error: fetchError } = await supabase
         .from("card_variants")
         .select("stock")

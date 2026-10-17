@@ -6,7 +6,8 @@ import OrderActions from "@/components/admin/OrderActions";
 import DeleteOrderButton from "@/components/admin/DeleteOrderButton";
 
 interface OrderItem {
-  card_variant_id: string;
+  card_variant_id: string | null;
+  product_id: string | null;
   card_name: string;
   card_number: number;
   variant: string;
@@ -87,9 +88,9 @@ export default function ArchivedOrders({ orders }: { orders: OrderRow[] }) {
                 {o.items.map((item, i) => (
                   <div key={i} className="text-sm flex justify-between text-paper">
                     <span>
-                      #{String(item.card_number).padStart(3, "0")} {item.card_name}{" "}
+                      {item.product_id ? "" : `#${String(item.card_number).padStart(3, "0")} `}{item.card_name}{" "}
                       <span className="text-mute">
-                        ({variantLabel[item.variant as keyof typeof variantLabel] ?? "Vanligt"}) ×{item.quantity}
+                        {item.product_id ? "" : `(${variantLabel[item.variant as keyof typeof variantLabel] ?? "Vanligt"}) `}×{item.quantity}
                       </span>
                     </span>
                     <span className="font-mono">{item.unit_price_sek * item.quantity} kr</span>
@@ -107,6 +108,7 @@ export default function ArchivedOrders({ orders }: { orders: OrderRow[] }) {
                   orderId={o.id}
                   items={o.items.map((i) => ({
                     cardVariantId: i.card_variant_id,
+                    productId: i.product_id,
                     quantity: i.quantity,
                   }))}
                 />
