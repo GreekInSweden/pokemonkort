@@ -1,6 +1,6 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { Rarity, Variant, ParallelTier } from "@/lib/types";
-import { baseVariantByRarity, reverseHoloEligibleRarities } from "@/lib/rarity";
+import { masterVariantsFor, isFoilOnly } from "@/lib/rarity";
 import MasterSetChecklist from "@/components/admin/MasterSetChecklist";
 import SetPicker from "@/components/SetPicker";
 
@@ -110,12 +110,9 @@ export default async function MasterSetPage({
   // inte som spårbar data i det här systemet, så den nivån visas inte
   // här — den här checklistan mäter bara det som faktiskt går att mäta.
   const checklistCards = cards.map((c) => {
-    const hasVariant = (v: Variant) => c.card_variants.some((cv) => cv.variant === v);
-    const baseVariant = baseVariantByRarity[c.rarity];
-    const reverseEligible = reverseHoloEligibleRarities.includes(c.rarity);
-
-    const masterVariants: Variant[] = hasVariant(baseVariant) ? [baseVariant] : [];
-    if (reverseEligible && hasVariant("reverse_holo")) masterVariants.push("reverse_holo");
+    const present = c.card_variants.map((cv) => cv.variant);
+    const masterVariants = masterVariantsFor(c.rarity, present);
+    const foilOnly = isFoilOnly(c.rarity, present);
 
     const ownedVariants = owned
       .filter((o) => o.card_id === c.id)
@@ -132,6 +129,7 @@ export default async function MasterSetPage({
       rarity: c.rarity,
       imageUrl: c.image_url,
       masterVariants,
+      foilOnly,
       ownedVariants,
       ownedParallelTierIds,
     };
@@ -195,11 +193,7 @@ export default async function MasterSetPage({
 
   const setTotals = new Map<string, { total: number; owned: number }>();
   for (const c of allCards) {
-    const hasVariant = (v: Variant) => c.card_variants.some((cv) => cv.variant === v);
-    const baseVariant = baseVariantByRarity[c.rarity];
-    const reverseEligible = reverseHoloEligibleRarities.includes(c.rarity);
-    const need: Variant[] = hasVariant(baseVariant) ? [baseVariant] : [];
-    if (reverseEligible && hasVariant("reverse_holo")) need.push("reverse_holo");
+    const need = masterVariantsFor(c.rarity, c.card_variants.map((cv) => cv.variant));
 
     const entry = setTotals.get(c.set_id) ?? { total: 0, owned: 0 };
     entry.total += need.length;

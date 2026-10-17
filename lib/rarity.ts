@@ -1,4 +1,4 @@
-import { Rarity } from "./types";
+import { Rarity, Variant } from "./types";
 
 export const rarityLabel: Record<Rarity, string> = {
   common: "Vanligt",
@@ -51,3 +51,31 @@ export const baseVariantByRarity: Record<Rarity, "normal" | "holo"> = {
 // from Double Rare upward is already the special/single print and never
 // gets one.
 export const reverseHoloEligibleRarities: Rarity[] = ["common", "rare"];
+
+// Vilka varianter som räknas mot ett Master Set för ett kort, givet vilka
+// varianter det faktiskt har i databasen. Bastrycket följer rarity (se
+// ovan) -- MEN för set där ALLA kort är foil och inget vanligt tryck
+// finns (t.ex. 30th Celebration) har ett "common" bara en holo-rad och
+// ingen normal-rad. Då räknas holo som bastryck, så kortet inte faller
+// bort ur Master Set.
+export function masterVariantsFor(rarity: Rarity, present: Variant[]): Variant[] {
+  const base = baseVariantByRarity[rarity];
+  const out: Variant[] = [];
+  if (present.includes(base)) out.push(base);
+  else if (base === "normal" && present.includes("holo")) out.push("holo");
+  if (reverseHoloEligibleRarities.includes(rarity) && present.includes("reverse_holo")) {
+    out.push("reverse_holo");
+  }
+  return out;
+}
+
+// True för kort som bara finns som foil (holo) utan vanligt tryck och utan
+// reverse holo -- då ska admin inte erbjuda "lägg till reverse holo".
+export function isFoilOnly(rarity: Rarity, present: Variant[]): boolean {
+  return (
+    baseVariantByRarity[rarity] === "normal" &&
+    present.includes("holo") &&
+    !present.includes("normal") &&
+    !present.includes("reverse_holo")
+  );
+}
