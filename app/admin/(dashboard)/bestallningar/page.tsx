@@ -36,7 +36,7 @@ export default async function BestallningarPage() {
     (orders ?? []).map(async (o) => {
       const { data: items } = await supabase
         .from("order_items")
-        .select("card_variant_id, card_name, card_number, variant, quantity, unit_price_sek")
+        .select("card_variant_id, product_id, card_name, card_number, variant, quantity, unit_price_sek")
         .eq("order_id", o.id);
       return { ...o, items: items ?? [] };
     })
@@ -61,7 +61,7 @@ export default async function BestallningarPage() {
       </h1>
       <p className="text-mute mb-8">
         {pendingCount > 0
-          ? `${pendingCount} väntar på betalning — kolla ålder (datum nedan) och avbryt de som verkar övergivna för att frigöra korten igen.`
+          ? `${pendingCount} väntar på betalning — kolla ålder (datum nedan) och avbryt de som verkar övergivna för att frigöra varorna igen.`
           : "Inga obetalda beställningar väntar just nu."}
       </p>
 
@@ -104,9 +104,9 @@ export default async function BestallningarPage() {
                     {o.items.map((item, i) => (
                       <div key={i} className="text-sm flex justify-between text-paper">
                         <span>
-                          #{String(item.card_number).padStart(3, "0")} {item.card_name}{" "}
+                          {item.product_id ? "" : `#${String(item.card_number).padStart(3, "0")} `}{item.card_name}{" "}
                           <span className="text-mute">
-                            ({variantLabel[item.variant as keyof typeof variantLabel] ?? "Vanligt"}) ×{item.quantity}
+                            {item.product_id ? "" : `(${variantLabel[item.variant as keyof typeof variantLabel] ?? "Vanligt"}) `}×{item.quantity}
                           </span>
                         </span>
                         <span className="font-mono">
@@ -126,6 +126,7 @@ export default async function BestallningarPage() {
                       orderId={o.id}
                       items={o.items.map((i) => ({
                         cardVariantId: i.card_variant_id,
+                        productId: i.product_id,
                         quantity: i.quantity,
                       }))}
                     />

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentMember } from "@/lib/currentMember";
 import { LAGER_ENABLED } from "@/lib/siteConfig";
+import { isShopEnabled } from "@/lib/shopStatus";
 
 export const dynamic = "force-dynamic";
 
@@ -16,15 +17,17 @@ export default async function RootPage() {
     redirect("/konto/portfolj");
   }
 
+  const shop = await isShopEnabled();
+
   return (
     <div>
-      <Hero />
-      <Features />
+      <Hero shop={shop} />
+      <Features shop={shop} />
     </div>
   );
 }
 
-function Hero() {
+function Hero({ shop }: { shop: boolean }) {
   return (
     <div className="max-w-6xl mx-auto px-4 pt-16 pb-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
       <div>
@@ -37,6 +40,8 @@ function Hero() {
         <p className="text-mute text-lg mb-8 max-w-prose">
           {LAGER_ENABLED
             ? "Kortmarknad är stället för lösa Pokémon- och sportkort — köp styckvis ur vårt lager, buda på de sällsynta korten, och bygg din egen portfölj för att hitta andra medlemmar som säljer eller byter precis det du letar efter."
+            : shop
+            ? "Kortmarknad är stället för Pokémon- och sportkort — handla boosters och boxar i butiken, buda på de sällsynta korten, och bygg din egen portfölj för att hitta andra medlemmar som säljer eller byter precis det du letar efter."
             : "Kortmarknad är stället för Pokémon- och sportkort — buda på de sällsynta korten, och bygg din egen portfölj för att hitta andra medlemmar som säljer eller byter precis det du letar efter."}
         </p>
         <div className="flex flex-wrap items-center gap-3">
@@ -61,14 +66,14 @@ function Hero() {
   );
 }
 
-function Features() {
+function Features({ shop }: { shop: boolean }) {
   const items = [
-    ...(LAGER_ENABLED
+    ...(shop
       ? [
           {
             accent: "text-gold",
-            title: "Vårt lager",
-            text: "Bläddra bland lösa Pokémon- och sportkort ur egen samling, sorterade set för set. Välj vilka du vill ha — vi packar och skickar.",
+            title: "Butik",
+            text: "Boosters, booster bundles, Elite Trainer Boxes och tins. Lägg i varukorgen, betala med Swish — vi packar och skickar.",
           },
         ]
       : []),
@@ -86,7 +91,7 @@ function Features() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 pb-20">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className={`grid grid-cols-1 gap-4 ${items.length > 2 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
         {items.map((item) => (
           <div
             key={item.title}

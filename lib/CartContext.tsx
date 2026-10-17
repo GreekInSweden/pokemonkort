@@ -10,7 +10,7 @@ import {
 } from "react";
 import { CartItem } from "./types";
 
-const STORAGE_KEY = "kortlagret-cart-v1";
+const STORAGE_KEY = "kortmarknad-cart-v2";
 
 interface CartContextValue {
   items: CartItem[];

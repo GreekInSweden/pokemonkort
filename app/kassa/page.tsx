@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/lib/CartContext";
-import { calculateShippingSek } from "@/lib/shipping";
+import { calculateShippingForWeightSek } from "@/lib/shipping";
 import { variantLabel } from "@/lib/variant";
 
 export default function KassaPage() {
@@ -44,7 +44,14 @@ export default function KassaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const shippingSek = useMemo(() => calculateShippingSek(itemCount), [itemCount]);
+  const totalWeightG = useMemo(
+    () => items.reduce((sum, i) => sum + (i.weightG ?? 0) * i.quantity, 0),
+    [items]
+  );
+  const shippingSek = useMemo(
+    () => calculateShippingForWeightSek(totalWeightG),
+    [totalWeightG]
+  );
   const totalSek = subtotalSek + shippingSek;
 
   function updateField(field: keyof typeof form, value: string) {
@@ -63,6 +70,7 @@ export default function KassaPage() {
           customer: form,
           items: items.map((i) => ({
             variantId: i.variantId,
+            kind: i.kind ?? "card",
             cardName: i.cardName,
             cardNumber: i.cardNumber,
             variant: i.variant,
@@ -82,7 +90,7 @@ export default function KassaPage() {
       }
       clear();
       router.push(
-        `/order-confirmed?order=${data.orderNumber}&total=${totalSek}`
+        `/order-confirmed?order=${data.orderNumber}&total=${data.totalSek ?? totalSek}`
       );
     } catch {
       setErrorMsg("Kunde inte skicka ordern. Kontrollera din internetuppkoppling.");
@@ -96,12 +104,12 @@ export default function KassaPage() {
         <h1 className="font-display text-3xl font-bold text-paper mb-3">
           Varukorgen är tom
         </h1>
-        <p className="text-mute mb-6">Hitta kort att lägga till först.</p>
+        <p className="text-mute mb-6">Hitta något att lägga till först.</p>
         <Link
-          href="/lager"
+          href="/butik"
           className="focus-ring inline-block rounded-sm bg-gold text-ink font-semibold px-6 py-3"
         >
-          Bläddra bland kort
+          Gå till butiken
         </Link>
       </div>
     );
@@ -121,13 +129,20 @@ export default function KassaPage() {
           >
             <div className="min-w-0">
               <div className="font-mono text-xs text-mute">
-                #{String(item.cardNumber).padStart(3, "0")} · {item.setName}
+                {item.kind === "product"
+                  ? item.setName
+                  : `#${String(item.cardNumber).padStart(3, "0")} · ${item.setName}`}
               </div>
               <div className="font-display font-medium text-paper">
-                {item.cardName}{" "}
-                <span className="text-mute text-sm font-body">
-                  ({variantLabel[item.variant]})
-                </span>
+                {item.cardName}
+                {item.kind !== "product" && (
+                  <>
+                    {" "}
+                    <span className="text-mute text-sm font-body">
+                      ({variantLabel[item.variant]})
+                    </span>
+                  </>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-3 shrink-0">
@@ -157,7 +172,7 @@ export default function KassaPage() {
 
       <div className="border border-line rounded-md p-4 mb-10 space-y-2 font-mono text-sm">
         <div className="flex justify-between text-mute">
-          <span>Delsumma ({itemCount} kort)</span>
+          <span>Delsumma ({itemCount} st)</span>
           <span>{subtotalSek} kr</span>
         </div>
         <div className="flex justify-between text-mute">
@@ -231,7 +246,7 @@ export default function KassaPage() {
         </p>
         <p className="text-xs text-mute text-center border-t border-line pt-3 mt-3">
           Vi reserverar oss för eventuella prisfel och slutförsäljning. Om
-          ett kort visar sig ha fått fel pris eller redan är sålt kontaktar
+          en vara visar sig ha fått fel pris eller redan är slutsåld kontaktar
           vi dig och betalningen återbetalas i sin helhet — du är aldrig
           skyldig att fullfölja köpet till fel pris.
         </p>

@@ -26,11 +26,12 @@ export default function AdminLayout({
                 Lager
               </Link>
             )}
-            {LAGER_ENABLED && (
-              <Link href="/admin/bestallningar" className="focus-ring text-sm text-paper hover:text-gold">
-                Beställningar
-              </Link>
-            )}
+            <Link href="/admin/produkter" className="focus-ring text-sm text-paper hover:text-gold">
+              Produkter
+            </Link>
+            <Link href="/admin/bestallningar" className="focus-ring text-sm text-paper hover:text-gold">
+              Beställningar
+            </Link>
             <Link href="/admin/paket" className="focus-ring text-sm text-paper hover:text-gold">
               Paket
             </Link>

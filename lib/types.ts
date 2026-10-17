@@ -79,6 +79,26 @@ export interface CartItem {
   quantity: number;
   setSlug: string;
   setName: string;
+  // Butiken (sealed-produkter). Saknas på gamla kortrader.
+  kind?: "card" | "product";
+  imageUrl?: string | null;
+  weightG?: number;
+}
+
+export type ProductCategory = "booster" | "booster_bundle" | "etb" | "tin_box" | "other";
+
+export interface ProductRow {
+  id: string;
+  name: string;
+  category: ProductCategory;
+  set_name: string | null;
+  description: string | null;
+  price_sek: number;
+  stock: number;
+  weight_g: number;
+  image_url: string | null;
+  is_active: boolean;
+  sort_order: number;
 }
 
 export interface AuctionListing {

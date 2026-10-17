@@ -51,16 +51,16 @@ export default function OrderConfirmedPage({
 
       <p className="text-xs text-mute mb-8 border-t border-line pt-4">
         Vi reserverar oss för eventuella prisfel och slutförsäljning. Om
-        något kort i din order visar sig ha fått fel pris eller redan är
-        sålt kontaktar vi dig innan något skickas, och betalningen
+        något i din order visar sig ha fått fel pris eller redan är
+        slutsålt kontaktar vi dig innan något skickas, och betalningen
         återbetalas i sin helhet om vi inte kommer överens om något annat.
       </p>
 
       <Link
-        href="/lager"
+        href="/butik"
         className="focus-ring inline-block rounded-sm border border-line px-6 py-3 text-paper hover:border-gold"
       >
-        Tillbaka till lagret
+        Tillbaka till butiken
       </Link>
     </div>
   );

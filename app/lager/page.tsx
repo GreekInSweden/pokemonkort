@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { isShopEnabled } from "@/lib/shopStatus";
 import { supabase } from "@/lib/supabaseClient";
 import { LAGER_ENABLED } from "@/lib/siteConfig";
 
@@ -40,20 +42,8 @@ async function getCategories(): Promise<CategoryGroup[]> {
 }
 
 export default async function LagerPage() {
-  if (!LAGER_ENABLED) {
-    return (
-      <div className="max-w-6xl mx-auto px-4 py-14">
-        <h1 className="font-display text-4xl font-bold text-paper mb-2">
-          Vårt lager
-        </h1>
-        <div className="border border-line rounded-md p-8 text-mute max-w-xl mt-8">
-          Lagret är tillfälligt pausat medan vi bygger om det. Din
-          portfölj, dina matchningar och meddelanden till andra medlemmar
-          fungerar som vanligt under tiden.
-        </div>
-      </div>
-    );
-  }
+  // Kortlagret är pausat -- butiken (sealed-produkter) har tagit över.
+  if (!LAGER_ENABLED) redirect((await isShopEnabled()) ? "/butik" : "/");
 
   const categories = await getCategories();
   const pokemonCategories = categories.filter((c) => c.productLine === "pokemon");
