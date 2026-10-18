@@ -9,6 +9,8 @@ import {
   entriesOpen,
   getCurrentGiveaway,
   isPaidMember,
+  memberTotal,
+  resolveGoal,
 } from "@/lib/giveaway";
 
 export const dynamic = "force-dynamic";
@@ -32,11 +34,13 @@ async function labelsFor(ids: string[]): Promise<Map<string, string>> {
 // dragningen får webbläsaren bara deltagarnamnen att snurra bland.
 //   ?nav=1  ->  bara { active } för menylänken, inga extra frågor.
 export async function GET(req: NextRequest) {
-  const giveaway = await getCurrentGiveaway();
+  const current = await getCurrentGiveaway();
 
   if (req.nextUrl.searchParams.get("nav")) {
-    return NextResponse.json({ active: !!giveaway });
+    return NextResponse.json({ active: !!current });
   }
+
+  const giveaway = current ? await resolveGoal(current) : null;
 
   const now = Date.now();
   const base = { serverNow: new Date(now).toISOString() };
@@ -44,6 +48,8 @@ export async function GET(req: NextRequest) {
   if (!giveaway) {
     return NextResponse.json({ ...base, active: false, giveaway: null });
   }
+
+  const memberCount = giveaway.member_goal ? await memberTotal() : null;
 
   const { count } = await supabaseAdmin
     .from("giveaway_entries")
@@ -66,7 +72,10 @@ export async function GET(req: NextRequest) {
       .eq("member_id", member.id)
       .maybeSingle();
     me.joined = !!mine;
-    if (!entriesOpen(giveaway, now)) {
+    if (giveaway.member_goal && !giveaway.goal_reached_at) {
+      me.eligible = false;
+      me.reason = `Anmälan öppnar när vi är ${giveaway.member_goal} medlemmar.`;
+    } else if (!entriesOpen(giveaway, now)) {
       me.eligible = false;
       me.reason = "Anmälan är stängd.";
     } else if (giveaway.audience === "paid" && !(await isPaidMember(member.id))) {
@@ -153,6 +162,9 @@ export async function GET(req: NextRequest) {
       status: giveaway.status,
       entryCount: count ?? 0,
       entriesOpen: entriesOpen(giveaway, now),
+      memberGoal: giveaway.member_goal,
+      goalReached: !giveaway.member_goal || !!giveaway.goal_reached_at,
+      memberCount,
     },
     me,
     drawing,
@@ -185,9 +197,16 @@ export async function POST(req: NextRequest) {
     .select(GIVEAWAY_COLUMNS)
     .eq("id", giveawayId)
     .maybeSingle();
-  const giveaway = data as GiveawayRow | null;
+  let giveaway = data as GiveawayRow | null;
+  if (giveaway) giveaway = await resolveGoal(giveaway);
   if (!giveaway || giveaway.status === "draft") {
     return NextResponse.json({ error: "Giveawayen finns inte." }, { status: 404 });
+  }
+  if (giveaway.member_goal && !giveaway.goal_reached_at) {
+    return NextResponse.json(
+      { error: `Anmälan öppnar när vi är ${giveaway.member_goal} medlemmar.` },
+      { status: 409 }
+    );
   }
   if (!entriesOpen(giveaway)) {
     return NextResponse.json({ error: "Anmälan är stängd." }, { status: 409 });

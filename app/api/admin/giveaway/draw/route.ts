@@ -3,6 +3,7 @@ import { randomInt } from "crypto";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { isAdminUser } from "@/lib/shopStatus";
 import { memberLabel } from "@/lib/memberLabel";
+import { GIVEAWAY_COLUMNS, GiveawayRow, resolveGoal, memberTotal } from "@/lib/giveaway";
 
 export const dynamic = "force-dynamic";
 
@@ -21,13 +22,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Något saknas." }, { status: 400 });
   }
 
-  const { data: g } = await supabaseAdmin
+  const { data: raw } = await supabaseAdmin
     .from("giveaways")
-    .select("id, status, winner_member_id, draw_started_at")
+    .select(GIVEAWAY_COLUMNS)
     .eq("id", giveawayId)
     .maybeSingle();
-  if (!g) {
+  if (!raw) {
     return NextResponse.json({ error: "Giveawayen finns inte." }, { status: 404 });
+  }
+  const g = await resolveGoal(raw as GiveawayRow);
+  if (g.member_goal && !g.goal_reached_at) {
+    return NextResponse.json(
+      { error: `Medlemsmålet är inte nått ännu (${await memberTotal()} av ${g.member_goal}).` },
+      { status: 409 }
+    );
   }
   if (g.status === "draft") {
     return NextResponse.json({ error: "Publicera giveawayen först." }, { status: 409 });

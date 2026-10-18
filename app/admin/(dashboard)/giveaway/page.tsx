@@ -9,11 +9,15 @@ export default async function AdminGiveawayPage() {
   const { data, error } = await supabase
     .from("giveaways")
     .select(
-      "id, title, description, image_url, audience, draw_at, status, winner_member_id, draw_started_at, created_at, giveaway_entries(count)"
+      "id, title, description, image_url, audience, draw_at, status, winner_member_id, draw_started_at, member_goal, goal_reached_at, created_at, giveaway_entries(count)"
     )
     .order("created_at", { ascending: false });
 
   const rows = (data as any[]) ?? [];
+  const { count: memberCount } = await supabase
+    .from("members")
+    .select("id", { count: "exact", head: true });
+  const members = memberCount ?? 0;
   const winnerIds = rows.map((r) => r.winner_member_id).filter(Boolean) as string[];
   const labels = new Map<string, string>();
   if (winnerIds.length) {
@@ -34,6 +38,9 @@ export default async function AdminGiveawayPage() {
     status: r.status,
     winnerLabel: r.winner_member_id ? labels.get(r.winner_member_id) ?? "Okänd medlem" : null,
     entryCount: r.giveaway_entries?.[0]?.count ?? 0,
+    member_goal: r.member_goal ?? null,
+    goalReached: !r.member_goal || !!r.goal_reached_at || members >= r.member_goal,
+    memberCount: members,
   }));
 
   return (
