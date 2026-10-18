@@ -101,7 +101,7 @@ export default function SiteHeader() {
 
   return (
     <header className="border-b border-line sticky top-0 z-30 bg-ink/95 backdrop-blur">
-      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
         <Link href="/" className="font-display text-xl font-bold tracking-tight text-paper shrink-0">
           Kortmarknad
         </Link>
@@ -110,33 +110,36 @@ export default function SiteHeader() {
             är inloggad, eftersom Min portfölj/Mina matchningar annars
             bara studsar vidare till inloggningen. Mest eftertraktade är
             publik och visas alltid. */}
-        <nav className="hidden md:flex items-center gap-4 flex-1">
+        <nav className="hidden md:flex items-center gap-3 lg:gap-4 flex-1 min-w-0">
           <Link
             href="/sa-funkar-det"
-            className="focus-ring text-sm text-paper hover:text-gold"
+            className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
           >
             Så funkar det
           </Link>
           {member && (
             <Link
               href="/konto/portfolj"
-              className="focus-ring text-sm text-paper hover:text-gold"
+              className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
             >
-              Min portfölj
+              <span className="xl:hidden">Portfölj</span>
+              <span className="hidden xl:inline">Min portfölj</span>
             </Link>
           )}
           <Link
             href="/mest-eftertraktade"
-            className="focus-ring text-sm text-paper hover:text-gold"
+            className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
           >
-            Mest eftertraktade
+            <span className="xl:hidden">Eftertraktade</span>
+            <span className="hidden xl:inline">Mest eftertraktade</span>
           </Link>
           {member && (
             <Link
               href="/konto/matchningar"
-              className="focus-ring text-sm text-paper hover:text-gold"
+              className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
             >
-              Mina matchningar
+              <span className="xl:hidden">Matchningar</span>
+              <span className="hidden xl:inline">Mina matchningar</span>
               {matchCount > 0 && (
                 <span className="text-gold font-mono"> ({matchCount})</span>
               )}
@@ -145,7 +148,7 @@ export default function SiteHeader() {
           {member && (
             <Link
               href="/konto/meddelanden"
-              className="focus-ring text-sm text-paper hover:text-gold"
+              className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
             >
               Meddelanden
               {unreadCount > 0 && (
@@ -156,17 +159,17 @@ export default function SiteHeader() {
         </nav>
 
         {/* Höger grupp: auktioner/butik + konto. */}
-        <nav className="flex items-center gap-4 shrink-0">
+        <nav className="flex items-center gap-3 lg:gap-4 shrink-0">
           <Link
             href="/auktioner"
-            className="focus-ring text-sm text-paper hover:text-gold"
+            className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
           >
             Auktioner
           </Link>
           {giveawayActive && (
             <Link
               href="/giveaway"
-              className="focus-ring text-sm text-paper hover:text-gold"
+              className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
             >
               Giveaway
             </Link>
@@ -174,7 +177,7 @@ export default function SiteHeader() {
           {shopEnabled && (
             <Link
               href="/butik"
-              className="focus-ring text-sm text-paper hover:text-gold"
+              className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
             >
               Butik
             </Link>
@@ -182,7 +185,7 @@ export default function SiteHeader() {
           {LAGER_ENABLED && (
             <Link
               href="/lager"
-              className="focus-ring text-sm text-paper hover:text-gold"
+              className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
             >
               Vårt lager
             </Link>
@@ -191,14 +194,14 @@ export default function SiteHeader() {
             <>
               <Link
                 href="/konto"
-                className="focus-ring text-sm text-paper hover:text-gold"
+                className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap max-w-[9rem] truncate"
               >
                 {memberLabel(member.memberNumber, member.username)}
               </Link>
               <button
                 onClick={handleLogout}
                 disabled={loggingOut}
-                className="focus-ring text-sm text-mute hover:text-paper disabled:opacity-50"
+                className="focus-ring text-sm text-mute hover:text-paper disabled:opacity-50 lg:whitespace-nowrap"
               >
                 {loggingOut ? "Loggar ut…" : "Logga ut"}
               </button>
@@ -206,7 +209,7 @@ export default function SiteHeader() {
           ) : (
             <Link
               href="/konto/logga-in"
-              className="focus-ring text-sm text-paper hover:text-gold"
+              className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
             >
               Logga in
             </Link>
@@ -224,12 +227,15 @@ export default function SiteHeader() {
           )}
           {memberCount !== null && (
             <div
-              className="flex items-center gap-2 rounded-md border border-line px-3 py-2"
+              className="flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 lg:whitespace-nowrap"
               title="Antal registrerade medlemmar"
             >
               <span className="font-mono text-sm font-medium text-gold">{memberCount}</span>
               <span className="font-mono text-sm text-mute">
-                {memberCount === 1 ? "medlem" : "medlemmar"}
+                <span className="xl:hidden">medl.</span>
+                <span className="hidden xl:inline">
+                  {memberCount === 1 ? "medlem" : "medlemmar"}
+                </span>
               </span>
             </div>
           )}
