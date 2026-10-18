@@ -1,11 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { GIVEAWAY_RECENT_DAYS } from "@/lib/giveawayConfig";
 
-// Hur länge live-dragningen "snurrar" innan vinnaren avslöjas (ms).
-export const GIVEAWAY_REVEAL_MS = 10_000;
-
-// Hur länge en avslutad giveaway ligger kvar som aktuell (och länken i
-// menyn syns) efter att vinnaren dragits.
-export const GIVEAWAY_RECENT_DAYS = 14;
+export { GIVEAWAY_REVEAL_MS, GIVEAWAY_RECENT_DAYS } from "@/lib/giveawayConfig";
 
 export type GiveawayStatus = "draft" | "open" | "closed" | "drawn";
 export type GiveawayAudience = "all" | "paid";

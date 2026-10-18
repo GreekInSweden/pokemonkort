@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { GIVEAWAY_REVEAL_MS } from "@/lib/giveaway";
+import { GIVEAWAY_REVEAL_MS } from "@/lib/giveawayConfig";
 
 interface GiveawayData {
   serverNow: string;
@@ -140,7 +140,7 @@ export default function GiveawayView() {
       <h1 className="font-display text-4xl font-bold text-paper mb-2">{g.title}</h1>
       <div className="flex flex-wrap items-center gap-2 mb-6">
         <span className="font-mono text-xs border border-line rounded-sm px-2 py-1 text-mute">
-          {g.status === "drawn" ? "Avslutad" : g.status === "closed" ? "Anmälan stängd" : "Pågår"}
+          {data.drawing ? "Dragning pågår" : g.status === "drawn" ? "Avslutad" : g.status === "closed" ? "Anmälan stängd" : "Pågår"}
         </span>
         {g.audience === "paid" && (
           <span className="font-mono text-xs border border-gold/50 rounded-sm px-2 py-1 text-gold">
@@ -168,8 +168,8 @@ export default function GiveawayView() {
         <div className="border border-line rounded-md bg-panel p-4">
           {g.status === "drawn" ? (
             <>
-              <div className="font-mono text-3xl text-paper">Dragen</div>
-              <div className="text-xs text-mute">vinnare utsedd</div>
+              <div className="font-mono text-3xl text-paper">{data.drawing ? "Live!" : "Dragen"}</div>
+              <div className="text-xs text-mute">{data.drawing ? "dragningen pågår nu" : "vinnare utsedd"}</div>
             </>
           ) : toDraw !== null ? (
             <>
