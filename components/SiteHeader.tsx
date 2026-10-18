@@ -17,6 +17,7 @@ export default function SiteHeader() {
   const [shopEnabled, setShopEnabled] = useState(false);
   const [giveawayActive, setGiveawayActive] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -85,6 +86,11 @@ export default function SiteHeader() {
       .then((res) => res.json())
       .then((data) => setGiveawayActive(!!data.active))
       .catch(() => setGiveawayActive(false));
+  }, [pathname]);
+
+  // Mobilmenyn stängs när man navigerat till en ny sida.
+  useEffect(() => {
+    setMenuOpen(false);
   }, [pathname]);
 
   async function handleLogout() {
@@ -159,7 +165,7 @@ export default function SiteHeader() {
         </nav>
 
         {/* Höger grupp: auktioner/butik + konto. */}
-        <nav className="flex items-center gap-3 lg:gap-4 shrink-0">
+        <nav className="hidden md:flex items-center gap-3 lg:gap-4 shrink-0">
           <Link
             href="/auktioner"
             className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
@@ -240,7 +246,117 @@ export default function SiteHeader() {
             </div>
           )}
         </nav>
+
+        {/* Mobil: kassa + medlemsräknare + menyknapp. Resten av länkarna
+            ligger i panelen som öppnas under. */}
+        <div className="md:hidden flex items-center gap-2 shrink-0">
+          {itemCount > 0 && (
+            <Link
+              href="/kassa"
+              className="focus-ring flex items-center gap-2 rounded-md border border-line px-2.5 py-1.5"
+            >
+              <span className="font-mono text-xs text-mute">{itemCount} st</span>
+              <span className="font-mono text-xs font-medium text-gold">{subtotalSek} kr</span>
+            </Link>
+          )}
+          {memberCount !== null && (
+            <div
+              className="flex items-center gap-1 rounded-md border border-line px-2 py-1.5"
+              title="Antal registrerade medlemmar"
+            >
+              <span className="font-mono text-xs font-medium text-gold">{memberCount}</span>
+              <span className="font-mono text-xs text-mute">medl.</span>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-expanded={menuOpen}
+            aria-label={menuOpen ? "Stäng menyn" : "Öppna menyn"}
+            className="focus-ring relative flex items-center justify-center w-10 h-10 rounded-md border border-line text-paper hover:border-gold"
+          >
+            {menuOpen ? (
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M3 3l12 12M15 3L3 15" />
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M2 4h14M2 9h14M2 14h14" />
+              </svg>
+            )}
+            {!menuOpen && matchCount + unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-gold text-ink text-[10px] font-bold flex items-center justify-center">
+                {matchCount + unreadCount}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
+
+      {menuOpen && (
+        <nav className="md:hidden border-t border-line bg-ink max-h-[calc(100vh-4rem)] overflow-y-auto">
+          <div className="max-w-7xl mx-auto px-4 py-2 flex flex-col">
+            {[
+              { href: "/sa-funkar-det", label: "Så funkar det", show: true },
+              { href: "/konto/portfolj", label: "Min portfölj", show: !!member },
+              { href: "/mest-eftertraktade", label: "Mest eftertraktade", show: true },
+              {
+                href: "/konto/matchningar",
+                label: "Mina matchningar",
+                show: !!member,
+                badge: matchCount,
+              },
+              {
+                href: "/konto/meddelanden",
+                label: "Meddelanden",
+                show: !!member,
+                badge: unreadCount,
+              },
+              { href: "/auktioner", label: "Auktioner", show: true },
+              { href: "/giveaway", label: "Giveaway", show: giveawayActive },
+              { href: "/butik", label: "Butik", show: shopEnabled },
+              { href: "/lager", label: "Vårt lager", show: LAGER_ENABLED },
+            ]
+              .filter((l) => l.show)
+              .map((l) => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className="focus-ring flex items-center justify-between py-3 border-b border-line text-paper hover:text-gold"
+                >
+                  <span>{l.label}</span>
+                  {!!l.badge && l.badge > 0 && (
+                    <span className="font-mono text-sm text-gold">({l.badge})</span>
+                  )}
+                </Link>
+              ))}
+            {member === undefined ? null : member ? (
+              <>
+                <Link
+                  href="/konto"
+                  className="focus-ring py-3 border-b border-line text-paper hover:text-gold"
+                >
+                  Mitt konto ({memberLabel(member.memberNumber, member.username)})
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  className="focus-ring text-left py-3 text-mute hover:text-paper disabled:opacity-50"
+                >
+                  {loggingOut ? "Loggar ut…" : "Logga ut"}
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/konto/logga-in"
+                className="focus-ring py-3 text-paper hover:text-gold"
+              >
+                Logga in
+              </Link>
+            )}
+          </div>
+        </nav>
+      )}
     </header>
   );
 }
