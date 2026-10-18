@@ -133,7 +133,7 @@ export default function GiveawayAdmin({ initial }: { initial: AdminGiveaway[] })
             </select>
           </label>
           <label className="block">
-            <span className="text-xs text-mute mb-1 block">Planerad dragning (valfritt, visas som nedräkning)</span>
+            <span className="text-xs text-mute mb-1 block">Deadline för anmälan (valfritt, anmälan stängs automatiskt då)</span>
             <input
               type="datetime-local"
               className={inputCls}
@@ -353,7 +353,10 @@ function GiveawayCard({
           <div className="font-display font-semibold text-paper">{g.title}</div>
           {g.draw_at && (
             <div className="text-xs text-mute">
-              Planerad dragning: {new Date(g.draw_at).toLocaleString("sv-SE")}
+              Deadline: {new Date(g.draw_at).toLocaleString("sv-SE")}
+              {g.status === "open" && new Date(g.draw_at).getTime() <= Date.now() && (
+                <span className="text-amber-400/90"> · passerad, anmälan är stängd</span>
+              )}
             </div>
           )}
           {g.winnerLabel && (
@@ -435,7 +438,7 @@ function GiveawayCard({
               </select>
             </label>
             <label className="block">
-              <span className="text-xs text-mute mb-1 block">Planerad dragning</span>
+              <span className="text-xs text-mute mb-1 block">Deadline för anmälan (flytta fram för att öppna igen)</span>
               <input
                 type="datetime-local"
                 className={inputCls}

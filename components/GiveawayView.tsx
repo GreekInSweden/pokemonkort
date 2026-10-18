@@ -16,6 +16,7 @@ interface GiveawayData {
     drawAt: string | null;
     status: "open" | "closed" | "drawn";
     entryCount: number;
+    entriesOpen: boolean;
   } | null;
   me?: { loggedIn: boolean; joined: boolean; eligible: boolean; reason: string | null };
   drawing?: { startedAt: string; revealAt: string; names: string[] } | null;
@@ -133,6 +134,9 @@ export default function GiveawayView() {
   const serverNow = Date.now() + offsetRef.current;
   const toDraw = g.drawAt ? Date.parse(g.drawAt) - serverNow : null;
   void tick;
+  // Deadline stänger anmälan -- räknas om varje sekund, så knappen
+  // försvinner i samma ögonblick nedräkningen når noll.
+  const entriesOpen = g.status === "open" && (toDraw === null || toDraw > 0);
 
   return (
     <div>
@@ -140,7 +144,7 @@ export default function GiveawayView() {
       <h1 className="font-display text-4xl font-bold text-paper mb-2">{g.title}</h1>
       <div className="flex flex-wrap items-center gap-2 mb-6">
         <span className="font-mono text-xs border border-line rounded-sm px-2 py-1 text-mute">
-          {data.drawing ? "Dragning pågår" : g.status === "drawn" ? "Avslutad" : g.status === "closed" ? "Anmälan stängd" : "Pågår"}
+          {data.drawing ? "Dragning pågår" : g.status === "drawn" ? "Avslutad" : g.status === "closed" || !entriesOpen ? "Anmälan stängd" : "Pågår"}
         </span>
         {g.audience === "paid" && (
           <span className="font-mono text-xs border border-gold/50 rounded-sm px-2 py-1 text-gold">
@@ -174,10 +178,10 @@ export default function GiveawayView() {
           ) : toDraw !== null ? (
             <>
               <div className="font-mono text-3xl text-paper">
-                {toDraw > 0 ? formatLeft(toDraw) : "Snart"}
+                {toDraw > 0 ? formatLeft(toDraw) : "Stängd"}
               </div>
               <div className="text-xs text-mute">
-                {toDraw > 0 ? "till dragningen" : "dragningen startar när admin trycker"}
+                {toDraw > 0 ? "kvar att anmäla sig" : "anmälan stängd, dragning snart"}
               </div>
             </>
           ) : (
@@ -214,7 +218,7 @@ export default function GiveawayView() {
       )}
 
       {/* Delta-knappen */}
-      {g.status === "open" && !data.drawing && (
+      {g.status === "open" && entriesOpen && !data.drawing && (
         <div className="mb-6">
           {!me?.loggedIn ? (
             <Link
@@ -250,7 +254,7 @@ export default function GiveawayView() {
           {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
         </div>
       )}
-      {g.status === "closed" && (
+      {((g.status === "open" && !entriesOpen) || g.status === "closed") && !data.drawing && (
         <p className="text-mute mb-6">
           Anmälan är stängd. Dragningen kommer snart — håll sidan öppen så ser du den live!
         </p>
