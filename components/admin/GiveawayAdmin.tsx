@@ -15,6 +15,9 @@ export interface AdminGiveaway {
   status: "draft" | "open" | "closed" | "drawn";
   winnerLabel: string | null;
   entryCount: number;
+  member_goal: number | null;
+  goalReached: boolean;
+  memberCount: number;
 }
 
 const inputCls =
@@ -26,6 +29,11 @@ const statusLabel: Record<AdminGiveaway["status"], string> = {
   closed: "Anmälan stängd",
   drawn: "Dragen",
 };
+
+function parseGoal(v: string): number | null {
+  const n = Math.floor(Number(v));
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
 
 function toLocalInput(iso: string | null): string {
   if (!iso) return "";
@@ -58,6 +66,7 @@ export default function GiveawayAdmin({ initial }: { initial: AdminGiveaway[] })
     description: "",
     audience: "all" as "all" | "paid",
     draw_at: "",
+    member_goal: "",
   });
   const [file, setFile] = useState<File | null>(null);
   const [creating, setCreating] = useState(false);
@@ -81,10 +90,11 @@ export default function GiveawayAdmin({ initial }: { initial: AdminGiveaway[] })
         image_url,
         audience: form.audience,
         draw_at: fromLocalInput(form.draw_at),
+        member_goal: parseGoal(form.member_goal),
         status: publish ? "open" : "draft",
       });
       if (e) throw new Error(e.message);
-      setForm({ title: "", description: "", audience: "all", draw_at: "" });
+      setForm({ title: "", description: "", audience: "all", draw_at: "", member_goal: "" });
       setFile(null);
       router.refresh();
     } catch (e: any) {
@@ -142,6 +152,23 @@ export default function GiveawayAdmin({ initial }: { initial: AdminGiveaway[] })
             />
           </label>
         </div>
+        <label className="block">
+          <span className="text-xs text-mute mb-1 block">
+            Medlemsmål (valfritt, t.ex. 100). Anmälan öppnar först när så många är registrerade
+          </span>
+          <input
+            className={inputCls}
+            inputMode="numeric"
+            value={form.member_goal}
+            onChange={(e) => setForm({ ...form, member_goal: e.target.value })}
+            placeholder="Tomt = ingen teaser, öppen direkt"
+          />
+        </label>
+        {form.member_goal && form.draw_at && (
+          <p className="text-xs text-amber-400/90">
+            Med medlemsmål bör deadline ligga efter målet. Passerar deadline innan målet nås stängs anmälan.
+          </p>
+        )}
         <label className="block">
           <span className="text-xs text-mute mb-1 block">Bild (valfritt)</span>
           <input
@@ -204,6 +231,7 @@ function GiveawayCard({
   const [description, setDescription] = useState(g.description ?? "");
   const [audience, setAudience] = useState(g.audience);
   const [drawAt, setDrawAt] = useState(toLocalInput(g.draw_at));
+  const [goal, setGoal] = useState(g.member_goal ? String(g.member_goal) : "");
   const [entries, setEntries] = useState<{ member_id: string; label: string }[] | null>(null);
 
   async function patch(values: Record<string, unknown>) {
@@ -230,6 +258,9 @@ function GiveawayCard({
       description: description.trim() || null,
       audience,
       draw_at: fromLocalInput(drawAt),
+      member_goal: parseGoal(goal),
+      // Ändrat mål -> räkna om om det är nått.
+      ...(parseGoal(goal) !== g.member_goal ? { goal_reached_at: null } : {}),
     });
     if (ok) setEdit(false);
   }
@@ -347,9 +378,19 @@ function GiveawayCard({
         </label>
         <div className="min-w-0 flex-1">
           <div className="font-mono text-xs text-mute">
-            {statusLabel[g.status]} · {g.audience === "paid" ? "bara betalande" : "alla medlemmar"} ·{" "}
-            {g.entryCount} deltagare
+            {g.status === "open" && !g.goalReached ? "Teaser (anmälan öppnar vid målet)" : statusLabel[g.status]} ·{" "}
+            {g.audience === "paid" ? "bara betalande" : "alla medlemmar"} · {g.entryCount} deltagare
           </div>
+          {g.member_goal && (
+            <div className="text-xs text-mute">
+              Medlemsmål: {g.member_goal}{" "}
+              {g.goalReached ? (
+                <span className="text-gold">· nått ✓</span>
+              ) : (
+                <span>· nu {g.memberCount} ({Math.max(0, g.member_goal - g.memberCount)} kvar)</span>
+              )}
+            </div>
+          )}
           <div className="font-display font-semibold text-paper">{g.title}</div>
           {g.draw_at && (
             <div className="text-xs text-mute">
@@ -384,7 +425,8 @@ function GiveawayCard({
         {(g.status === "open" || g.status === "closed") && (
           <button
             className="focus-ring text-xs rounded-sm bg-gold text-ink font-semibold px-3 py-1.5 disabled:opacity-50"
-            disabled={busy || g.entryCount === 0}
+            disabled={busy || g.entryCount === 0 || !g.goalReached}
+            title={!g.goalReached ? "Medlemsmålet är inte nått ännu" : undefined}
             onClick={draw}
           >
             Dra vinnare live
@@ -447,6 +489,15 @@ function GiveawayCard({
               />
             </label>
           </div>
+          <label className="block">
+            <span className="text-xs text-mute mb-1 block">Medlemsmål (tomt = inget mål)</span>
+            <input
+              className={inputCls}
+              inputMode="numeric"
+              value={goal}
+              onChange={(e) => setGoal(e.target.value)}
+            />
+          </label>
           <button
             onClick={saveEdit}
             disabled={busy}

@@ -17,6 +17,9 @@ interface GiveawayData {
     status: "open" | "closed" | "drawn";
     entryCount: number;
     entriesOpen: boolean;
+    memberGoal: number | null;
+    goalReached: boolean;
+    memberCount: number | null;
   } | null;
   me?: { loggedIn: boolean; joined: boolean; eligible: boolean; reason: string | null };
   drawing?: { startedAt: string; revealAt: string; names: string[] } | null;
@@ -80,6 +83,7 @@ export default function GiveawayView() {
       else if (d?.giveaway) {
         const g = d.giveaway;
         if (g.status === "drawn") delay = d.winnerLabel ? 30000 : 1500;
+        else if (g.memberGoal && !g.goalReached) delay = 8000;
         else {
           const toDraw = g.drawAt ? Date.parse(g.drawAt) - (Date.now() + offsetRef.current) : null;
           delay = toDraw === null || toDraw < 15 * 60_000 ? 3000 : 15000;
@@ -136,7 +140,8 @@ export default function GiveawayView() {
   void tick;
   // Deadline stänger anmälan -- räknas om varje sekund, så knappen
   // försvinner i samma ögonblick nedräkningen når noll.
-  const entriesOpen = g.status === "open" && (toDraw === null || toDraw > 0);
+  const teaser = g.status === "open" && !!g.memberGoal && !g.goalReached;
+  const entriesOpen = g.status === "open" && !teaser && (toDraw === null || toDraw > 0);
 
   return (
     <div>
@@ -144,7 +149,7 @@ export default function GiveawayView() {
       <h1 className="font-display text-4xl font-bold text-paper mb-2">{g.title}</h1>
       <div className="flex flex-wrap items-center gap-2 mb-6">
         <span className="font-mono text-xs border border-line rounded-sm px-2 py-1 text-mute">
-          {data.drawing ? "Dragning pågår" : g.status === "drawn" ? "Avslutad" : g.status === "closed" || !entriesOpen ? "Anmälan stängd" : "Pågår"}
+          {data.drawing ? "Dragning pågår" : g.status === "drawn" ? "Avslutad" : teaser ? "Öppnar vid målet" : g.status === "closed" || !entriesOpen ? "Anmälan stängd" : "Pågår"}
         </span>
         {g.audience === "paid" && (
           <span className="font-mono text-xs border border-gold/50 rounded-sm px-2 py-1 text-gold">
@@ -164,6 +169,20 @@ export default function GiveawayView() {
         <p className="text-paper/90 whitespace-pre-line mb-6">{g.description}</p>
       )}
 
+      {teaser && g.memberGoal && (
+        <GoalProgress
+          current={g.memberCount ?? 0}
+          goal={g.memberGoal}
+          loggedIn={!!me?.loggedIn}
+        />
+      )}
+      {!teaser && g.memberGoal && g.status === "open" && (
+        <p className="text-gold text-sm mb-4">
+          🎉 Målet på {g.memberGoal} medlemmar är nått — nu är anmälan öppen!
+        </p>
+      )}
+
+      {!teaser && (
       <div className="grid grid-cols-2 gap-3 mb-6">
         <div className="border border-line rounded-md bg-panel p-4">
           <div className="font-mono text-3xl text-gold">{g.entryCount}</div>
@@ -192,6 +211,7 @@ export default function GiveawayView() {
           )}
         </div>
       </div>
+      )}
 
       {/* Live-dragning / vinnare */}
       {data.drawing && (
@@ -254,7 +274,7 @@ export default function GiveawayView() {
           {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
         </div>
       )}
-      {((g.status === "open" && !entriesOpen) || g.status === "closed") && !data.drawing && (
+      {((g.status === "open" && !entriesOpen && !teaser) || g.status === "closed") && !data.drawing && (
         <p className="text-mute mb-6">
           Anmälan är stängd. Dragningen kommer snart — håll sidan öppen så ser du den live!
         </p>
@@ -366,6 +386,50 @@ function Confetti() {
         />
       ))}
       <style>{`@keyframes confettiFall { to { transform: translateY(110vh) rotate(720deg); opacity: .9; } }`}</style>
+    </div>
+  );
+}
+
+function GoalProgress({
+  current,
+  goal,
+  loggedIn,
+}: {
+  current: number;
+  goal: number;
+  loggedIn: boolean;
+}) {
+  const pct = Math.min(100, Math.round((current / goal) * 100));
+  const left = Math.max(0, goal - current);
+  return (
+    <div className="border border-gold/60 rounded-md bg-panel p-5 mb-6">
+      <div className="flex items-end justify-between gap-3 mb-3">
+        <div>
+          <div className="font-mono text-3xl text-gold">
+            {current} <span className="text-mute text-lg">av {goal}</span>
+          </div>
+          <div className="text-xs text-mute">registrerade medlemmar</div>
+        </div>
+        <div className="font-mono text-sm text-paper">{pct}%</div>
+      </div>
+      <div className="h-3 rounded-full bg-ink border border-line overflow-hidden">
+        <div
+          className="h-full bg-gold transition-all duration-700"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <p className="text-sm text-paper/90 mt-4">
+        Giveawayen öppnar när vi är <strong>{goal} medlemmar</strong>
+        {left > 0 ? ` — bara ${left} till!` : "!"} Tipsa dina vänner om Kortmarknad.
+      </p>
+      {!loggedIn && (
+        <Link
+          href="/konto/registrera"
+          className="focus-ring inline-block mt-4 rounded-sm bg-gold text-ink font-semibold px-5 py-2"
+        >
+          Bli medlem
+        </Link>
+      )}
     </div>
   );
 }
