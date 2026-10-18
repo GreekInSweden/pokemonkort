@@ -15,6 +15,7 @@ export default function SiteHeader() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [memberCount, setMemberCount] = useState<number | null>(null);
   const [shopEnabled, setShopEnabled] = useState(false);
+  const [giveawayActive, setGiveawayActive] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -76,6 +77,14 @@ export default function SiteHeader() {
       .then((res) => res.json())
       .then((data) => setShopEnabled(!!data.enabled))
       .catch(() => setShopEnabled(false));
+  }, [pathname]);
+
+  // Giveaway-länken visas bara när det finns en aktuell giveaway.
+  useEffect(() => {
+    fetch("/api/giveaway?nav=1")
+      .then((res) => res.json())
+      .then((data) => setGiveawayActive(!!data.active))
+      .catch(() => setGiveawayActive(false));
   }, [pathname]);
 
   async function handleLogout() {
@@ -154,6 +163,14 @@ export default function SiteHeader() {
           >
             Auktioner
           </Link>
+          {giveawayActive && (
+            <Link
+              href="/giveaway"
+              className="focus-ring text-sm text-paper hover:text-gold"
+            >
+              Giveaway
+            </Link>
+          )}
           {shopEnabled && (
             <Link
               href="/butik"
