@@ -6,6 +6,7 @@ import {
   GIVEAWAY_COLUMNS,
   GIVEAWAY_REVEAL_MS,
   GiveawayRow,
+  entriesOpen,
   getCurrentGiveaway,
   isPaidMember,
 } from "@/lib/giveaway";
@@ -65,7 +66,10 @@ export async function GET(req: NextRequest) {
       .eq("member_id", member.id)
       .maybeSingle();
     me.joined = !!mine;
-    if (giveaway.audience === "paid" && !(await isPaidMember(member.id))) {
+    if (!entriesOpen(giveaway, now)) {
+      me.eligible = false;
+      me.reason = "Anmälan är stängd.";
+    } else if (giveaway.audience === "paid" && !(await isPaidMember(member.id))) {
       me.eligible = false;
       me.reason = "Den här giveawayen är bara för betalande medlemmar.";
     } else {
@@ -148,6 +152,7 @@ export async function GET(req: NextRequest) {
       drawAt: giveaway.draw_at,
       status: giveaway.status,
       entryCount: count ?? 0,
+      entriesOpen: entriesOpen(giveaway, now),
     },
     me,
     drawing,
@@ -184,8 +189,8 @@ export async function POST(req: NextRequest) {
   if (!giveaway || giveaway.status === "draft") {
     return NextResponse.json({ error: "Giveawayen finns inte." }, { status: 404 });
   }
-  if (giveaway.status !== "open") {
-    return NextResponse.json({ error: "Giveawayen är stängd för nya deltagare." }, { status: 409 });
+  if (!entriesOpen(giveaway)) {
+    return NextResponse.json({ error: "Anmälan är stängd." }, { status: 409 });
   }
 
   if (action === "leave") {
