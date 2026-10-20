@@ -30,7 +30,22 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
   "perfect order": { slug: "Perfect-Order", code: "POR", versioned: true },
   "chaos rising": { slug: "Chaos-Rising", code: "CRI", versioned: true },
   "pitch black": { slug: "Pitch-Black", code: "PBL", versioned: true },
+  "astral radiance": { slug: "Astral-Radiance", code: "ASR", versioned: true },
+  "151": { slug: "151", code: "MEW", versioned: true },
+  "paldea evolved": { slug: "Paldea-Evolved", code: "PAL", versioned: true },
+  "obsidian flames": { slug: "Obsidian-Flames", code: "OBF", versioned: true },
+  "paradox rift": { slug: "Paradox-Rift", code: "PAR", versioned: true },
+  "paldean fates": { slug: "Paldean-Fates", code: "PAF", versioned: true },
+  "temporal forces": { slug: "Temporal-Forces", code: "TEF", versioned: true },
+  "twilight masquerade": { slug: "Twilight-Masquerade", code: "TWM", versioned: true },
+  "shrouded fable": { slug: "Shrouded-Fable", code: "SFA", versioned: true },
+  "stellar crown": { slug: "Stellar-Crown", code: "SCR", versioned: true },
   "30th celebration": { slug: "30th-Celebration", code: "30C", versioned: false },
+};
+
+// Set vars Cardmarket-slug inte är samma som vårt setnamn.
+const SET_SLUG_OVERRIDES: Record<string, string> = {
+  base: "Base-Set",
 };
 
 const BASE = "https://www.cardmarket.com/en/Pokemon/Products";
@@ -66,7 +81,17 @@ export function cardmarketLink(
 ): CardmarketLink {
   const set = CARDMARKET_SETS[setName.trim().toLowerCase()];
   if (!set) {
-    return { url: searchUrl(card.name), exact: false };
+    // Övriga set: sök på kortnamnet INOM setets egen sida (verifierat på
+    // Base-Set). Visar alla utgåvor (t.ex. Shadowless) så man väljer själv.
+    const key = setName.trim().toLowerCase();
+    if (!key || key.includes("classic collection")) {
+      return { url: searchUrl(card.name), exact: false };
+    }
+    const slug = SET_SLUG_OVERRIDES[key] ?? cardmarketNameSlug(setName);
+    return {
+      url: `${BASE}/Singles/${slug}?searchString=${encodeURIComponent(card.name)}&${FILTERS}`,
+      exact: false,
+    };
   }
 
   let version = "";
@@ -91,5 +116,5 @@ export function cardmarketLink(
 }
 
 function searchUrl(query: string): string {
-  return `${BASE}/Search?searchString=${encodeURIComponent(query)}`;
+  return `${BASE}/Search?searchString=${encodeURIComponent(query)}&${FILTERS}`;
 }
