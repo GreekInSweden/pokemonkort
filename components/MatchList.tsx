@@ -10,6 +10,7 @@ interface Match {
   cardNumber: number;
   cardName: string;
   setName: string;
+  cardmarketUrl?: string | null;
   variant: Variant;
   parallelTierId: string | null;
   parallelTierName: string | null;
@@ -171,6 +172,16 @@ export default function MatchList() {
                     ({m.parallelTierName ?? variantLabel[m.variant]})
                   </span>
                 </div>
+                {m.cardmarketUrl && (
+                  <a
+                    href={m.cardmarketUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block text-xs text-gold hover:underline mt-0.5"
+                  >
+                    Se pris på Cardmarket ↗
+                  </a>
+                )}
                 <div className="text-xs text-gold mt-1">
                   {m.matchCount} {m.matchCount === 1 ? "medlem har" : "medlemmar har"} det
                   här kortet tillgängligt

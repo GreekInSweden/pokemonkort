@@ -5,6 +5,7 @@ import { ParallelTier, Rarity, Variant } from "@/lib/types";
 import { rarityAccent, rarityLabel } from "@/lib/rarity";
 import { variantLabel } from "@/lib/variant";
 import CardZoomImage from "@/components/CardZoomImage";
+import { cardmarketLink } from "@/lib/cardmarket";
 
 interface VariantRow {
   id: string;
@@ -372,6 +373,14 @@ export default function PortfolioChecklist({
               <div className="font-display text-sm font-medium text-paper truncate">
                 {card.name}
               </div>
+              <a
+                href={cardmarketLink(setName, card, cards).url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block text-xs text-gold hover:underline mt-0.5"
+              >
+                Se pris på Cardmarket ↗
+              </a>
               <div className="mt-2 flex flex-wrap gap-2">
                 {card.card_variants.map((v) => {
                   const pk = `${card.id}:${v.variant}`;
