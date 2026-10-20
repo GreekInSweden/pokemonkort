@@ -67,6 +67,10 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
 // Set vars Cardmarket-slug inte är samma som vårt setnamn.
 const SET_SLUG_OVERRIDES: Record<string, string> = {
   base: "Base-Set",
+  // Classic Collection ligger under huvudsetet på Cardmarket, med kod efter
+  // ursprungssetet (t.ex. Charizard-30CBS-4 = Base Set) -- därför sökning.
+  "30th celebration: classic collection": "30th-Celebration",
+  "celebrations: classic collection": "Celebrations",
 };
 
 const BASE = "https://www.cardmarket.com/en/Pokemon/Products";
@@ -98,6 +102,18 @@ export interface CardmarketLink {
 export function cardmarketLink(
   setName: string,
   card: CardRef,
+  siblings: CardRef[],
+  opts: { reverseHolo?: boolean } = {}
+): CardmarketLink {
+  const r = cardmarketLinkBase(setName, card, siblings);
+  if (!opts.reverseHolo) return r;
+  // Cardmarkets filter för reverse holo (verifierat: isReverseHolo=Y).
+  return { ...r, url: `${r.url}&isReverseHolo=Y` };
+}
+
+function cardmarketLinkBase(
+  setName: string,
+  card: CardRef,
   siblings: CardRef[]
 ): CardmarketLink {
   const set = CARDMARKET_SETS[setName.trim().toLowerCase()];
@@ -105,7 +121,7 @@ export function cardmarketLink(
     // Övriga set: sök på kortnamnet INOM setets egen sida (verifierat på
     // Base-Set). Visar alla utgåvor (t.ex. Shadowless) så man väljer själv.
     const key = setName.trim().toLowerCase();
-    if (!key || key.includes("classic collection")) {
+    if (!key) {
       return { url: searchUrl(card.name), exact: false };
     }
     const slug = SET_SLUG_OVERRIDES[key] ?? cardmarketNameSlug(setName);
