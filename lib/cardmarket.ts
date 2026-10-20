@@ -40,6 +40,13 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
   "twilight masquerade": { slug: "Twilight-Masquerade", code: "TWM", versioned: true },
   "shrouded fable": { slug: "Shrouded-Fable", code: "SFA", versioned: true },
   "stellar crown": { slug: "Stellar-Crown", code: "SCR", versioned: true },
+  "surging sparks": { slug: "Surging-Sparks", code: "SSP", versioned: true },
+  "prismatic evolutions": { slug: "Prismatic-Evolutions", code: "PRE", versioned: true },
+  "journey together": { slug: "Journey-Together", code: "JTG", versioned: true },
+  "destined rivals": { slug: "Destined-Rivals", code: "DRI", versioned: true },
+  "black bolt": { slug: "Black-Bolt", code: "BLK", versioned: true },
+  "white flare": { slug: "White-Flare", code: "WHT", versioned: true },
+  "scarlet & violet": { slug: "Scarlet-Violet", code: "SVI", versioned: true },
   "30th celebration": { slug: "30th-Celebration", code: "30C", versioned: false },
 };
 
@@ -56,7 +63,7 @@ export function cardmarketNameSlug(name: string): string {
   return name
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "") // accenter
-    .replace(/['’`´]/g, "") // apostrofer försvinner
+    .replace(/['’`´.]/g, "") // apostrofer och punkter försvinner (Pokégear 3.0 -> Pokegear-30)
     .replace(/[^A-Za-z0-9]+/g, "-") // allt annat blir bindestreck
     .replace(/^-+|-+$/g, "");
 }
