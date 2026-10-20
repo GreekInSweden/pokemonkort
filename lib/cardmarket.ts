@@ -20,6 +20,7 @@ export interface CardmarketSet {
   slug: string; // setets del av adressen
   code: string; // t.ex. PBL
   versioned: boolean; // sätter Cardmarket V-siffra i det här setet?
+  pad?: number; // antal siffror i kortnumret (standard 3; 0 = ingen nollfyllnad)
 }
 
 // Nyckel: setets namn hos oss, med gemener.
@@ -47,6 +48,17 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
   "black bolt": { slug: "Black-Bolt", code: "BLK", versioned: true },
   "white flare": { slug: "White-Flare", code: "WHT", versioned: true },
   "scarlet & violet": { slug: "Scarlet-Violet", code: "SVI", versioned: true },
+  "brilliant stars": { slug: "Brilliant-Stars", code: "BRS", versioned: true },
+  "lost origin": { slug: "Lost-Origin", code: "LOR", versioned: true },
+  "silver tempest": { slug: "Silver-Tempest", code: "SIT", versioned: true },
+  "crown zenith": { slug: "Crown-Zenith", code: "CRZ", versioned: true },
+  "evolving skies": { slug: "Evolving-Skies", code: "EVS", versioned: true },
+  "chilling reign": { slug: "Chilling-Reign", code: "CRE", versioned: true },
+  "battle styles": { slug: "Battle-Styles", code: "BST", versioned: true },
+  "vivid voltage": { slug: "Vivid-Voltage", code: "VIV", versioned: true },
+  "darkness ablaze": { slug: "Darkness-Ablaze", code: "DAA", versioned: true, pad: 0 },
+  "rebel clash": { slug: "Rebel-Clash", code: "RCL", versioned: true },
+  "sword & shield": { slug: "Sword-Shield", code: "SSH", versioned: true },
   "30th celebration": { slug: "30th-Celebration", code: "30C", versioned: false },
 };
 
@@ -114,7 +126,7 @@ export function cardmarketLink(
     if (sameName.length > 1) version = `V${sameName.indexOf(card.number) + 1}-`;
   }
 
-  const num = String(card.number).padStart(3, "0");
+  const num = String(card.number).padStart(set.pad ?? 3, "0");
   const slug = `${cardmarketNameSlug(card.name)}-${version}${set.code}${num}`;
   return {
     url: `${BASE}/Singles/${set.slug}/${slug}?${FILTERS}`,
