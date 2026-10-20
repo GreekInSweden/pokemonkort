@@ -76,7 +76,8 @@ export async function GET() {
         ? cardmarketLink(
             setName,
             { name: cardName, number: cardNumber },
-            await siblingsFor(w.cards.set_id)
+            await siblingsFor(w.cards.set_id),
+            { reverseHolo: w.variant === "reverse_holo" }
           ).url
         : null;
       matches.push({
