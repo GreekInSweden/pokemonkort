@@ -381,6 +381,16 @@ export default function PortfolioChecklist({
               >
                 Se pris på Cardmarket ↗
               </a>
+              {card.card_variants.some((v) => v.variant === "reverse_holo") && (
+                <a
+                  href={cardmarketLink(setName, card, cards, { reverseHolo: true }).url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block text-xs text-gold hover:underline mt-0.5 ml-3"
+                >
+                  Reverse Holo-pris ↗
+                </a>
+              )}
               <div className="mt-2 flex flex-wrap gap-2">
                 {card.card_variants.map((v) => {
                   const pk = `${card.id}:${v.variant}`;
