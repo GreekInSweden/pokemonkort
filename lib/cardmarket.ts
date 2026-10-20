@@ -59,6 +59,8 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
   "darkness ablaze": { slug: "Darkness-Ablaze", code: "DAA", versioned: true, pad: 0 },
   "rebel clash": { slug: "Rebel-Clash", code: "RCL", versioned: true },
   "sword & shield": { slug: "Sword-Shield", code: "SSH", versioned: true },
+  "fusion strike": { slug: "Fusion-Strike", code: "FST", versioned: true },
+  "celebrations": { slug: "Celebrations", code: "CEL", versioned: true },
   "30th celebration": { slug: "30th-Celebration", code: "30C", versioned: false },
 };
 
