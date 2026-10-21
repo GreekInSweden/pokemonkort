@@ -22,6 +22,7 @@ export interface CardmarketSet {
   slug: string; // setets del av adressen
   code: string; // t.ex. PBL
   versioned: boolean; // sätter Cardmarket V-siffra i det här setet?
+  sameRarity?: boolean; // Black & White-eran: V bara bland kort med samma raritet
   withList?: boolean; // visa även "Alla utgåvor"-länk (äldre set)
   pad?: number; // antal siffror i kortnumret (standard 3; 0 = ingen nollfyllnad)
 }
@@ -81,16 +82,16 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
   "hs—undaunted": { slug: "Undaunted", code: "UD", versioned: true, pad: 0, withList: true }, // ej verifierad
   "hs—triumphant": { slug: "Triumphant", code: "TM", versioned: true, pad: 0, withList: true }, // ej verifierad
   "call of legends": { slug: "Call-of-Legends", code: "CL", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "emerging powers": { slug: "Emerging-Powers", code: "EPO", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "noble victories": { slug: "Noble-Victories", code: "NVI", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "next destinies": { slug: "Next-Destinies", code: "NXD", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "dark explorers": { slug: "Dark-Explorers", code: "DEX", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "dragons exalted": { slug: "Dragons-Exalted", code: "DRX", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "boundaries crossed": { slug: "Boundaries-Crossed", code: "BCR", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "plasma storm": { slug: "Plasma-Storm", code: "PLS", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "plasma freeze": { slug: "Plasma-Freeze", code: "PLF", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "plasma blast": { slug: "Plasma-Blast", code: "PLB", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "legendary treasures": { slug: "Legendary-Treasures", code: "LTR", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "emerging powers": { slug: "Emerging-Powers", code: "EPO", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "noble victories": { slug: "Noble-Victories", code: "NVI", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "next destinies": { slug: "Next-Destinies", code: "NXD", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "dark explorers": { slug: "Dark-Explorers", code: "DEX", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "dragons exalted": { slug: "Dragons-Exalted", code: "DRX", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "boundaries crossed": { slug: "Boundaries-Crossed", code: "BCR", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "plasma storm": { slug: "Plasma-Storm", code: "PLS", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "plasma freeze": { slug: "Plasma-Freeze", code: "PLF", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "plasma blast": { slug: "Plasma-Blast", code: "PLB", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "legendary treasures": { slug: "Legendary-Treasures", code: "LTR", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
   "xy": { slug: "XY", code: "XY", versioned: true, pad: 0, withList: true }, // ej verifierad
   "flashfire": { slug: "Flashfire", code: "FLF", versioned: true, pad: 0, withList: true }, // ej verifierad
   "furious fists": { slug: "Furious-Fists", code: "FFI", versioned: true, pad: 0, withList: true }, // ej verifierad
@@ -116,8 +117,9 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
   "unified minds": { slug: "Unified-Minds", code: "UNM", versioned: true, pad: 0, withList: true }, // ej verifierad
   "hidden fates": { slug: "Hidden-Fates", code: "HIF", versioned: true, pad: 0, withList: true }, // ej verifierad
   "cosmic eclipse": { slug: "Cosmic-Eclipse", code: "CEC", versioned: true, pad: 0, withList: true }, // ej verifierad
-  // Black & White: V bara när namnet finns flera gånger (Snivy 1/2, Zebstrika 42/43 -> V1; Musharna 49 -> ingen V)
-  "black & white": { slug: "Black-White", code: "BLW", versioned: true, pad: 0, withList: true },
+  // Black & White: V bara bland kort med samma namn OCH raritet (Snivy 1/2, Zebstrika 42/43 -> V1;
+  // Musharna 49 och Zekrom 47/114 (holo vs hemlig) -> ingen V)
+  "black & white": { slug: "Black-White", code: "BLW", versioned: true, pad: 0, sameRarity: true, withList: true },
   // Expedition: V räknas efter kortnummer (Alakazam 1 = V1, 33 = V2)
   "expedition base set": { slug: "Expedition-Base-Set", code: "EX", versioned: true, pad: 0, withList: true },
   "30th celebration": { slug: "30th-Celebration", code: "30C", versioned: false },
@@ -199,6 +201,8 @@ export interface CardRef {
   // Behövs för kort med internt nummer (>= 500000): originalnumret (H10, SH10,
   // RC1 ...) läses ur bildens filnamn.
   image_url?: string | null;
+  // Används av sameRarity-set: V räknas bara bland kort med samma raritet.
+  rarity?: string | null;
 }
 
 // "https://images.pokemontcg.io/pl4/SH10_hires.png" -> "SH10"
@@ -334,7 +338,11 @@ function cardmarketLinkBase(
   let version = "";
   if (set.versioned) {
     const sameName = siblings
-      .filter((c) => c.name.trim().toLowerCase() === card.name.trim().toLowerCase())
+      .filter(
+        (c) =>
+          c.name.trim().toLowerCase() === card.name.trim().toLowerCase() &&
+          (!set.sameRarity || !c.rarity || !card.rarity || c.rarity === card.rarity)
+      )
       .map((c) => c.number)
       .sort((a, b) => a - b);
     // Hittas kortet inte bland syskonen vet vi inte säkert -> sökning.
