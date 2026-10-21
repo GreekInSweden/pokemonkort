@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getCurrentMember } from "@/lib/currentMember";
 import { Variant } from "@/lib/types";
 import { getMembershipState, canUseSet } from "@/lib/membership";
+import { notifyWanters } from "@/lib/matchNotify";
 
 export const dynamic = "force-dynamic";
 
@@ -128,6 +129,35 @@ export async function POST(req: NextRequest) {
     parallel_tier_id: normalizedParallelTierId,
   };
 
+  // Var kortet redan tillgängligt (Säljer/Byter) innan det här klicket?
+  // Notis till de som söker det skickas bara när det BLIR tillgängligt.
+  let wasAvailable = false;
+  if (status === "have") {
+    let pq = supabaseAdmin
+      .from("member_cards")
+      .select("sellable, tradeable")
+      .eq("member_id", member.id)
+      .eq("card_id", cardId)
+      .eq("variant", variant)
+      .eq("status", "have");
+    pq = normalizedParallelTierId
+      ? pq.eq("parallel_tier_id", normalizedParallelTierId)
+      : pq.is("parallel_tier_id", null);
+    const { data: prev } = await pq.maybeSingle();
+    wasAvailable = !!(prev && (prev.sellable || prev.tradeable));
+  }
+  const becameAvailable =
+    status === "have" && (row.sellable || row.tradeable) && !wasAvailable;
+  const notify = () =>
+    becameAvailable
+      ? notifyWanters({
+          ownerId: member.id,
+          cardId,
+          variant,
+          parallelTierId: normalizedParallelTierId,
+        })
+      : Promise.resolve();
+
   // Postgres treats NULL as distinct from NULL in a unique constraint, so
   // upsert's onConflict can't catch "same card+status, both with no
   // parallel" — it would just insert a second row. When there's no
@@ -153,6 +183,7 @@ export async function POST(req: NextRequest) {
     if (error) {
       return NextResponse.json({ error: "Kunde inte spara." }, { status: 500 });
     }
+    await notify();
     return NextResponse.json({ ok: true });
   }
 
@@ -163,6 +194,7 @@ export async function POST(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: "Kunde inte spara." }, { status: 500 });
   }
+  await notify();
   return NextResponse.json({ ok: true });
 }
 
