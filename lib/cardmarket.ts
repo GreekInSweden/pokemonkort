@@ -20,6 +20,7 @@ export interface CardmarketSet {
   slug: string; // setets del av adressen
   code: string; // t.ex. PBL
   versioned: boolean; // sätter Cardmarket V-siffra i det här setet?
+  withList?: boolean; // visa även "Alla utgåvor"-länk (äldre set)
   pad?: number; // antal siffror i kortnumret (standard 3; 0 = ingen nollfyllnad)
 }
 
@@ -61,6 +62,8 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
   "sword & shield": { slug: "Sword-Shield", code: "SSH", versioned: true },
   "fusion strike": { slug: "Fusion-Strike", code: "FST", versioned: true },
   "celebrations": { slug: "Celebrations", code: "CEL", versioned: true },
+  // Expedition: V räknas efter kortnummer (Alakazam 1 = V1, 33 = V2)
+  "expedition base set": { slug: "Expedition-Base-Set", code: "EX", versioned: true, pad: 0, withList: true },
   "30th celebration": { slug: "30th-Celebration", code: "30C", versioned: false },
 };
 
@@ -76,10 +79,18 @@ const SET_SLUG_OVERRIDES: Record<string, string> = {
 // Äldre set: kortnummer utan nollfyllnad, och vi länkar till V1 (den vanliga
 // utgåvan). Verifierat: Base-Set/Alakazam-V1-BS1, Charizard-V1-BS4,
 // Jungle/Clefable-V1-JU1, Fossil/Aerodactyl-V1-FO1, Black-White/Snivy-V1-BLW1.
-const LEGACY_SETS: Record<string, { slug: string; code: string }> = {
+const LEGACY_SETS: Record<string, { slug: string; code: string; noV?: boolean }> = {
   base: { slug: "Base-Set", code: "BS" },
   jungle: { slug: "Jungle", code: "JU" },
   fossil: { slug: "Fossil", code: "FO" },
+  // Team Rocket har ingen V-siffra (en utgåva per kort): Dark-Charizard-TR4
+  "team rocket": { slug: "Team-Rocket", code: "TR", noV: true },
+  "neo genesis": { slug: "Neo-Genesis", code: "NG", noV: true },
+  "neo destiny": { slug: "Neo-Destiny", code: "NDE", noV: true },
+  "neo discovery": { slug: "Neo-Discovery", code: "NDI", noV: true },
+  "neo revelation": { slug: "Neo-Revelation", code: "NR", noV: true },
+  aquapolis: { slug: "Aquapolis", code: "AQH" },
+  skyridge: { slug: "Skyridge", code: "SK", noV: true },
   "black & white": { slug: "Black-White", code: "BLW" },
 };
 
@@ -141,7 +152,7 @@ function cardmarketLinkBase(
     const legacy = LEGACY_SETS[key];
     if (legacy) {
       return {
-        url: `${BASE}/Singles/${legacy.slug}/${cardmarketNameSlug(card.name)}-V1-${legacy.code}${card.number}?${FILTERS}`,
+        url: `${BASE}/Singles/${legacy.slug}/${cardmarketNameSlug(card.name)}${legacy.noV ? "-" : "-V1-"}${legacy.code}${card.number}?${FILTERS}`,
         exact: true,
         listUrl: `${BASE}/Singles/${legacy.slug}?searchString=${encodeURIComponent(card.name)}&${FILTERS}`,
       };
@@ -174,6 +185,9 @@ function cardmarketLinkBase(
   return {
     url: `${BASE}/Singles/${set.slug}/${slug}?${FILTERS}`,
     exact: true,
+    listUrl: set.withList
+      ? `${BASE}/Singles/${set.slug}?searchString=${encodeURIComponent(card.name)}&${FILTERS}`
+      : undefined,
   };
 }
 
