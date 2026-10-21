@@ -191,6 +191,16 @@ export function cardmarketNameSlug(name: string): string {
 export interface CardRef {
   name: string;
   number: number;
+  // Behövs för kort med internt nummer (>= 500000): originalnumret (H10, SH10,
+  // RC1 ...) läses ur bildens filnamn.
+  image_url?: string | null;
+}
+
+// "https://images.pokemontcg.io/pl4/SH10_hires.png" -> "SH10"
+function originalNumberText(c: CardRef): string | null {
+  if (c.number < 500000 || !c.image_url) return null;
+  const m = c.image_url.match(/\/([A-Za-z]+\d+)(?:_[A-Za-z]+)?_hires\./);
+  return m ? m[1] : null;
 }
 
 export interface CardmarketLink {
@@ -230,7 +240,7 @@ function cardmarketLinkBase(
   const levels = CARDMARKET_LEVELS[setName.trim().toLowerCase()];
   if (levels) {
     const withLv = (c: CardRef): CardRef => {
-      const lv = levels[c.number];
+      const lv = levels[originalNumberText(c) ?? String(c.number)];
       return lv && !/\bLV\.?\s*[\dX]/i.test(c.name)
         ? { ...c, name: `${c.name} Lv${lv}` }
         : c;
@@ -248,10 +258,20 @@ function cardmarketLinkBase(
       LEGACY_SETS[k]?.slug ??
       SET_SLUG_OVERRIDES[k] ??
       (EX_ERA_SETS.has(k) ? "EX-" : "") + cardmarketNameSlug(setName);
-    return {
-      url: `${BASE}/Singles/${slug}?searchString=${encodeURIComponent(origName)}&${FILTERS}`,
-      exact: false,
-    };
+    const listUrl = `${BASE}/Singles/${slug}?searchString=${encodeURIComponent(origName)}&${FILTERS}`;
+    // Kod = setkod + originalets prefix och nummer (verifierat: Arceus/Bagon-Lv15-ARSH10).
+    const code = CARDMARKET_SETS[k]?.code ?? LEGACY_SETS[k]?.code;
+    const orig = originalNumberText(card);
+    // Bara verifierat för D&P/Platinum (Arceus/Bagon-Lv15-ARSH10); övriga set
+    // (t.ex. E-Card H1-kort) har annan kodning -> sök tills de verifierats.
+    if (code && orig && CARDMARKET_LEVELS[k]) {
+      return {
+        url: `${BASE}/Singles/${slug}/${cardmarketNameSlug(card.name)}-${code}${orig}?${FILTERS}`,
+        exact: true,
+        listUrl,
+      };
+    }
+    return { url: listUrl, exact: false };
   }
   const set = CARDMARKET_SETS[setName.trim().toLowerCase()];
   if (!set) {
