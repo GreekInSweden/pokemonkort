@@ -72,16 +72,17 @@ export async function GET() {
       const cardName = w.cards?.name ?? "Okänt kort";
       const cardNumber = w.cards?.number ?? 0;
       const setName = w.cards?.sets?.name ?? "";
-      const cardmarketUrl = w.cards
+      const cm = w.cards
         ? cardmarketLink(
             setName,
             { name: cardName, number: cardNumber },
             await siblingsFor(w.cards.set_id),
             { reverseHolo: w.variant === "reverse_holo" }
-          ).url
+          )
         : null;
       matches.push({
-        cardmarketUrl,
+        cardmarketUrl: cm?.url ?? null,
+        cardmarketListUrl: cm?.listUrl ?? null,
         cardId: w.card_id,
         cardNumber: w.cards?.number ?? 0,
         cardName: w.cards?.name ?? "Okänt kort",
