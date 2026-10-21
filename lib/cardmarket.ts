@@ -238,6 +238,21 @@ function cardmarketLinkBase(
     card = withLv(card);
     siblings = siblings.map(withLv);
   }
+  // Kort med internt nummer (>= 500000) har ett icke-numeriskt nummer i
+  // originalet (H10, RC1, XY10 ...) vars Cardmarket-kod vi inte kan räkna ut
+  // -> sök på namnet inom setet i stället.
+  if (card.number >= 500000) {
+    const k = setName.trim().toLowerCase();
+    const slug =
+      CARDMARKET_SETS[k]?.slug ??
+      LEGACY_SETS[k]?.slug ??
+      SET_SLUG_OVERRIDES[k] ??
+      (EX_ERA_SETS.has(k) ? "EX-" : "") + cardmarketNameSlug(setName);
+    return {
+      url: `${BASE}/Singles/${slug}?searchString=${encodeURIComponent(origName)}&${FILTERS}`,
+      exact: false,
+    };
+  }
   const set = CARDMARKET_SETS[setName.trim().toLowerCase()];
   if (!set) {
     // Övriga set: sök på kortnamnet INOM setets egen sida (verifierat på
