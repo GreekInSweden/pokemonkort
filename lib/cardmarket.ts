@@ -159,7 +159,7 @@ const LEGACY_SETS: Record<string, { slug: string; code: string; noV?: boolean }>
   "crystal guardians": { slug: "EX-Crystal-Guardians", code: "CG", noV: true }, // ej verifierad
   "power keepers": { slug: "EX-Power-Keepers", code: "PK", noV: true }, // ej verifierad
   sandstorm: { slug: "EX-Sandstorm", code: "SS", noV: true },
-  aquapolis: { slug: "Aquapolis", code: "AQH" },
+  aquapolis: { slug: "Aquapolis", code: "AQ" }, // vanliga kort AQ95a, holo-kort AQH1
   skyridge: { slug: "Skyridge", code: "SK", noV: true },
   "black & white": { slug: "Black-White", code: "BLW" },
 };
@@ -172,6 +172,8 @@ const EX_ERA_SETS = new Set([
   "unseen forces", "delta species", "legend maker", "holon phantoms",
   "crystal guardians", "dragon frontiers", "power keepers",
 ]);
+
+const SEARCH_ONLY = new Set<string>(["aquapolis:95"]);
 
 const BASE = "https://www.cardmarket.com/en/Pokemon/Products";
 const FILTERS = "language=1&minCondition=2"; // engelska, minst Near Mint
@@ -272,6 +274,16 @@ function cardmarketLinkBase(
       };
     }
     return { url: listUrl, exact: false };
+  }
+  // Kort som Cardmarket delat upp i flera (Mr. Mime 95 = 95a/95b i Aquapolis)
+  // -> visa listan i stället för en direktlänk som ger "invalid product".
+  if (SEARCH_ONLY.has(`${setName.trim().toLowerCase()}:${card.number}`)) {
+    const k = setName.trim().toLowerCase();
+    const slug = CARDMARKET_SETS[k]?.slug ?? LEGACY_SETS[k]?.slug ?? cardmarketNameSlug(setName);
+    return {
+      url: `${BASE}/Singles/${slug}?searchString=${encodeURIComponent(origName)}&${FILTERS}`,
+      exact: false,
+    };
   }
   const set = CARDMARKET_SETS[setName.trim().toLowerCase()];
   if (!set) {
