@@ -11,6 +11,7 @@ interface Match {
   cardName: string;
   setName: string;
   cardmarketUrl?: string | null;
+  cardmarketListUrl?: string | null;
   variant: Variant;
   parallelTierId: string | null;
   parallelTierName: string | null;
@@ -180,6 +181,16 @@ export default function MatchList() {
                     className="inline-block text-xs text-gold hover:underline mt-0.5"
                   >
                     Se pris på Cardmarket ↗
+                  </a>
+                )}
+                {m.cardmarketListUrl && (
+                  <a
+                    href={m.cardmarketListUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block text-xs text-mute hover:text-gold hover:underline mt-0.5 ml-3"
+                  >
+                    Alla utgåvor ↗
                   </a>
                 )}
                 <div className="text-xs text-gold mt-1">

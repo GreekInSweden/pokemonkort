@@ -381,6 +381,16 @@ export default function PortfolioChecklist({
               >
                 Se pris på Cardmarket ↗
               </a>
+              {cardmarketLink(setName, card, cards).listUrl && (
+                <a
+                  href={cardmarketLink(setName, card, cards).listUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block text-xs text-mute hover:text-gold hover:underline mt-0.5 ml-3"
+                >
+                  Alla utgåvor ↗
+                </a>
+              )}
               {card.card_variants.some((v) => v.variant === "reverse_holo") && (
                 <a
                   href={cardmarketLink(setName, card, cards, { reverseHolo: true }).url}
