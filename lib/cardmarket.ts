@@ -94,6 +94,16 @@ const LEGACY_SETS: Record<string, { slug: string; code: string; noV?: boolean }>
   emerald: { slug: "EX-Emerald", code: "EM", noV: true },
   "dragon frontiers": { slug: "EX-Dragon-Frontiers", code: "DF", noV: true },
   "unseen forces": { slug: "EX-Unseen-Forces", code: "UF", noV: true },
+  "dragon": { slug: "EX-Dragon", code: "DR", noV: true },
+  "team magma vs team aqua": { slug: "EX-Team-Magma-vs-Team-Aqua", code: "MA", noV: true },
+  "hidden legends": { slug: "EX-Hidden-Legends", code: "HL", noV: true },
+  "firered & leafgreen": { slug: "EX-FireRed-LeafGreen", code: "FL", noV: true },
+  "deoxys": { slug: "EX-Deoxys", code: "DX", noV: true }, // ej verifierad
+  "delta species": { slug: "EX-Delta-Species", code: "DS", noV: true }, // ej verifierad
+  "legend maker": { slug: "EX-Legend-Maker", code: "LM", noV: true }, // ej verifierad
+  "holon phantoms": { slug: "EX-Holon-Phantoms", code: "HP", noV: true }, // ej verifierad
+  "crystal guardians": { slug: "EX-Crystal-Guardians", code: "CG", noV: true }, // ej verifierad
+  "power keepers": { slug: "EX-Power-Keepers", code: "PK", noV: true }, // ej verifierad
   sandstorm: { slug: "EX-Sandstorm", code: "SS", noV: true },
   aquapolis: { slug: "Aquapolis", code: "AQH" },
   skyridge: { slug: "Skyridge", code: "SK", noV: true },
