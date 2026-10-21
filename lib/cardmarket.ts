@@ -89,10 +89,20 @@ const LEGACY_SETS: Record<string, { slug: string; code: string; noV?: boolean }>
   "neo destiny": { slug: "Neo-Destiny", code: "NDE", noV: true },
   "neo discovery": { slug: "Neo-Discovery", code: "NDI", noV: true },
   "neo revelation": { slug: "Neo-Revelation", code: "NR", noV: true },
+  "ruby & sapphire": { slug: "EX-Ruby-Sapphire", code: "RS", noV: true },
   aquapolis: { slug: "Aquapolis", code: "AQH" },
   skyridge: { slug: "Skyridge", code: "SK", noV: true },
   "black & white": { slug: "Black-White", code: "BLW" },
 };
+
+// EX-seten heter "EX-<namn>" hos Cardmarket (verifierat: EX-Ruby-Sapphire).
+// Övriga namn är antaget efter samma mönster -- rapportera om något ger fel.
+const EX_ERA_SETS = new Set([
+  "sandstorm", "dragon", "team magma vs team aqua", "hidden legends",
+  "firered & leafgreen", "team rocket returns", "deoxys", "emerald",
+  "unseen forces", "delta species", "legend maker", "holon phantoms",
+  "crystal guardians", "dragon frontiers", "power keepers",
+]);
 
 const BASE = "https://www.cardmarket.com/en/Pokemon/Products";
 const FILTERS = "language=1&minCondition=2"; // engelska, minst Near Mint
@@ -160,7 +170,9 @@ function cardmarketLinkBase(
     if (!key) {
       return { url: searchUrl(card.name), exact: false };
     }
-    const slug = SET_SLUG_OVERRIDES[key] ?? cardmarketNameSlug(setName);
+    const slug =
+      SET_SLUG_OVERRIDES[key] ??
+      (EX_ERA_SETS.has(key) ? "EX-" : "") + cardmarketNameSlug(setName);
     return {
       url: `${BASE}/Singles/${slug}?searchString=${encodeURIComponent(card.name)}&${FILTERS}`,
       exact: false,
