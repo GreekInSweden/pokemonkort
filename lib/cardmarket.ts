@@ -133,7 +133,7 @@ const SET_SLUG_OVERRIDES: Record<string, string> = {
 // Äldre set: kortnummer utan nollfyllnad, och vi länkar till V1 (den vanliga
 // utgåvan). Verifierat: Base-Set/Alakazam-V1-BS1, Charizard-V1-BS4,
 // Jungle/Clefable-V1-JU1, Fossil/Aerodactyl-V1-FO1, Black-White/Snivy-V1-BLW1.
-const LEGACY_SETS: Record<string, { slug: string; code: string; noV?: boolean }> = {
+const LEGACY_SETS: Record<string, { slug: string; code: string; noV?: boolean; eCard?: boolean }> = {
   base: { slug: "Base-Set", code: "BS" },
   jungle: { slug: "Jungle", code: "JU" },
   fossil: { slug: "Fossil", code: "FO" },
@@ -159,8 +159,10 @@ const LEGACY_SETS: Record<string, { slug: string; code: string; noV?: boolean }>
   "crystal guardians": { slug: "EX-Crystal-Guardians", code: "CG", noV: true }, // ej verifierad
   "power keepers": { slug: "EX-Power-Keepers", code: "PK", noV: true }, // ej verifierad
   sandstorm: { slug: "EX-Sandstorm", code: "SS", noV: true },
-  aquapolis: { slug: "Aquapolis", code: "AQ" }, // vanliga kort AQ95a, holo-kort AQH1
-  skyridge: { slug: "Skyridge", code: "SK", noV: true },
+  // E-Card-seten har vanliga kort (AQ2) och holo-kort med H-nummer (AQH2). Finns
+  // båda med samma namn är holo-kortet V1 och det vanliga V2 (verifierat: Arcanine).
+  aquapolis: { slug: "Aquapolis", code: "AQ", eCard: true },
+  skyridge: { slug: "Skyridge", code: "SK", eCard: true }, // samma mönster antaget
   "black & white": { slug: "Black-White", code: "BLW" },
 };
 
@@ -250,6 +252,34 @@ function cardmarketLinkBase(
     card = withLv(card);
     siblings = siblings.map(withLv);
   }
+  // Kort som Cardmarket delat upp i flera (Mr. Mime 95 = 95a/95b i Aquapolis)
+  // -> visa listan i stället för en direktlänk som ger "invalid product".
+  if (SEARCH_ONLY.has(`${setName.trim().toLowerCase()}:${card.number}`)) {
+    const k = setName.trim().toLowerCase();
+    const slug = CARDMARKET_SETS[k]?.slug ?? LEGACY_SETS[k]?.slug ?? cardmarketNameSlug(setName);
+    return {
+      url: `${BASE}/Singles/${slug}?searchString=${encodeURIComponent(origName)}&${FILTERS}`,
+      exact: false,
+    };
+  }
+  const ec = LEGACY_SETS[setName.trim().toLowerCase()];
+  if (ec?.eCard) {
+    const prefixed = card.number >= 500000;
+    const orig = originalNumberText(card);
+    const listUrl = `${BASE}/Singles/${ec.slug}?searchString=${encodeURIComponent(origName)}&${FILTERS}`;
+    if (prefixed && !orig) return { url: listUrl, exact: false };
+    const nm = card.name.trim().toLowerCase();
+    const dup = siblings.some(
+      (c) => c.name.trim().toLowerCase() === nm && c.number >= 500000 !== prefixed
+    );
+    const v = dup ? (prefixed ? "-V1" : "-V2") : "";
+    const num = prefixed ? orig : String(card.number);
+    return {
+      url: `${BASE}/Singles/${ec.slug}/${cardmarketNameSlug(card.name)}${v}-${ec.code}${num}?${FILTERS}`,
+      exact: true,
+      listUrl,
+    };
+  }
   // Kort med internt nummer (>= 500000) har ett icke-numeriskt nummer i
   // originalet (H10, RC1, XY10 ...) vars Cardmarket-kod vi inte kan räkna ut
   // -> sök på namnet inom setet i stället.
@@ -274,16 +304,6 @@ function cardmarketLinkBase(
       };
     }
     return { url: listUrl, exact: false };
-  }
-  // Kort som Cardmarket delat upp i flera (Mr. Mime 95 = 95a/95b i Aquapolis)
-  // -> visa listan i stället för en direktlänk som ger "invalid product".
-  if (SEARCH_ONLY.has(`${setName.trim().toLowerCase()}:${card.number}`)) {
-    const k = setName.trim().toLowerCase();
-    const slug = CARDMARKET_SETS[k]?.slug ?? LEGACY_SETS[k]?.slug ?? cardmarketNameSlug(setName);
-    return {
-      url: `${BASE}/Singles/${slug}?searchString=${encodeURIComponent(origName)}&${FILTERS}`,
-      exact: false,
-    };
   }
   const set = CARDMARKET_SETS[setName.trim().toLowerCase()];
   if (!set) {
