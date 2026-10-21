@@ -102,18 +102,6 @@ export interface CardmarketLink {
 export function cardmarketLink(
   setName: string,
   card: CardRef,
-  siblings: CardRef[],
-  opts: { reverseHolo?: boolean } = {}
-): CardmarketLink {
-  const r = cardmarketLinkBase(setName, card, siblings);
-  if (!opts.reverseHolo) return r;
-  // Cardmarkets filter för reverse holo (verifierat: isReverseHolo=Y).
-  return { ...r, url: `${r.url}&isReverseHolo=Y` };
-}
-
-function cardmarketLinkBase(
-  setName: string,
-  card: CardRef,
   siblings: CardRef[]
 ): CardmarketLink {
   const set = CARDMARKET_SETS[setName.trim().toLowerCase()];
