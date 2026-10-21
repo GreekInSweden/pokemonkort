@@ -62,6 +62,58 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
   "sword & shield": { slug: "Sword-Shield", code: "SSH", versioned: true },
   "fusion strike": { slug: "Fusion-Strike", code: "FST", versioned: true },
   "celebrations": { slug: "Celebrations", code: "CEL", versioned: true },
+  // Diamond & Pearl -> Sun & Moon: första fyra verifierade, resten antagna (officiella koder)
+  "diamond & pearl": { slug: "Diamond-Pearl", code: "DP", versioned: true, pad: 0, withList: true },
+  "mysterious treasures": { slug: "Mysterious-Treasures", code: "MT", versioned: true, pad: 0, withList: true },
+  "secret wonders": { slug: "Secret-Wonders", code: "SW", versioned: true, pad: 0, withList: true },
+  "great encounters": { slug: "Great-Encounters", code: "GE", versioned: true, pad: 0, withList: true },
+  "majestic dawn": { slug: "Majestic-Dawn", code: "MD", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "legends awakened": { slug: "Legends-Awakened", code: "LA", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "stormfront": { slug: "Stormfront", code: "SF", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "platinum": { slug: "Platinum", code: "PL", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "rising rivals": { slug: "Rising-Rivals", code: "RR", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "supreme victors": { slug: "Supreme-Victors", code: "SV", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "arceus": { slug: "Arceus", code: "AR", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "heartgold & soulsilver": { slug: "HeartGold-SoulSilver", code: "HS", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "hs—unleashed": { slug: "HS-Unleashed", code: "UL", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "hs—undaunted": { slug: "HS-Undaunted", code: "UD", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "hs—triumphant": { slug: "HS-Triumphant", code: "TM", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "call of legends": { slug: "Call-of-Legends", code: "CL", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "emerging powers": { slug: "Emerging-Powers", code: "EPO", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "noble victories": { slug: "Noble-Victories", code: "NVI", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "next destinies": { slug: "Next-Destinies", code: "NXD", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "dark explorers": { slug: "Dark-Explorers", code: "DEX", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "dragons exalted": { slug: "Dragons-Exalted", code: "DRX", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "boundaries crossed": { slug: "Boundaries-Crossed", code: "BCR", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "plasma storm": { slug: "Plasma-Storm", code: "PLS", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "plasma freeze": { slug: "Plasma-Freeze", code: "PLF", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "plasma blast": { slug: "Plasma-Blast", code: "PLB", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "legendary treasures": { slug: "Legendary-Treasures", code: "LTR", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "xy": { slug: "XY", code: "XY", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "flashfire": { slug: "Flashfire", code: "FLF", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "furious fists": { slug: "Furious-Fists", code: "FFI", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "phantom forces": { slug: "Phantom-Forces", code: "PHF", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "primal clash": { slug: "Primal-Clash", code: "PRC", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "roaring skies": { slug: "Roaring-Skies", code: "ROS", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "ancient origins": { slug: "Ancient-Origins", code: "AOR", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "breakthrough": { slug: "BREAKthrough", code: "BKT", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "breakpoint": { slug: "BREAKpoint", code: "BKP", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "fates collide": { slug: "Fates-Collide", code: "FCO", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "steam siege": { slug: "Steam-Siege", code: "STS", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "evolutions": { slug: "Evolutions", code: "EVO", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "sun & moon": { slug: "Sun-Moon", code: "SUM", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "guardians rising": { slug: "Guardians-Rising", code: "GRI", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "burning shadows": { slug: "Burning-Shadows", code: "BUS", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "crimson invasion": { slug: "Crimson-Invasion", code: "CIN", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "ultra prism": { slug: "Ultra-Prism", code: "UPR", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "forbidden light": { slug: "Forbidden-Light", code: "FLI", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "celestial storm": { slug: "Celestial-Storm", code: "CES", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "lost thunder": { slug: "Lost-Thunder", code: "LOT", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "team up": { slug: "Team-Up", code: "TEU", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "unbroken bonds": { slug: "Unbroken-Bonds", code: "UNB", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "unified minds": { slug: "Unified-Minds", code: "UNM", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "hidden fates": { slug: "Hidden-Fates", code: "HIF", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "cosmic eclipse": { slug: "Cosmic-Eclipse", code: "CEC", versioned: true, pad: 0, withList: true }, // ej verifierad
   // Expedition: V räknas efter kortnummer (Alakazam 1 = V1, 33 = V2)
   "expedition base set": { slug: "Expedition-Base-Set", code: "EX", versioned: true, pad: 0, withList: true },
   "30th celebration": { slug: "30th-Celebration", code: "30C", versioned: false },
@@ -125,6 +177,7 @@ const FILTERS = "language=1&minCondition=2"; // engelska, minst Near Mint
 // "Lillie's Determination" -> "Lillies-Determination", "Poké Pad" -> "Poke-Pad"
 export function cardmarketNameSlug(name: string): string {
   return name
+    .replace(/\bLV\.?\s*(\d+)/gi, "Lv$1") // "Dialga LV.68" -> Dialga-Lv68
     .replace(/\s*δ/g, " Delta Species") // "Feraligatr δ" -> Feraligatr-Delta-Species
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "") // accenter
