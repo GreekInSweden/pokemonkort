@@ -16,6 +16,8 @@
 // - Undantag: 30th Celebration använder aldrig V (alla Pikachu heter bara
 //   Pikachu-30C0xx).
 
+import { CARDMARKET_LEVELS } from "./cardmarketLevels";
+
 export interface CardmarketSet {
   slug: string; // setets del av adressen
   code: string; // t.ex. PBL
@@ -223,6 +225,19 @@ function cardmarketLinkBase(
   card: CardRef,
   siblings: CardRef[]
 ): CardmarketLink {
+  const origName = card.name;
+  // D&P/Platinum: Cardmarket har nivån i namnet ("Charizard Lv60").
+  const levels = CARDMARKET_LEVELS[setName.trim().toLowerCase()];
+  if (levels) {
+    const withLv = (c: CardRef): CardRef => {
+      const lv = levels[c.number];
+      return lv && !/\bLV\.?\s*[\dX]/i.test(c.name)
+        ? { ...c, name: `${c.name} Lv${lv}` }
+        : c;
+    };
+    card = withLv(card);
+    siblings = siblings.map(withLv);
+  }
   const set = CARDMARKET_SETS[setName.trim().toLowerCase()];
   if (!set) {
     // Övriga set: sök på kortnamnet INOM setets egen sida (verifierat på
@@ -267,7 +282,7 @@ function cardmarketLinkBase(
     url: `${BASE}/Singles/${set.slug}/${slug}?${FILTERS}`,
     exact: true,
     listUrl: set.withList
-      ? `${BASE}/Singles/${set.slug}?searchString=${encodeURIComponent(card.name)}&${FILTERS}`
+      ? `${BASE}/Singles/${set.slug}?searchString=${encodeURIComponent(origName)}&${FILTERS}`
       : undefined,
   };
 }
