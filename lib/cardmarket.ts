@@ -75,9 +75,9 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
   "supreme victors": { slug: "Supreme-Victors", code: "SV", versioned: true, pad: 0, withList: true }, // ej verifierad
   "arceus": { slug: "Arceus", code: "AR", versioned: true, pad: 0, withList: true }, // ej verifierad
   "heartgold & soulsilver": { slug: "HeartGold-SoulSilver", code: "HS", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "hs—unleashed": { slug: "HS-Unleashed", code: "UL", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "hs—undaunted": { slug: "HS-Undaunted", code: "UD", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "hs—triumphant": { slug: "HS-Triumphant", code: "TM", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "hs—unleashed": { slug: "Unleashed", code: "UL", versioned: true, pad: 0, withList: true },
+  "hs—undaunted": { slug: "Undaunted", code: "UD", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "hs—triumphant": { slug: "Triumphant", code: "TM", versioned: true, pad: 0, withList: true }, // ej verifierad
   "call of legends": { slug: "Call-of-Legends", code: "CL", versioned: true, pad: 0, withList: true }, // ej verifierad
   "emerging powers": { slug: "Emerging-Powers", code: "EPO", versioned: true, pad: 0, withList: true }, // ej verifierad
   "noble victories": { slug: "Noble-Victories", code: "NVI", versioned: true, pad: 0, withList: true }, // ej verifierad
