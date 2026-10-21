@@ -116,6 +116,8 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
   "unified minds": { slug: "Unified-Minds", code: "UNM", versioned: true, pad: 0, withList: true }, // ej verifierad
   "hidden fates": { slug: "Hidden-Fates", code: "HIF", versioned: true, pad: 0, withList: true }, // ej verifierad
   "cosmic eclipse": { slug: "Cosmic-Eclipse", code: "CEC", versioned: true, pad: 0, withList: true }, // ej verifierad
+  // Black & White: V bara när namnet finns flera gånger (Snivy 1/2, Zebstrika 42/43 -> V1; Musharna 49 -> ingen V)
+  "black & white": { slug: "Black-White", code: "BLW", versioned: true, pad: 0, withList: true },
   // Expedition: V räknas efter kortnummer (Alakazam 1 = V1, 33 = V2)
   "expedition base set": { slug: "Expedition-Base-Set", code: "EX", versioned: true, pad: 0, withList: true },
   "30th celebration": { slug: "30th-Celebration", code: "30C", versioned: false },
@@ -163,7 +165,6 @@ const LEGACY_SETS: Record<string, { slug: string; code: string; noV?: boolean; e
   // båda med samma namn är holo-kortet V1 och det vanliga V2 (verifierat: Arcanine).
   aquapolis: { slug: "Aquapolis", code: "AQ", eCard: true },
   skyridge: { slug: "Skyridge", code: "SK", eCard: true }, // samma mönster antaget
-  "black & white": { slug: "Black-White", code: "BLW" },
 };
 
 // EX-seten heter "EX-<namn>" hos Cardmarket (verifierat: EX-Ruby-Sapphire).
