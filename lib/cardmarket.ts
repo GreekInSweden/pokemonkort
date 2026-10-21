@@ -73,6 +73,16 @@ const SET_SLUG_OVERRIDES: Record<string, string> = {
   "celebrations: classic collection": "Celebrations",
 };
 
+// Äldre set: kortnummer utan nollfyllnad, och vi länkar till V1 (den vanliga
+// utgåvan). Verifierat: Base-Set/Alakazam-V1-BS1, Charizard-V1-BS4,
+// Jungle/Clefable-V1-JU1, Fossil/Aerodactyl-V1-FO1, Black-White/Snivy-V1-BLW1.
+const LEGACY_SETS: Record<string, { slug: string; code: string }> = {
+  base: { slug: "Base-Set", code: "BS" },
+  jungle: { slug: "Jungle", code: "JU" },
+  fossil: { slug: "Fossil", code: "FO" },
+  "black & white": { slug: "Black-White", code: "BLW" },
+};
+
 const BASE = "https://www.cardmarket.com/en/Pokemon/Products";
 const FILTERS = "language=1&minCondition=2"; // engelska, minst Near Mint
 
@@ -95,11 +105,30 @@ export interface CardmarketLink {
   url: string;
   // true = direktlänk till kortets sida, false = sökning (reservväg)
   exact: boolean;
+  // Bara äldre set: sökning på setsidan som visar ALLA utgåvor
+  // (reservväg om direktlänken till V1 inte finns).
+  listUrl?: string;
 }
 
 // siblings = ALLA kort i samma set (med namn + nummer) -- behövs för att
 // räkna ut V-siffran.
 export function cardmarketLink(
+  setName: string,
+  card: CardRef,
+  siblings: CardRef[],
+  opts: { reverseHolo?: boolean } = {}
+): CardmarketLink {
+  const r = cardmarketLinkBase(setName, card, siblings);
+  if (!opts.reverseHolo) return r;
+  // Cardmarkets filter för reverse holo (verifierat: isReverseHolo=Y).
+  return {
+    ...r,
+    url: `${r.url}&isReverseHolo=Y`,
+    listUrl: r.listUrl ? `${r.listUrl}&isReverseHolo=Y` : undefined,
+  };
+}
+
+function cardmarketLinkBase(
   setName: string,
   card: CardRef,
   siblings: CardRef[]
@@ -109,6 +138,14 @@ export function cardmarketLink(
     // Övriga set: sök på kortnamnet INOM setets egen sida (verifierat på
     // Base-Set). Visar alla utgåvor (t.ex. Shadowless) så man väljer själv.
     const key = setName.trim().toLowerCase();
+    const legacy = LEGACY_SETS[key];
+    if (legacy) {
+      return {
+        url: `${BASE}/Singles/${legacy.slug}/${cardmarketNameSlug(card.name)}-V1-${legacy.code}${card.number}?${FILTERS}`,
+        exact: true,
+        listUrl: `${BASE}/Singles/${legacy.slug}?searchString=${encodeURIComponent(card.name)}&${FILTERS}`,
+      };
+    }
     if (!key) {
       return { url: searchUrl(card.name), exact: false };
     }
