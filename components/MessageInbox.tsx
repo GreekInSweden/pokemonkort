@@ -95,7 +95,11 @@ export default function MessageInbox() {
           >
             <div className="flex items-center justify-between gap-3 mb-1">
               <span className="text-xs text-gold">
-                {n.kind === "outbid" ? "Överbjuden på auktion" : "Notis"}
+                {n.kind === "outbid"
+                  ? "Överbjuden på auktion"
+                  : n.kind === "match"
+                    ? "Ny matchning"
+                    : "Notis"}
               </span>
               <span className="flex items-center gap-2 shrink-0">
                 <span className="text-[10px] text-mute font-mono">
@@ -110,6 +114,14 @@ export default function MessageInbox() {
               </span>
             </div>
             <p className="text-sm text-paper">{n.body}</p>
+            {n.kind === "match" && (
+              <a
+                href="/konto/matchningar"
+                className="focus-ring inline-block mt-2 text-xs text-gold hover:underline"
+              >
+                Gå till Mina matchningar
+              </a>
+            )}
             {n.auctionId && (
               <a
                 href="/auktioner"

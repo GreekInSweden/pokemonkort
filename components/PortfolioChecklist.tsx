@@ -81,6 +81,7 @@ export default function PortfolioChecklist({
   );
   const [pending, setPending] = useState<Set<EntryKey>>(new Set());
   const [query, setQuery] = useState("");
+  const [view, setView] = useState<"all" | "missing" | "owned">("all");
   const [error, setError] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
   // Vilken parallel som just nu är vald per kort+variant, innan man
@@ -109,16 +110,6 @@ export default function PortfolioChecklist({
     return map;
   });
 
-  const filteredCards = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return cards;
-    return cards.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        String(c.number).padStart(3, "0").includes(q)
-    );
-  }, [cards, query]);
-
   // Räkna bara poster på kort+variant som faktiskt finns kvar i listan.
   // Gamla rader på borttagna varianter (t.ex. Vanligt/Reverse Holo på
   // 30th Celebration) ligger kvar i member_cards tills de städas, men
@@ -128,6 +119,31 @@ export default function PortfolioChecklist({
     for (const c of cards) for (const v of c.card_variants) s.add(`${c.id}:${v.variant}:`);
     return s;
   }, [cards]);
+  // Kort man äger i minst en variant (Har). Bara kort+varianter som finns kvar
+  // räknas -- se validPrefixes nedan.
+  const ownedCardIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const k of Array.from(entries)) {
+      if (!k.endsWith(":have")) continue;
+      const parts = k.split(":");
+      if (validPrefixes.has(`${parts[0]}:${parts[1]}:`)) ids.add(parts[0]);
+    }
+    return ids;
+  }, [entries, validPrefixes]);
+
+  const filteredCards = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return cards.filter((c) => {
+      if (view === "missing" && ownedCardIds.has(c.id)) return false;
+      if (view === "owned" && !ownedCardIds.has(c.id)) return false;
+      if (!q) return true;
+      return (
+        c.name.toLowerCase().includes(q) ||
+        String(c.number).padStart(3, "0").includes(q)
+      );
+    });
+  }, [cards, query, view, ownedCardIds]);
+
   const countStatus = (status: Status) =>
     Array.from(entries).filter((k) => {
       if (!k.endsWith(`:${status}`)) return false;
@@ -317,6 +333,56 @@ export default function PortfolioChecklist({
         <p className="text-xs text-mute font-mono">
           {haveCount} har · {wantCount} vill ha
         </p>
+      </div>
+
+      <div className="mb-4">
+        <div className="flex items-baseline justify-between text-xs mb-1">
+          <span className="text-paper">
+            {ownedCardIds.size} av {cards.length} kort
+          </span>
+          <span className="text-gold font-mono">
+            {cards.length > 0
+              ? Math.floor((ownedCardIds.size / cards.length) * 100)
+              : 0}
+            %
+          </span>
+        </div>
+        <div
+          className="h-2 rounded-full bg-line overflow-hidden"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={cards.length}
+          aria-valuenow={ownedCardIds.size}
+          aria-label="Andel kort du har i setet"
+        >
+          <div
+            className="h-full bg-gold transition-all"
+            style={{
+              width: `${cards.length > 0 ? (ownedCardIds.size / cards.length) * 100 : 0}%`,
+            }}
+          />
+        </div>
+        <div className="flex gap-2 mt-3 text-xs">
+          {(
+            [
+              ["all", `Alla (${cards.length})`],
+              ["missing", `Saknas (${cards.length - ownedCardIds.size})`],
+              ["owned", `Har (${ownedCardIds.size})`],
+            ] as const
+          ).map(([v, label]) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`focus-ring rounded-sm border px-3 py-1 ${
+                view === v
+                  ? "border-gold text-gold bg-gold/10"
+                  : "border-line text-mute hover:text-paper"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <p className="text-xs text-mute mb-3">
