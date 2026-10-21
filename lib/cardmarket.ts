@@ -90,6 +90,11 @@ const LEGACY_SETS: Record<string, { slug: string; code: string; noV?: boolean }>
   "neo discovery": { slug: "Neo-Discovery", code: "NDI", noV: true },
   "neo revelation": { slug: "Neo-Revelation", code: "NR", noV: true },
   "ruby & sapphire": { slug: "EX-Ruby-Sapphire", code: "RS", noV: true },
+  "team rocket returns": { slug: "EX-Team-Rocket-Returns", code: "TRR", noV: true },
+  emerald: { slug: "EX-Emerald", code: "EM", noV: true },
+  "dragon frontiers": { slug: "EX-Dragon-Frontiers", code: "DF", noV: true },
+  "unseen forces": { slug: "EX-Unseen-Forces", code: "UF", noV: true },
+  sandstorm: { slug: "EX-Sandstorm", code: "SS", noV: true },
   aquapolis: { slug: "Aquapolis", code: "AQH" },
   skyridge: { slug: "Skyridge", code: "SK", noV: true },
   "black & white": { slug: "Black-White", code: "BLW" },
@@ -110,6 +115,7 @@ const FILTERS = "language=1&minCondition=2"; // engelska, minst Near Mint
 // "Lillie's Determination" -> "Lillies-Determination", "Poké Pad" -> "Poke-Pad"
 export function cardmarketNameSlug(name: string): string {
   return name
+    .replace(/\s*δ/g, " Delta Species") // "Feraligatr δ" -> Feraligatr-Delta-Species
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "") // accenter
     .replace(/['’`´.]/g, "") // apostrofer och punkter försvinner (Pokégear 3.0 -> Pokegear-30)
