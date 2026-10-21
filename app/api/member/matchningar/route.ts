@@ -20,7 +20,7 @@ export async function GET() {
   const { data: wants } = await supabaseAdmin
     .from("member_cards")
     .select(
-      "card_id, variant, parallel_tier_id, cards(number, name, set_id, image_url, sets(name)), parallel_tiers(name)"
+      "card_id, variant, parallel_tier_id, cards(number, name, set_id, image_url, rarity, sets(name)), parallel_tiers(name)"
     )
     .eq("member_id", member.id)
     .eq("status", "want");
@@ -37,12 +37,13 @@ export async function GET() {
     if (cached) return cached;
     const { data } = await supabaseAdmin
       .from("cards")
-      .select("name, number, image_url")
+      .select("name, number, image_url, rarity")
       .eq("set_id", setId);
     const list = ((data as CardRef[]) ?? []).map((c) => ({
       name: c.name,
       number: c.number,
       image_url: c.image_url,
+      rarity: (c as any).rarity,
     }));
     siblingsBySet.set(setId, list);
     return list;
@@ -76,7 +77,7 @@ export async function GET() {
       const cm = w.cards
         ? cardmarketLink(
             setName,
-            { name: cardName, number: cardNumber, image_url: w.cards.image_url },
+            { name: cardName, number: cardNumber, image_url: w.cards.image_url, rarity: w.cards.rarity },
             await siblingsFor(w.cards.set_id),
             { reverseHolo: w.variant === "reverse_holo" }
           )
