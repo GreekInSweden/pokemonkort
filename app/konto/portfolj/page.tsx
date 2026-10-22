@@ -41,7 +41,7 @@ interface CardRow {
 export default async function PortfolioPage({
   searchParams,
 }: {
-  searchParams: { set?: string };
+  searchParams: { set?: string; q?: string };
 }) {
   const member = await getCurrentMember();
   if (!member) {
@@ -174,6 +174,7 @@ export default async function PortfolioPage({
           initialEntries={ownEntries}
           parallelTiers={parallelTiers}
           swedishPrices={swedishPrices}
+          initialQuery={searchParams.q}
         />
       )}
     </div>
