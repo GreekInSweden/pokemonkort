@@ -46,14 +46,15 @@ export function pricechartingLink(
   setName: string,
   card: { name: string; number: number }
 ): PriceChartingLink {
-  // #full-prices hoppar direkt till pristabellen med alla graderingar.
+  // Obs: #full-prices på PriceChartings sida är en knapp som deras egna script
+  // hanterar -- den går inte att öppna via adressen (testat), så ingen #-del.
   const search = `https://www.pricecharting.com/search-products?type=prices&q=${encodeURIComponent(
     `${card.name} ${setName}`
   )}`;
   if (!setName.trim() || card.number >= 500000) return { url: search, exact: false };
   const setSlug = SET_SLUGS[setName.trim().toLowerCase()] ?? `pokemon-${slugify(setName)}`;
   return {
-    url: `https://www.pricecharting.com/game/${setSlug}/${slugify(card.name)}-${card.number}#full-prices`,
+    url: `https://www.pricecharting.com/game/${setSlug}/${slugify(card.name)}-${card.number}`,
     exact: true,
   };
 }
