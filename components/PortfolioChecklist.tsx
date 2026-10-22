@@ -479,7 +479,7 @@ export default function PortfolioChecklist({
                   rel="noopener noreferrer"
                   className="inline-block text-xs text-gold hover:underline mt-0.5 ml-3"
                 >
-                  Graderat pris ↗
+                  Graderat pris ↗ <span className="text-mute">(klicka + för alla graderingar)</span>
                 </a>
               )}
               {swedishPriceText(swedishPrices[card.id]) && (
