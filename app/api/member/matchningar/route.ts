@@ -89,7 +89,7 @@ export async function GET() {
         cardmarketUrl: cm?.url ?? null,
         cardmarketListUrl: cm?.listUrl ?? null,
         pricechartingUrl:
-          w.cards && hasGradedPrice(w.cards.rarity)
+          w.cards && hasGradedPrice(w.cards.rarity, w.cards.sets?.name)
             ? pricechartingLink(setName, { name: cardName, number: cardNumber }).url
             : null,
         cardId: w.card_id,

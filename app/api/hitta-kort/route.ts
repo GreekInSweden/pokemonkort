@@ -83,7 +83,7 @@ export async function GET(req: Request) {
       era: set.category_name,
       releaseDate: set.release_date ?? null,
       cardmarketUrl: cm.url,
-      pricechartingUrl: hasGradedPrice(r.rarity)
+      pricechartingUrl: hasGradedPrice(r.rarity, set.name)
         ? pricechartingLink(set.name, { name: r.name, number: r.number }).url
         : null,
     };
