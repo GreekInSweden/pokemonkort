@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getCurrentMember } from "@/lib/currentMember";
 import { cardmarketLink, CardRef } from "@/lib/cardmarket";
+import { hasGradedPrice, pricechartingLink } from "@/lib/pricecharting";
 import { getSwedishPrices } from "@/lib/swedishPrices";
 import { swedishPriceText } from "@/lib/swedishPricesFormat";
 
@@ -87,6 +88,10 @@ export async function GET() {
       matches.push({
         cardmarketUrl: cm?.url ?? null,
         cardmarketListUrl: cm?.listUrl ?? null,
+        pricechartingUrl:
+          w.cards && hasGradedPrice(w.cards.rarity)
+            ? pricechartingLink(setName, { name: cardName, number: cardNumber }).url
+            : null,
         cardId: w.card_id,
         cardNumber: w.cards?.number ?? 0,
         cardName: w.cards?.name ?? "Okänt kort",
