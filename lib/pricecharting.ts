@@ -17,8 +17,24 @@ const GRADED_RARITIES = new Set([
   "mega_hyper_rare",
 ]);
 
-export function hasGradedPrice(rarity: string | null | undefined): boolean {
-  return !!rarity && GRADED_RARITIES.has(rarity);
+// Äldre set (WotC-eran m.fl.) där även vanliga "rare"-kort (holos) är
+// värda att graderas -- där finns ingen IR-nivå, så Rare räknas med.
+const VINTAGE_SETS = new Set([
+  "base", "jungle", "fossil", "base set 2", "team rocket", "gym heroes",
+  "gym challenge", "neo genesis", "neo discovery", "neo revelation",
+  "neo destiny", "legendary collection", "expedition base set",
+  "aquapolis", "skyridge", "wizards black star promos",
+]);
+
+export function hasGradedPrice(
+  rarity: string | null | undefined,
+  setName?: string | null
+): boolean {
+  if (!rarity) return false;
+  if (GRADED_RARITIES.has(rarity)) return true;
+  return (
+    rarity === "rare" && !!setName && VINTAGE_SETS.has(setName.toLowerCase())
+  );
 }
 
 // Setnamn hos oss (gemener) -> PriceChartings setadress, där den inte är

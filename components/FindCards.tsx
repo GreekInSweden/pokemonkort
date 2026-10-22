@@ -169,7 +169,7 @@ export default function FindCards() {
                     </a>
                     {r.pricechartingUrl && (
                       <a href={r.pricechartingUrl} target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">
-                        Graderat pris ↗
+                        Värde graderat (PSA/BGS) ↗
                       </a>
                     )}
                     <a

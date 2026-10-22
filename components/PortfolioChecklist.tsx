@@ -474,14 +474,14 @@ export default function PortfolioChecklist({
                   Reverse Holo-pris ↗
                 </a>
               )}
-              {hasGradedPrice(card.rarity) && (
+              {hasGradedPrice(card.rarity, setName) && (
                 <a
                   href={pricechartingLink(setName, card).url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block text-xs text-gold hover:underline mt-0.5 ml-3"
                 >
-                  Graderat pris ↗ <span className="text-mute">(klicka + för alla graderingar)</span>
+                  Värde graderat (PSA/BGS) ↗ <span className="text-mute">(klicka + för alla graderingar)</span>
                 </a>
               )}
               {swedishPriceText(swedishPrices[card.id]) && (
