@@ -257,6 +257,30 @@ function cardmarketLinkBase(
     card = withLv(card);
     siblings = siblings.map(withLv);
   }
+  // Vanliga basenergier finns i flera varianter på Cardmarket (V1, V2, V3 med
+  // samma nummer; verifierat: Metal-Energy-V1/V2/V3-BLW112) men bara som ett
+  // kort hos oss -> direktlänk till V1 + "Alla utgåvor" för de andra.
+  if (/^(basic )?(grass|fire|water|lightning|psychic|fighting|darkness|metal|fairy) energy$/i.test(card.name.trim())) {
+    const k = setName.trim().toLowerCase();
+    const cs = CARDMARKET_SETS[k];
+    const ls = LEGACY_SETS[k];
+    const slug =
+      cs?.slug ??
+      ls?.slug ??
+      SET_SLUG_OVERRIDES[k] ??
+      (EX_ERA_SETS.has(k) ? "EX-" : "") + cardmarketNameSlug(setName);
+    const listUrl = `${BASE}/Singles/${slug}?searchString=${encodeURIComponent(origName)}&${FILTERS}`;
+    const code = cs?.code ?? ls?.code;
+    if (code && card.number < 500000) {
+      const num = String(card.number).padStart(cs?.pad ?? (ls ? 0 : 3), "0");
+      return {
+        url: `${BASE}/Singles/${slug}/${cardmarketNameSlug(card.name)}-V1-${code}${num}?${FILTERS}`,
+        exact: true,
+        listUrl,
+      };
+    }
+    return { url: listUrl, exact: false };
+  }
   // Kort som Cardmarket delat upp i flera (Mr. Mime 95 = 95a/95b i Aquapolis)
   // -> visa listan i stället för en direktlänk som ger "invalid product".
   if (SEARCH_ONLY.has(`${setName.trim().toLowerCase()}:${card.number}`)) {
