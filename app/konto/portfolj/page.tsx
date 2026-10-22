@@ -1,3 +1,4 @@
+import { getSwedishPrices } from "@/lib/swedishPrices";
 import { redirect } from "next/navigation";
 import { getCurrentMember } from "@/lib/currentMember";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -82,6 +83,7 @@ export default async function PortfolioPage({
     parallel_tier_id: string | null;
   }[] = [];
   let parallelTiers: ParallelTier[] = [];
+  let swedishPrices: Record<string, import("@/lib/swedishPrices").SwedishPrice> = {};
 
   if (selectedSet) {
     const { data: cardsData } = await supabase
@@ -90,6 +92,7 @@ export default async function PortfolioPage({
       .eq("set_id", selectedSet.id)
       .order("number");
     cards = (cardsData as unknown as CardRow[]) ?? [];
+    swedishPrices = await getSwedishPrices({ setId: selectedSet.id });
 
     // Bara satt för Topps-set som faktiskt har definierade parallels (se
     // supabase/parallel_tiers.sql) — tom lista annars, då visar
@@ -170,6 +173,7 @@ export default async function PortfolioPage({
           cards={cards}
           initialEntries={ownEntries}
           parallelTiers={parallelTiers}
+          swedishPrices={swedishPrices}
         />
       )}
     </div>

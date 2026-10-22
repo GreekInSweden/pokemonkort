@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentMember } from "@/lib/currentMember";
 import MatchList from "@/components/MatchList";
+import SwapGroups from "@/components/SwapGroups";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,7 @@ export default async function MatchningarPage() {
         kontaktinfo visas förrän du klickar "Visa kontakt" på en specifik
         matchning.
       </p>
+      <SwapGroups />
       <MatchList />
     </div>
   );

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getCurrentMember } from "@/lib/currentMember";
 import { cardmarketLink, CardRef } from "@/lib/cardmarket";
+import { getSwedishPrices } from "@/lib/swedishPrices";
+import { swedishPriceText } from "@/lib/swedishPricesFormat";
 
 export const dynamic = "force-dynamic";
 
@@ -99,5 +101,14 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json({ matches });
+  // Svenskt pris (butik / senast sålt hos oss) per matchat kort.
+  const prices = await getSwedishPrices({
+    cardIds: Array.from(new Set(matches.map((m) => m.cardId as string))),
+  });
+  return NextResponse.json({
+    matches: matches.map((m) => ({
+      ...m,
+      swedishPrice: swedishPriceText(prices[m.cardId as string]),
+    })),
+  });
 }
