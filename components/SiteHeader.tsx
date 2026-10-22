@@ -123,6 +123,12 @@ export default function SiteHeader() {
           >
             Så funkar det
           </Link>
+          <Link
+            href="/hitta-kort"
+            className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
+          >
+            Hitta kort
+          </Link>
           {member && (
             <Link
               href="/konto/portfolj"
@@ -298,6 +304,7 @@ export default function SiteHeader() {
           <div className="max-w-7xl mx-auto px-4 py-2 flex flex-col">
             {[
               { href: "/sa-funkar-det", label: "Så funkar det", show: true },
+              { href: "/hitta-kort", label: "Hitta kort", show: true },
               { href: "/konto/portfolj", label: "Min portfölj", show: !!member },
               { href: "/mest-eftertraktade", label: "Mest eftertraktade", show: true },
               {

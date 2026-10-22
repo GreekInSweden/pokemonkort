@@ -49,6 +49,7 @@ export default function PortfolioChecklist({
   initialEntries,
   parallelTiers = [],
   swedishPrices = {},
+  initialQuery,
 }: {
   setName: string;
   cards: CardRow[];
@@ -66,6 +67,7 @@ export default function PortfolioChecklist({
   parallelTiers?: ParallelTier[];
   // Vad kortet kostar/senast såldes för hos oss (lib/swedishPrices.ts).
   swedishPrices?: Record<string, SwedishPrice>;
+  initialQuery?: string;
 }) {
   const [entries, setEntries] = useState<Set<EntryKey>>(
     () =>
@@ -85,7 +87,7 @@ export default function PortfolioChecklist({
       )
   );
   const [pending, setPending] = useState<Set<EntryKey>>(new Set());
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery ?? "");
   const [view, setView] = useState<"all" | "missing" | "owned">("all");
   const [error, setError] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
