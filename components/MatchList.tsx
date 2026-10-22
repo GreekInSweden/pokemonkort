@@ -12,6 +12,7 @@ interface Match {
   setName: string;
   cardmarketUrl?: string | null;
   cardmarketListUrl?: string | null;
+  swedishPrice?: string | null;
   variant: Variant;
   parallelTierId: string | null;
   parallelTierName: string | null;
@@ -192,6 +193,9 @@ export default function MatchList() {
                   >
                     Alla utgåvor ↗
                   </a>
+                )}
+                {m.swedishPrice && (
+                  <div className="text-xs text-mute mt-0.5">🇸🇪 {m.swedishPrice}</div>
                 )}
                 <div className="text-xs text-gold mt-1">
                   {m.matchCount} {m.matchCount === 1 ? "medlem har" : "medlemmar har"} det

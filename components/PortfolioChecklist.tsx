@@ -6,6 +6,7 @@ import { rarityAccent, rarityLabel } from "@/lib/rarity";
 import { variantLabel } from "@/lib/variant";
 import CardZoomImage from "@/components/CardZoomImage";
 import { cardmarketLink } from "@/lib/cardmarket";
+import { swedishPriceText, type SwedishPrice } from "@/lib/swedishPricesFormat";
 
 interface VariantRow {
   id: string;
@@ -46,6 +47,7 @@ export default function PortfolioChecklist({
   cards,
   initialEntries,
   parallelTiers = [],
+  swedishPrices = {},
 }: {
   setName: string;
   cards: CardRow[];
@@ -61,6 +63,8 @@ export default function PortfolioChecklist({
   // supabase/parallel_tiers.sql) — tom lista för Pokémon och alla andra
   // set, då visas ingen parallel-väljare alls.
   parallelTiers?: ParallelTier[];
+  // Vad kortet kostar/senast såldes för hos oss (lib/swedishPrices.ts).
+  swedishPrices?: Record<string, SwedishPrice>;
 }) {
   const [entries, setEntries] = useState<Set<EntryKey>>(
     () =>
@@ -466,6 +470,11 @@ export default function PortfolioChecklist({
                 >
                   Reverse Holo-pris ↗
                 </a>
+              )}
+              {swedishPriceText(swedishPrices[card.id]) && (
+                <div className="text-xs text-mute mt-0.5">
+                  🇸🇪 {swedishPriceText(swedishPrices[card.id])}
+                </div>
               )}
               <div className="mt-2 flex flex-wrap gap-2">
                 {card.card_variants.map((v) => {
