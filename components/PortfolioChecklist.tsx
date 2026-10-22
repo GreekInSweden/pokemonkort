@@ -6,6 +6,7 @@ import { rarityAccent, rarityLabel } from "@/lib/rarity";
 import { variantLabel } from "@/lib/variant";
 import CardZoomImage from "@/components/CardZoomImage";
 import { cardmarketLink } from "@/lib/cardmarket";
+import { hasGradedPrice, pricechartingLink } from "@/lib/pricecharting";
 import { swedishPriceText, type SwedishPrice } from "@/lib/swedishPricesFormat";
 
 interface VariantRow {
@@ -469,6 +470,16 @@ export default function PortfolioChecklist({
                   className="inline-block text-xs text-gold hover:underline mt-0.5 ml-3"
                 >
                   Reverse Holo-pris ↗
+                </a>
+              )}
+              {hasGradedPrice(card.rarity) && (
+                <a
+                  href={pricechartingLink(setName, card).url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block text-xs text-gold hover:underline mt-0.5 ml-3"
+                >
+                  Graderat pris ↗
                 </a>
               )}
               {swedishPriceText(swedishPrices[card.id]) && (

@@ -13,6 +13,7 @@ interface Match {
   cardmarketUrl?: string | null;
   cardmarketListUrl?: string | null;
   swedishPrice?: string | null;
+  pricechartingUrl?: string | null;
   variant: Variant;
   parallelTierId: string | null;
   parallelTierName: string | null;
@@ -192,6 +193,16 @@ export default function MatchList() {
                     className="inline-block text-xs text-mute hover:text-gold hover:underline mt-0.5 ml-3"
                   >
                     Alla utgåvor ↗
+                  </a>
+                )}
+                {m.pricechartingUrl && (
+                  <a
+                    href={m.pricechartingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block text-xs text-gold hover:underline mt-0.5 ml-3"
+                  >
+                    Graderat pris ↗
                   </a>
                 )}
                 {m.swedishPrice && (
