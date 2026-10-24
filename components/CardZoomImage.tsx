@@ -17,12 +17,15 @@ export default function CardZoomImage({
   number,
   rarity,
   className = "",
+  caption,
 }: {
   src: string | null;
   alt: string;
   number: number;
   rarity: Rarity;
   className?: string;
+  // Ersätter raden "#nummer · raritet" i förstoringen (t.ex. med setnamn).
+  caption?: string;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -70,7 +73,7 @@ export default function CardZoomImage({
             />
             <div className="mt-3 text-center">
               <div className="font-mono text-xs text-mute mb-1">
-                #{String(number).padStart(3, "0")} · {rarityLabel[rarity]}
+                {caption ?? `#${String(number).padStart(3, "0")} · ${rarityLabel[rarity]}`}
               </div>
               <div className="font-display text-lg font-semibold text-paper">
                 {alt}

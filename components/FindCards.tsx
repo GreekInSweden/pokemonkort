@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Rarity } from "@/lib/types";
 import { rarityLabel } from "@/lib/rarity";
+import CardZoomImage from "@/components/CardZoomImage";
 
 interface Result {
   id: string;
@@ -146,17 +147,14 @@ export default function FindCards() {
           <ul className="mt-3 grid gap-3 sm:grid-cols-2">
             {shown.map((r) => (
               <li key={r.id} className="flex gap-3 border border-line rounded p-3 bg-ink/50">
-                {r.image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={r.image_url}
-                    alt={r.name}
-                    loading="lazy"
-                    className="w-20 h-auto rounded self-start"
-                  />
-                ) : (
-                  <div className="w-20 h-28 bg-line rounded" />
-                )}
+                <CardZoomImage
+                  src={r.image_url}
+                  alt={r.name}
+                  number={0}
+                  rarity={r.rarity}
+                  caption={`${r.setName} · ${r.numberText} · ${rarityLabel[r.rarity] ?? r.rarity}`}
+                  className="w-20 aspect-[3/4] rounded self-start"
+                />
                 <div className="min-w-0 text-sm">
                   <div className="font-semibold text-paper">{r.name}</div>
                   <div className="text-mute">{r.setName}</div>
