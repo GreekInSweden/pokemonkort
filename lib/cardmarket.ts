@@ -13,7 +13,7 @@
 //   V1 = lägsta kortnumret, V2 = nästa, osv. (verifierat på Mega Darkrai ex
 //   i Pitch Black: 048=V1, 101=V2, 116=V3, 120=V4). Kort som bara finns i en
 //   version har ingen V-siffra.
-// - Undantag: 30th Celebration använder aldrig V (alla Pikachu heter bara
+// - Undantag: 30th Celebration: V bara när raritet skiljer (Moltres-V2-30C130; alla Pikachu heter bara
 //   Pikachu-30C0xx).
 
 import { CARDMARKET_LEVELS } from "./cardmarketLevels";
@@ -22,6 +22,9 @@ export interface CardmarketSet {
   slug: string; // setets del av adressen
   code: string; // t.ex. PBL
   versioned: boolean; // sätter Cardmarket V-siffra i det här setet?
+  // 30th Celebration: V sätts bara om kort med samma namn har OLIKA raritet
+  // (Moltres 11 = V1, 130 = V2), medan 30 st Pikachu Rare saknar V.
+  vIfRarityDiffers?: boolean;
   sameRarity?: boolean; // Black & White-eran: V bara bland kort med samma raritet
   withList?: boolean; // visa även "Alla utgåvor"-länk (äldre set)
   pad?: number; // antal siffror i kortnumret (standard 3; 0 = ingen nollfyllnad)
@@ -122,7 +125,7 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
   "black & white": { slug: "Black-White", code: "BLW", versioned: true, pad: 0, sameRarity: true, withList: true },
   // Expedition: V räknas efter kortnummer (Alakazam 1 = V1, 33 = V2)
   "expedition base set": { slug: "Expedition-Base-Set", code: "EX", versioned: true, pad: 0, withList: true },
-  "30th celebration": { slug: "30th-Celebration", code: "30C", versioned: false },
+  "30th celebration": { slug: "30th-Celebration", code: "30C", versioned: true, vIfRarityDiffers: true },
 };
 
 // Set vars Cardmarket-slug inte är samma som vårt setnamn.
@@ -361,19 +364,19 @@ function cardmarketLinkBase(
 
   let version = "";
   if (set.versioned) {
-    const sameName = siblings
-      .filter(
-        (c) =>
-          c.name.trim().toLowerCase() === card.name.trim().toLowerCase() &&
-          (!set.sameRarity || !c.rarity || !card.rarity || c.rarity === card.rarity)
-      )
-      .map((c) => c.number)
-      .sort((a, b) => a - b);
+    const sameNameCards = siblings.filter(
+      (c) =>
+        c.name.trim().toLowerCase() === card.name.trim().toLowerCase() &&
+        (!set.sameRarity || !c.rarity || !card.rarity || c.rarity === card.rarity)
+    );
+    const rarityDiffers =
+      new Set(sameNameCards.map((c) => c.rarity ?? "")).size > 1;
+    const sameName = sameNameCards.map((c) => c.number).sort((a, b) => a - b);
     // Hittas kortet inte bland syskonen vet vi inte säkert -> sökning.
     if (!sameName.includes(card.number)) {
       return { url: searchUrl(`${card.name} ${set.code}`), exact: false };
     }
-    if (sameName.length > 1) version = `V${sameName.indexOf(card.number) + 1}-`;
+    if (sameName.length > 1 && (!set.vIfRarityDiffers || rarityDiffers)) version = `V${sameName.indexOf(card.number) + 1}-`;
   }
 
   const num = String(card.number).padStart(set.pad ?? 3, "0");
