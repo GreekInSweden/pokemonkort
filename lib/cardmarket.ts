@@ -247,6 +247,17 @@ function cardmarketLinkBase(
   card: CardRef,
   siblings: CardRef[]
 ): CardmarketLink {
+  // 30th Celebration: våra namn har tillägg som "Pikachu (18/30)" och
+  // "Pikachu ex (day)" -- Cardmarket heter bara "Pikachu" / "Pikachu ex".
+  if (setName.trim().toLowerCase() === "30th celebration") {
+    const strip = (c: CardRef): CardRef => ({
+      ...c,
+      name: c.name.replace(/\s*\([^)]*\)\s*$/, ""),
+    });
+    if (strip(card).name !== card.name || siblings.some((c) => strip(c).name !== c.name)) {
+      return cardmarketLinkBase("30th Celebration ", strip(card), siblings.map(strip));
+    }
+  }
   const origName = card.name;
   // D&P/Platinum: Cardmarket har nivån i namnet ("Charizard Lv60").
   const levels = CARDMARKET_LEVELS[setName.trim().toLowerCase()];
@@ -376,7 +387,17 @@ function cardmarketLinkBase(
     if (!sameName.includes(card.number)) {
       return { url: searchUrl(`${card.name} ${set.code}`), exact: false };
     }
-    if (sameName.length > 1 && (!set.vIfRarityDiffers || rarityDiffers)) version = `V${sameName.indexOf(card.number) + 1}-`;
+    if (set.vIfRarityDiffers) {
+      // V = raritetsgrupp i nummerordning (Pikachu ex 53/54 = V1, 149/150 = V2).
+      if (rarityDiffers) {
+        const groups: string[] = [];
+        for (const c of [...sameNameCards].sort((a, b) => a.number - b.number)) {
+          const r = c.rarity ?? "";
+          if (!groups.includes(r)) groups.push(r);
+        }
+        version = `V${groups.indexOf(card.rarity ?? "") + 1}-`;
+      }
+    } else if (sameName.length > 1) version = `V${sameName.indexOf(card.number) + 1}-`;
   }
 
   const num = String(card.number).padStart(set.pad ?? 3, "0");
