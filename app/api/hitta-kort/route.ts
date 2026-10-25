@@ -26,23 +26,50 @@ export async function GET(req: Request) {
     return NextResponse.json({ results: [], truncated: false, hint: "number_needs_total" });
   }
 
-  let query = supabaseAdmin
-    .from("cards")
-    .select(
-      "id, set_id, number, name, rarity, image_url, sets!inner(name, slug, category_name, printed_total, release_date, product_line)"
-    )
-    .eq("sets.product_line", "pokemon");
-  for (const w of parsed.words) {
-    // Namn som Farfetch'd / N's Zorua skrivs ofta utan apostrof.
-    if (w.length >= 3) {
-      const alt = `${w.slice(0, -1)}'${w.slice(-1)}`;
-      query = query.or(`name.ilike.%${w}%,name.ilike.%${alt}%`);
-    } else {
-      query = query.ilike("name", `%${w}%`);
+  const sp = new URL(req.url).searchParams;
+  const eraFilter = sp.get("era") ?? "";
+  const rarityFilter = sp.get("rarity") ?? "";
+
+  // Gemensamma sökvillkor (namn, nummer, total).
+  function applyBase(query: any) {
+    query = query.eq("sets.product_line", "pokemon");
+    for (const w of parsed.words) {
+      // Namn som Farfetch'd / N's Zorua skrivs ofta utan apostrof.
+      if (w.length >= 3) {
+        const alt = `${w.slice(0, -1)}'${w.slice(-1)}`;
+        query = query.or(`name.ilike.%${w}%,name.ilike.%${alt}%`);
+      } else {
+        query = query.ilike("name", `%${w}%`);
+      }
     }
+    if (parsed.number !== null) query = query.eq("number", parsed.number);
+    if (parsed.total !== null) query = query.eq("sets.printed_total", parsed.total);
+    return query;
   }
-  if (parsed.number !== null) query = query.eq("number", parsed.number);
-  if (parsed.total !== null) query = query.eq("sets.printed_total", parsed.total);
+
+  // Filtermenyer (eror/rariteter) räknas på ALLA träffar, inte bara de
+  // första visade -- annars försvinner t.ex. "Other" när ett namn som
+  // Pikachu har hundratals träffar.
+  const { data: facetRows } = await applyBase(
+    supabaseAdmin.from("cards").select("rarity, sets!inner(category_name, product_line)")
+  ).limit(5000);
+  const eraCount: Record<string, number> = {};
+  const rarityCount: Record<string, number> = {};
+  for (const r of (facetRows as any[]) ?? []) {
+    const set = Array.isArray(r.sets) ? r.sets[0] : r.sets;
+    eraCount[set.category_name] = (eraCount[set.category_name] ?? 0) + 1;
+    rarityCount[r.rarity] = (rarityCount[r.rarity] ?? 0) + 1;
+  }
+
+  let query = applyBase(
+    supabaseAdmin
+      .from("cards")
+      .select(
+        "id, set_id, number, name, rarity, image_url, sets!inner(name, slug, category_name, printed_total, release_date, product_line)"
+      )
+  );
+  if (eraFilter) query = query.eq("sets.category_name", eraFilter);
+  if (rarityFilter) query = query.eq("rarity", rarityFilter);
 
   const { data, error } = await query.limit(LIMIT + 1);
   if (error) {
@@ -96,5 +123,5 @@ export async function GET(req: Request) {
       a.name.localeCompare(b.name)
   );
 
-  return NextResponse.json({ results, truncated });
+  return NextResponse.json({ results, truncated, eras: eraCount, rarities: rarityCount });
 }
