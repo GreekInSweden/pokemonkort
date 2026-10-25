@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Rarity } from "@/lib/types";
 import { rarityLabel } from "@/lib/rarity";
 import CardZoomImage from "@/components/CardZoomImage";
@@ -19,8 +19,8 @@ interface Result {
   pricechartingUrl: string | null;
 }
 
-export default function FindCards() {
-  const [q, setQ] = useState("");
+export default function FindCards({ initialQuery = "" }: { initialQuery?: string }) {
+  const [q, setQ] = useState(initialQuery);
   const [results, setResults] = useState<Result[] | null>(null);
   const [truncated, setTruncated] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
@@ -28,6 +28,9 @@ export default function FindCards() {
   const [error, setError] = useState<string | null>(null);
   const [era, setEra] = useState("");
   const [rarity, setRarity] = useState("");
+  const [eraCounts, setEraCounts] = useState<Record<string, number>>({});
+  const [rarityCounts, setRarityCounts] = useState<Record<string, number>>({});
+  const lastQ = useRef("");
   const seq = useRef(0);
 
   useEffect(() => {
@@ -38,11 +41,22 @@ export default function FindCards() {
       setError(null);
       return;
     }
+    // Ny sökning nollställer filtren; ändrat filter behåller dem.
+    if (lastQ.current !== text) {
+      lastQ.current = text;
+      if (era || rarity) {
+        setEra("");
+        setRarity("");
+        return;
+      }
+    }
     const mine = ++seq.current;
     const t = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/hitta-kort?q=${encodeURIComponent(text)}`);
+        const res = await fetch(
+          `/api/hitta-kort?q=${encodeURIComponent(text)}&era=${encodeURIComponent(era)}&rarity=${encodeURIComponent(rarity)}`
+        );
         const json = await res.json();
         if (mine !== seq.current) return;
         if (!res.ok) {
@@ -53,8 +67,11 @@ export default function FindCards() {
           setResults(json.results);
           setTruncated(!!json.truncated);
           setHint(json.hint ?? null);
-          setEra("");
-          setRarity("");
+          // Menyerna visar alltid alla träffar för sökordet, även när ett filter är valt.
+          if (!era && !rarity) {
+            setEraCounts(json.eras ?? {});
+            setRarityCounts(json.rarities ?? {});
+          }
         }
       } catch {
         if (mine === seq.current) setError("Kunde inte söka just nu.");
@@ -63,19 +80,11 @@ export default function FindCards() {
       }
     }, 350);
     return () => clearTimeout(t);
-  }, [q]);
+  }, [q, era, rarity]);
 
-  const eras = useMemo(
-    () => Array.from(new Set((results ?? []).map((r) => r.era))).sort(),
-    [results]
-  );
-  const rarities = useMemo(
-    () => Array.from(new Set((results ?? []).map((r) => r.rarity))),
-    [results]
-  );
-  const shown = (results ?? []).filter(
-    (r) => (!era || r.era === era) && (!rarity || r.rarity === rarity)
-  );
+  const eras = Object.keys(eraCounts).sort();
+  const rarities = Object.keys(rarityCounts);
+  const shown = results ?? [];
 
   return (
     <div>
@@ -111,9 +120,9 @@ export default function FindCards() {
 
       {results && results.length > 0 && (
         <>
-          {(eras.length > 1 || rarities.length > 1) && (
+          {(eras.length > 1 || rarities.length > 1 || era || rarity) && (
             <div className="flex flex-wrap gap-2 mt-6">
-              {eras.length > 1 && (
+              {(eras.length > 1 || !!era) && (
                 <select
                   value={era}
                   onChange={(e) => setEra(e.target.value)}
@@ -122,11 +131,11 @@ export default function FindCards() {
                 >
                   <option value="">Alla eror</option>
                   {eras.map((x) => (
-                    <option key={x} value={x}>{x}</option>
+                    <option key={x} value={x}>{x} ({eraCounts[x]})</option>
                   ))}
                 </select>
               )}
-              {rarities.length > 1 && (
+              {(rarities.length > 1 || !!rarity) && (
                 <select
                   value={rarity}
                   onChange={(e) => setRarity(e.target.value)}
@@ -135,7 +144,7 @@ export default function FindCards() {
                 >
                   <option value="">Alla sällsynthetsgrader</option>
                   {rarities.map((x) => (
-                    <option key={x} value={x}>{rarityLabel[x] ?? x}</option>
+                    <option key={x} value={x}>{rarityLabel[x as Rarity] ?? x} ({rarityCounts[x]})</option>
                   ))}
                 </select>
               )}

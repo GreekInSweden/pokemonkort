@@ -138,6 +138,14 @@ export default function SiteHeader() {
               <span className="hidden xl:inline">Min portfölj</span>
             </Link>
           )}
+          {member && (
+            <Link
+              href="/konto/pokedex"
+              className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
+            >
+              Pokédex
+            </Link>
+          )}
           <Link
             href="/mest-eftertraktade"
             className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
@@ -306,6 +314,7 @@ export default function SiteHeader() {
               { href: "/sa-funkar-det", label: "Så funkar det", show: true },
               { href: "/hitta-kort", label: "Hitta kort", show: true },
               { href: "/konto/portfolj", label: "Min portfölj", show: !!member },
+              { href: "/konto/pokedex", label: "Pokédex", show: !!member },
               { href: "/mest-eftertraktade", label: "Mest eftertraktade", show: true },
               {
                 href: "/konto/matchningar",
