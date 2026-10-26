@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentMember } from "@/lib/currentMember";
 import { LAGER_ENABLED } from "@/lib/siteConfig";
 import { isShopEnabled } from "@/lib/shopStatus";
+import { getMasterSetCount } from "@/lib/masterSets";
 
 export const dynamic = "force-dynamic";
 
@@ -18,10 +19,19 @@ export default async function RootPage() {
   }
 
   const shop = await isShopEnabled();
+  const masterCount = await getMasterSetCount();
 
   return (
     <div>
       <Hero shop={shop} />
+      <div className="text-center -mt-8 mb-12 px-4">
+        <Link
+          href="/master-sets"
+          className="focus-ring inline-block rounded-full border border-gold/60 px-5 py-2 text-sm text-gold hover:bg-gold/10"
+        >
+          🏆 {masterCount} {masterCount === 1 ? "Master Set" : "Master Sets"} registrerade – se väggen →
+        </Link>
+      </div>
       <Features shop={shop} />
     </div>
   );

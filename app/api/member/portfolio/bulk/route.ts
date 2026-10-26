@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getCurrentMember } from "@/lib/currentMember";
 import { getMembershipState, canUseSet } from "@/lib/membership";
+import { evaluateMasterSets } from "@/lib/masterSets";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
     if (error) {
       return NextResponse.json({ error: "Kunde inte rensa." }, { status: 500 });
     }
+    await evaluateMasterSets(member.id, cardIds);
     return NextResponse.json({ ok: true });
   }
 
@@ -117,5 +119,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Sparade, men kunde inte ta bort Vill ha." }, { status: 500 });
   }
 
+  await evaluateMasterSets(member.id, cardIds);
   return NextResponse.json({ ok: true });
 }

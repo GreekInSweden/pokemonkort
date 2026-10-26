@@ -4,6 +4,7 @@ import { getCurrentMember } from "@/lib/currentMember";
 import { Variant } from "@/lib/types";
 import { getMembershipState, canUseSet } from "@/lib/membership";
 import { notifyWanters } from "@/lib/matchNotify";
+import { evaluateMasterSets } from "@/lib/masterSets";
 
 export const dynamic = "force-dynamic";
 
@@ -184,6 +185,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Kunde inte spara." }, { status: 500 });
     }
     await notify();
+    if (status === "have") await evaluateMasterSets(member.id, [cardId]);
     return NextResponse.json({ ok: true });
   }
 
@@ -195,6 +197,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Kunde inte spara." }, { status: 500 });
   }
   await notify();
+  if (status === "have") await evaluateMasterSets(member.id, [cardId]);
   return NextResponse.json({ ok: true });
 }
 
@@ -231,5 +234,6 @@ export async function DELETE(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: "Kunde inte ta bort." }, { status: 500 });
   }
+  if (status === "have") await evaluateMasterSets(member.id, [cardId]);
   return NextResponse.json({ ok: true });
 }

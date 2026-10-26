@@ -4,6 +4,7 @@ import { getCurrentMember } from "@/lib/currentMember";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { Variant, Rarity, ParallelTier } from "@/lib/types";
+import { MASTER_HOLD_MS, getMasterSetCount } from "@/lib/masterSets";
 import PortfolioChecklist from "@/components/PortfolioChecklist";
 import SetPicker from "@/components/SetPicker";
 import {
@@ -115,6 +116,37 @@ export default async function PortfolioPage({
     ownEntries = (entriesData as any[]) ?? [];
   }
 
+  // Master Set-status för det valda setet (väggen: lib/masterSets.ts).
+  let masterNote: { text: string; done: boolean } | null = null;
+  if (selectedSet) {
+    const { data: claims } = await supabaseAdmin
+      .from("master_set_claims")
+      .select("level, complete_since")
+      .eq("member_id", member.id)
+      .eq("set_id", selectedSet.id);
+    const rows = (claims as any[]) ?? [];
+    if (rows.length > 0) {
+      const since = Math.min(...rows.map((r) => new Date(r.complete_since).getTime()));
+      const left = Math.ceil((since + MASTER_HOLD_MS - Date.now()) / 60000);
+      const grand = rows.some((r) => r.level === "grand");
+      const label = grand ? "Grand Master Set" : "Master Set";
+      if (left > 0) {
+        masterNote = {
+          done: false,
+          text: `Du har alla kort i ${selectedSet.name}! Om cirka ${left} min hamnar du på Master Set-väggen (som ${label}), så länge setet förblir komplett.`,
+        };
+      } else if (!member.username) {
+        masterNote = {
+          done: false,
+          text: `Du har ${label} i ${selectedSet.name}, men du syns inte på väggen förrän du har ett användarnamn.`,
+        };
+      } else {
+        masterNote = { done: true, text: `🏆 Du står på Master Set-väggen för ${selectedSet.name} (${label}).` };
+      }
+    }
+  }
+  const masterCount = await getMasterSetCount();
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-14">
       <h1 className="font-display text-3xl font-bold text-paper mb-1">
@@ -132,6 +164,22 @@ export default async function PortfolioPage({
         </a>
         .
       </p>
+
+      <p className="text-xs text-mute mb-4">
+        🏆 {masterCount} {masterCount === 1 ? "Master Set" : "Master Sets"} registrerade –{" "}
+        <a href="/master-sets" className="text-gold hover:underline">
+          se väggen
+        </a>
+      </p>
+      {masterNote && (
+        <div
+          className={`mb-4 rounded border px-4 py-3 text-sm ${
+            masterNote.done ? "border-gold bg-gold/10 text-gold" : "border-line text-paper"
+          }`}
+        >
+          {masterNote.text}
+        </div>
+      )}
 
       {limited && (
         <p className="text-xs text-mute font-mono mb-3">
