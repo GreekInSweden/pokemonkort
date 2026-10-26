@@ -8,6 +8,7 @@ import { hasGradedPrice, pricechartingLink } from "@/lib/pricecharting";
 export const dynamic = "force-dynamic";
 
 const LIMIT = 100;
+const FETCH_LIMIT = 600;
 
 // Publik sökning över alla Pokémon-kort (referensdata, inget privat).
 export async function GET(req: Request) {
@@ -71,11 +72,21 @@ export async function GET(req: Request) {
   if (eraFilter) query = query.eq("sets.category_name", eraFilter);
   if (rarityFilter) query = query.eq("rarity", rarityFilter);
 
-  const { data, error } = await query.limit(LIMIT + 1);
+  // Hämta fler än vi visar och rangordna själva -- annars hamnar träffarna
+  // i databasens slumpmässiga ordning och kort kan försvinna när ett namn
+  // har många träffar (t.ex. "Meowth" bland alla Alolan/Galarian/ex-kort).
+  const { data, error } = await query.limit(FETCH_LIMIT);
   if (error) {
     return NextResponse.json({ error: "Sökningen misslyckades." }, { status: 500 });
   }
-  const rows = (data as any[]) ?? [];
+  const wanted = parsed.words.join(" ");
+  const rank = (r: any) => {
+    const n = String(r.name).toLowerCase().replace(/[’'´`.]/g, "");
+    return n === wanted ? 0 : n.startsWith(wanted) ? 1 : 2;
+  };
+  const rows = ((data as any[]) ?? []).sort(
+    (a, b) => rank(a) - rank(b) || String(a.name).length - String(b.name).length
+  );
   const truncated = rows.length > LIMIT;
   const slice = rows.slice(0, LIMIT);
 
