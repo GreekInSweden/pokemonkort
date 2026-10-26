@@ -138,6 +138,12 @@ export default function SiteHeader() {
               <span className="hidden xl:inline">Min portfölj</span>
             </Link>
           )}
+          <Link
+            href="/master-sets"
+            className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
+          >
+            Master Sets
+          </Link>
           {member && (
             <Link
               href="/konto/pokedex"
@@ -314,6 +320,7 @@ export default function SiteHeader() {
               { href: "/sa-funkar-det", label: "Så funkar det", show: true },
               { href: "/hitta-kort", label: "Hitta kort", show: true },
               { href: "/konto/portfolj", label: "Min portfölj", show: !!member },
+              { href: "/master-sets", label: "Master Sets", show: true },
               { href: "/konto/pokedex", label: "Pokédex", show: !!member },
               { href: "/mest-eftertraktade", label: "Mest eftertraktade", show: true },
               {
