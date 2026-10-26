@@ -105,6 +105,10 @@ export default function SiteHeader() {
     }
   }
 
+  // Admin har en egen meny (components/admin/AdminNav.tsx) -- två staplade
+  // menyrader tog halva skärmen på mobil.
+  if (pathname?.startsWith("/admin")) return null;
+
   return (
     <header className="border-b border-line sticky top-0 z-30 bg-ink/95 backdrop-blur">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
