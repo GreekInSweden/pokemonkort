@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useCart } from "@/lib/CartContext";
@@ -120,54 +120,15 @@ export default function SiteHeader() {
             är inloggad, eftersom Min portfölj/Mina matchningar annars
             bara studsar vidare till inloggningen. Mest eftertraktade är
             publik och visas alltid. */}
-        <nav className="hidden md:flex items-center gap-3 lg:gap-4 flex-1 min-w-0">
-          <Link
-            href="/sa-funkar-det"
-            className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
-          >
-            Så funkar det
-          </Link>
-          <Link
-            href="/hitta-kort"
-            className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
-          >
-            Hitta kort
-          </Link>
+        <nav className="hidden lg:flex items-center gap-4 flex-1 min-w-0">
           {member && (
-            <Link
-              href="/konto/portfolj"
-              className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
-            >
+            <Link href="/konto/portfolj" className="focus-ring text-sm text-paper hover:text-gold whitespace-nowrap">
               <span className="xl:hidden">Portfölj</span>
               <span className="hidden xl:inline">Min portfölj</span>
             </Link>
           )}
-          <Link
-            href="/master-sets"
-            className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
-          >
-            Master Sets
-          </Link>
           {member && (
-            <Link
-              href="/konto/pokedex"
-              className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
-            >
-              Pokédex
-            </Link>
-          )}
-          <Link
-            href="/mest-eftertraktade"
-            className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
-          >
-            <span className="xl:hidden">Eftertraktade</span>
-            <span className="hidden xl:inline">Mest eftertraktade</span>
-          </Link>
-          {member && (
-            <Link
-              href="/konto/matchningar"
-              className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
-            >
+            <Link href="/konto/matchningar" className="focus-ring text-sm text-paper hover:text-gold whitespace-nowrap">
               <span className="xl:hidden">Matchningar</span>
               <span className="hidden xl:inline">Mina matchningar</span>
               {matchCount > 0 && (
@@ -176,50 +137,36 @@ export default function SiteHeader() {
             </Link>
           )}
           {member && (
-            <Link
-              href="/konto/meddelanden"
-              className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
-            >
+            <Link href="/konto/meddelanden" className="focus-ring text-sm text-paper hover:text-gold whitespace-nowrap">
               Meddelanden
               {unreadCount > 0 && (
                 <span className="text-gold font-mono"> ({unreadCount})</span>
               )}
             </Link>
           )}
-        </nav>
-
-        {/* Höger grupp: auktioner/butik + konto. */}
-        <nav className="hidden md:flex items-center gap-3 lg:gap-4 shrink-0">
-          <Link
-            href="/auktioner"
-            className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
-          >
+          <Link href="/auktioner" className="focus-ring text-sm text-paper hover:text-gold whitespace-nowrap">
             Auktioner
           </Link>
           {giveawayActive && (
-            <Link
-              href="/giveaway"
-              className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
-            >
+            <Link href="/giveaway" className="focus-ring text-sm text-paper hover:text-gold whitespace-nowrap">
               Giveaway
             </Link>
           )}
           {shopEnabled && (
-            <Link
-              href="/butik"
-              className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
-            >
+            <Link href="/butik" className="focus-ring text-sm text-paper hover:text-gold whitespace-nowrap">
               Butik
             </Link>
           )}
           {LAGER_ENABLED && (
-            <Link
-              href="/lager"
-              className="focus-ring text-sm text-paper hover:text-gold lg:whitespace-nowrap"
-            >
+            <Link href="/lager" className="focus-ring text-sm text-paper hover:text-gold whitespace-nowrap">
               Vårt lager
             </Link>
           )}
+          <ExploreMenu member={!!member} />
+        </nav>
+
+        {/* Höger grupp: auktioner/butik + konto. */}
+        <nav className="hidden lg:flex items-center gap-4 shrink-0">
           {member === undefined ? null : member ? (
             <>
               <Link
@@ -273,7 +220,7 @@ export default function SiteHeader() {
 
         {/* Mobil: kassa + medlemsräknare + menyknapp. Resten av länkarna
             ligger i panelen som öppnas under. */}
-        <div className="md:hidden flex items-center gap-2 shrink-0">
+        <div className="lg:hidden flex items-center gap-2 shrink-0">
           {itemCount > 0 && (
             <Link
               href="/kassa"
@@ -318,7 +265,7 @@ export default function SiteHeader() {
       </div>
 
       {menuOpen && (
-        <nav className="md:hidden border-t border-line bg-ink max-h-[calc(100vh-4rem)] overflow-y-auto">
+        <nav className="lg:hidden border-t border-line bg-ink max-h-[calc(100vh-4rem)] overflow-y-auto">
           <div className="max-w-7xl mx-auto px-4 py-2 flex flex-col">
             {[
               { href: "/sa-funkar-det", label: "Så funkar det", show: true },
@@ -385,5 +332,67 @@ export default function SiteHeader() {
         </nav>
       )}
     </header>
+  );
+}
+
+// "Utforska"-rullgardinen: de mindre ofta använda sidorna, så att
+// huvudraden inte blir för lång på dator.
+function ExploreMenu({ member }: { member: boolean }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+
+  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const items = [
+    { href: "/hitta-kort", label: "Hitta kort", show: true },
+    { href: "/konto/pokedex", label: "Pokédex", show: member },
+    { href: "/master-sets", label: "Master Sets", show: true },
+    { href: "/mest-eftertraktade", label: "Mest eftertraktade", show: true },
+    { href: "/sa-funkar-det", label: "Så funkar det", show: true },
+  ].filter((i) => i.show);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className="focus-ring text-sm text-paper hover:text-gold whitespace-nowrap flex items-center gap-1"
+      >
+        Utforska
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className={open ? "rotate-180" : ""}>
+          <path d="M2 3.5l3 3 3-3" />
+        </svg>
+      </button>
+      {open && (
+        <div role="menu" className="absolute left-0 top-full mt-2 w-56 rounded-md border border-line bg-ink shadow-lg py-1 z-40">
+          {items.map((i) => (
+            <Link
+              key={i.href}
+              href={i.href}
+              role="menuitem"
+              className="focus-ring block px-4 py-2 text-sm text-paper hover:text-gold hover:bg-gold/5"
+            >
+              {i.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
