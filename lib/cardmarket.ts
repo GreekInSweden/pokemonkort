@@ -114,7 +114,7 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
   "burning shadows": { slug: "Burning-Shadows", code: "BUS", versioned: true, pad: 0, withList: true }, // ej verifierad
   "crimson invasion": { slug: "Crimson-Invasion", code: "CIN", versioned: true, pad: 0, withList: true }, // ej verifierad
   "ultra prism": { slug: "Ultra-Prism", code: "UPR", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "forbidden light": { slug: "Forbidden-Light", code: "FLI", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "forbidden light": { slug: "Forbidden-Light", code: "FLI", versioned: true, withList: true }, // ej verifierad
   "celestial storm": { slug: "Celestial-Storm", code: "CES", versioned: true, pad: 0, withList: true }, // ej verifierad
   "lost thunder": { slug: "Lost-Thunder", code: "LOT", versioned: true, pad: 0, withList: true }, // ej verifierad
   "team up": { slug: "Team-Up", code: "TEU", versioned: true, pad: 0, withList: true }, // ej verifierad
@@ -147,7 +147,7 @@ const LEGACY_SETS: Record<string, { slug: string; code: string; noV?: boolean; e
   jungle: { slug: "Jungle", code: "JU" },
   fossil: { slug: "Fossil", code: "FO" },
   // Team Rocket har ingen V-siffra (en utgåva per kort): Dark-Charizard-TR4
-  "team rocket": { slug: "Team-Rocket", code: "TR" },
+  "team rocket": { slug: "Team-Rocket", code: "TR", noV: true },
   "neo genesis": { slug: "Neo-Genesis", code: "NG", noV: true },
   "neo destiny": { slug: "Neo-Destiny", code: "NDE", noV: true },
   "neo discovery": { slug: "Neo-Discovery", code: "NDI", noV: true },
@@ -185,12 +185,26 @@ const EX_ERA_SETS = new Set([
 
 // Kort som har en extra version med samma nummer på Cardmarket (stämplad m.m.)
 // -> den vanliga heter -V1-. Lägg till fler här när de upptäcks ("set:nummer").
-const V1_EXCEPTIONS = new Set<string>([
-  "scarlet & violet:17", // Tarountula
-  "black & white:1", // Snivy
-  "black & white:42", // Zebstrika
-  "dark explorers:1", // Bulbasaur
-]);
+const V_OVERRIDES: Record<string, string> = {
+  "scarlet & violet:17": "V1", // Tarountula
+  "black & white:1": "V1", // Snivy
+  "black & white:42": "V1", // Zebstrika
+  "dark explorers:1": "V1", // Bulbasaur
+  "plasma blast:105": "V2", // Rare Candy
+  "aquapolis:150": "V3", // Nidoking
+  "team rocket:1": "V1", // Dark Alakazam
+  "sandstorm:1": "V1", // Armaldo (prerelease-promo finns)
+  "dragon:100": "V1", // Charizard
+  "stellar crown:1": "V1", // Venusaur ex
+  "breakpoint:1": "V1", // Chikorita
+};
+// Kort vars Cardmarket-kod avviker (Energy Ark = N275 i Neo Discovery).
+const CODE_OVERRIDES: Record<string, string> = {
+  "neo discovery:75": "N275",
+};
+function vOverride(setName: string, number: number): string | undefined {
+  return V_OVERRIDES[`${setName.trim().toLowerCase()}:${number}`];
+}
 
 const SEARCH_ONLY = new Set<string>(["aquapolis:95"]);
 
@@ -332,7 +346,8 @@ function cardmarketLinkBase(
     const dup = siblings.some(
       (c) => c.name.trim().toLowerCase() === nm && c.number >= 500000 !== prefixed
     );
-    const v = dup ? (prefixed ? "-V1" : "-V2") : "";
+    const ov = prefixed ? undefined : vOverride(setName, card.number);
+    const v = ov ? `-${ov}` : dup ? (prefixed ? "-V1" : "-V2") : "";
     const num = prefixed ? orig : String(card.number);
     return {
       url: `${BASE}/Singles/${ec.slug}/${cardmarketNameSlug(card.name)}${v}-${ec.code}${num}?${FILTERS}`,
@@ -372,8 +387,13 @@ function cardmarketLinkBase(
     const key = setName.trim().toLowerCase();
     const legacy = LEGACY_SETS[key];
     if (legacy) {
+      const ov = vOverride(setName, card.number);
+      const co = CODE_OVERRIDES[`${key}:${card.number}`];
+      // Jungle/Fossil/Base: bara holo-kort (rare) har -V1- (1st Edition-version);
+      // trainers och vanliga kort saknar V (verifierat: Poke-Ball-JU64).
+      const v = ov ? `-${ov}-` : legacy.noV || ((key === "jungle" || key === "fossil") && card.rarity !== "rare") ? "-" : "-V1-";
       return {
-        url: `${BASE}/Singles/${legacy.slug}/${cardmarketNameSlug(card.name)}${legacy.noV ? "-" : "-V1-"}${legacy.code}${card.number}?${FILTERS}`,
+        url: `${BASE}/Singles/${legacy.slug}/${cardmarketNameSlug(card.name)}${v}${co ?? `${legacy.code}${card.number}`}?${FILTERS}`,
         exact: true,
         listUrl: `${BASE}/Singles/${legacy.slug}?searchString=${encodeURIComponent(card.name)}&${FILTERS}`,
       };
@@ -414,8 +434,8 @@ function cardmarketLinkBase(
         }
         version = `V${groups.indexOf(card.rarity ?? "") + 1}-`;
       }
-    } else if (V1_EXCEPTIONS.has(`${setName.trim().toLowerCase()}:${card.number}`)) {
-      version = "V1-";
+    } else if (vOverride(setName, card.number)) {
+      version = `${vOverride(setName, card.number)}-`;
     } else if (sameName.length > 1 && set.rankV) version = `V${sameName.indexOf(card.number) + 1}-`;
   }
 
