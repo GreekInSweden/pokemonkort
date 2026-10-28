@@ -59,15 +59,15 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
   "lost origin": { slug: "Lost-Origin", code: "LOR", versioned: true },
   "silver tempest": { slug: "Silver-Tempest", code: "SIT", versioned: true },
   "crown zenith": { slug: "Crown-Zenith", code: "CRZ", versioned: true },
-  "evolving skies": { slug: "Evolving-Skies", code: "EVS", versioned: true },
-  "chilling reign": { slug: "Chilling-Reign", code: "CRE", versioned: true },
-  "battle styles": { slug: "Battle-Styles", code: "BST", versioned: true },
-  "vivid voltage": { slug: "Vivid-Voltage", code: "VIV", versioned: true },
+  "evolving skies": { slug: "Evolving-Skies", code: "EVS", versioned: true, pad: 0 },
+  "chilling reign": { slug: "Chilling-Reign", code: "CRE", versioned: true, pad: 0 },
+  "battle styles": { slug: "Battle-Styles", code: "BST", versioned: true, pad: 0 },
+  "vivid voltage": { slug: "Vivid-Voltage", code: "VIV", versioned: true, pad: 0 },
   "darkness ablaze": { slug: "Darkness-Ablaze", code: "DAA", versioned: true, pad: 0 },
-  "rebel clash": { slug: "Rebel-Clash", code: "RCL", versioned: true },
-  "sword & shield": { slug: "Sword-Shield", code: "SSH", versioned: true },
-  "fusion strike": { slug: "Fusion-Strike", code: "FST", versioned: true },
-  "celebrations": { slug: "Celebrations", code: "CEL", versioned: true },
+  "rebel clash": { slug: "Rebel-Clash", code: "RCL", versioned: true, pad: 0 },
+  "sword & shield": { slug: "Sword-Shield", code: "SSH", versioned: true, pad: 0 },
+  "fusion strike": { slug: "Fusion-Strike", code: "FST", versioned: true, pad: 0 },
+  "celebrations": { slug: "Celebrations", code: "CEL", versioned: true, pad: 0 },
   // Diamond & Pearl -> Sun & Moon: första fyra verifierade, resten antagna (officiella koder)
   "diamond & pearl": { slug: "Diamond-Pearl", code: "DP", versioned: true, pad: 0, withList: true },
   "mysterious treasures": { slug: "Mysterious-Treasures", code: "MT", versioned: true, pad: 0, withList: true },
@@ -95,18 +95,18 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
   "plasma freeze": { slug: "Plasma-Freeze", code: "PLF", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
   "plasma blast": { slug: "Plasma-Blast", code: "PLB", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
   "legendary treasures": { slug: "Legendary-Treasures", code: "LTR", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
-  "xy": { slug: "XY", code: "XY", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "flashfire": { slug: "Flashfire", code: "FLF", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "furious fists": { slug: "Furious-Fists", code: "FFI", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "phantom forces": { slug: "Phantom-Forces", code: "PHF", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "primal clash": { slug: "Primal-Clash", code: "PRC", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "roaring skies": { slug: "Roaring-Skies", code: "ROS", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "ancient origins": { slug: "Ancient-Origins", code: "AOR", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "breakthrough": { slug: "BREAKthrough", code: "BKT", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "breakpoint": { slug: "BREAKpoint", code: "BKP", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "fates collide": { slug: "Fates-Collide", code: "FCO", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "steam siege": { slug: "Steam-Siege", code: "STS", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "evolutions": { slug: "Evolutions", code: "EVO", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "xy": { slug: "XY", code: "XY", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "flashfire": { slug: "Flashfire", code: "FLF", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "furious fists": { slug: "Furious-Fists", code: "FFI", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "phantom forces": { slug: "Phantom-Forces", code: "PHF", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "primal clash": { slug: "Primal-Clash", code: "PRC", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "roaring skies": { slug: "Roaring-Skies", code: "ROS", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "ancient origins": { slug: "Ancient-Origins", code: "AOR", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "breakthrough": { slug: "BREAKthrough", code: "BKT", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "breakpoint": { slug: "BREAKpoint", code: "BKP", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "fates collide": { slug: "Fates-Collide", code: "FCO", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "steam siege": { slug: "Steam-Siege", code: "STS", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "evolutions": { slug: "Evolutions", code: "EVO", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
   "sun & moon": { slug: "Sun-Moon", code: "SUM", versioned: true, pad: 0, withList: true }, // ej verifierad
   "guardians rising": { slug: "Guardians-Rising", code: "GRI", versioned: true, pad: 0, withList: true }, // ej verifierad
   "burning shadows": { slug: "Burning-Shadows", code: "BUS", versioned: true, pad: 0, withList: true }, // ej verifierad
@@ -145,7 +145,7 @@ const LEGACY_SETS: Record<string, { slug: string; code: string; noV?: boolean; e
   jungle: { slug: "Jungle", code: "JU" },
   fossil: { slug: "Fossil", code: "FO" },
   // Team Rocket har ingen V-siffra (en utgåva per kort): Dark-Charizard-TR4
-  "team rocket": { slug: "Team-Rocket", code: "TR", noV: true },
+  "team rocket": { slug: "Team-Rocket", code: "TR" },
   "neo genesis": { slug: "Neo-Genesis", code: "NG", noV: true },
   "neo destiny": { slug: "Neo-Destiny", code: "NDE", noV: true },
   "neo discovery": { slug: "Neo-Discovery", code: "NDI", noV: true },
@@ -191,6 +191,7 @@ export function cardmarketNameSlug(name: string): string {
   return name
     .replace(/\bLV\.?\s*(\d+)/gi, "Lv$1") // "Dialga LV.68" -> Dialga-Lv68
     .replace(/\s*δ/g, " Delta Species") // "Feraligatr δ" -> Feraligatr-Delta-Species
+    .replace(/^M (?=[A-Z])/, "M") // "M Venusaur-EX" -> MVenusaur-EX (verifierat: Evolutions)
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "") // accenter
     .replace(/['’`´.]/g, "") // apostrofer och punkter försvinner (Pokégear 3.0 -> Pokegear-30)
@@ -274,7 +275,12 @@ function cardmarketLinkBase(
   // Vanliga basenergier finns i flera varianter på Cardmarket (V1, V2, V3 med
   // samma nummer; verifierat: Metal-Energy-V1/V2/V3-BLW112) men bara som ett
   // kort hos oss -> direktlänk till V1 + "Alla utgåvor" för de andra.
-  if (/^(basic )?(grass|fire|water|lightning|psychic|fighting|darkness|metal|fairy) energy$/i.test(card.name.trim())) {
+  // Bara Black & White är verifierat (Metal-Energy-V1/V2/V3-BLW112); i övriga set
+  // saknar basenergier V-siffra (verifierat: 151, Scarlet & Violet, Neo Genesis).
+  if (
+    setName.trim().toLowerCase() === "black & white" &&
+    /^(basic )?(grass|fire|water|lightning|psychic|fighting|darkness|metal|fairy) energy$/i.test(card.name.trim())
+  ) {
     const k = setName.trim().toLowerCase();
     const cs = CARDMARKET_SETS[k];
     const ls = LEGACY_SETS[k];
@@ -405,9 +411,9 @@ function cardmarketLinkBase(
   return {
     url: `${BASE}/Singles/${set.slug}/${slug}?${FILTERS}`,
     exact: true,
-    listUrl: set.withList
-      ? `${BASE}/Singles/${set.slug}?searchString=${encodeURIComponent(origName)}&${FILTERS}`
-      : undefined,
+    // Alla utgåvor-länk för alla set: Cardmarket har ibland extra versioner
+    // (stämplade/Prerelease) som ger V-siffror vi inte kan räkna ut.
+    listUrl: `${BASE}/Singles/${set.slug}?searchString=${encodeURIComponent(origName)}&${FILTERS}`,
   };
 }
 
