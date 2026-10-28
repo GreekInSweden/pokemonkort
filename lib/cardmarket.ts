@@ -183,6 +183,15 @@ const EX_ERA_SETS = new Set([
   "crystal guardians", "dragon frontiers", "power keepers",
 ]);
 
+// Kort som har en extra version med samma nummer på Cardmarket (stämplad m.m.)
+// -> den vanliga heter -V1-. Lägg till fler här när de upptäcks ("set:nummer").
+const V1_EXCEPTIONS = new Set<string>([
+  "scarlet & violet:17", // Tarountula
+  "black & white:1", // Snivy
+  "black & white:42", // Zebstrika
+  "dark explorers:1", // Bulbasaur
+]);
+
 const SEARCH_ONLY = new Set<string>(["aquapolis:95"]);
 
 const BASE = "https://www.cardmarket.com/en/Pokemon/Products";
@@ -405,6 +414,8 @@ function cardmarketLinkBase(
         }
         version = `V${groups.indexOf(card.rarity ?? "") + 1}-`;
       }
+    } else if (V1_EXCEPTIONS.has(`${setName.trim().toLowerCase()}:${card.number}`)) {
+      version = "V1-";
     } else if (sameName.length > 1 && set.rankV) version = `V${sameName.indexOf(card.number) + 1}-`;
   }
 
