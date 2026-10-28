@@ -9,6 +9,7 @@
 // - <Set> och <KOD> är Cardmarkets eget setnamn/kod (se CARDMARKET_SETS).
 // - Namnet skrivs med bindestreck: accenter tas bort (Poké -> Poke) och
 //   apostrofer försvinner utan bindestreck (Lillie's -> Lillies).
+// - OBS: i de flesta set sätter Cardmarket V<n> bara på kort som har extra versioner med SAMMA nummer (stämplade m.m.; verifierat: Tarountula SVI016/018 utan V, SVI017 = V1). Rank-baserad V används därför bara där den är verifierad (rankV).
 // - V<n> sätts bara när samma kortnamn finns i flera versioner i setet:
 //   V1 = lägsta kortnumret, V2 = nästa, osv. (verifierat på Mega Darkrai ex
 //   i Pitch Black: 048=V1, 101=V2, 116=V3, 120=V4). Kort som bara finns i en
@@ -26,18 +27,19 @@ export interface CardmarketSet {
   // (Moltres 11 = V1, 130 = V2), medan 30 st Pikachu Rare saknar V.
   vIfRarityDiffers?: boolean;
   sameRarity?: boolean; // Black & White-eran: V bara bland kort med samma raritet
+  rankV?: boolean; // V efter kortnummer bland kort med samma namn (bara verifierat i Mega-eran)
   withList?: boolean; // visa även "Alla utgåvor"-länk (äldre set)
   pad?: number; // antal siffror i kortnumret (standard 3; 0 = ingen nollfyllnad)
 }
 
 // Nyckel: setets namn hos oss, med gemener.
 export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
-  "mega evolution": { slug: "Mega-Evolution", code: "MEG", versioned: true },
-  "phantasmal flames": { slug: "Phantasmal-Flames", code: "PFL", versioned: true },
-  "ascended heroes": { slug: "Ascended-Heroes", code: "ASC", versioned: true },
-  "perfect order": { slug: "Perfect-Order", code: "POR", versioned: true },
-  "chaos rising": { slug: "Chaos-Rising", code: "CRI", versioned: true },
-  "pitch black": { slug: "Pitch-Black", code: "PBL", versioned: true },
+  "mega evolution": { slug: "Mega-Evolution", code: "MEG", versioned: true, rankV: true },
+  "phantasmal flames": { slug: "Phantasmal-Flames", code: "PFL", versioned: true, rankV: true },
+  "ascended heroes": { slug: "Ascended-Heroes", code: "ASC", versioned: true, rankV: true },
+  "perfect order": { slug: "Perfect-Order", code: "POR", versioned: true, rankV: true },
+  "chaos rising": { slug: "Chaos-Rising", code: "CRI", versioned: true, rankV: true },
+  "pitch black": { slug: "Pitch-Black", code: "PBL", versioned: true, rankV: true },
   "astral radiance": { slug: "Astral-Radiance", code: "ASR", versioned: true },
   "151": { slug: "151", code: "MEW", versioned: true },
   "paldea evolved": { slug: "Paldea-Evolved", code: "PAL", versioned: true },
@@ -124,7 +126,7 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
   // Musharna 49 och Zekrom 47/114 (holo vs hemlig) -> ingen V)
   "black & white": { slug: "Black-White", code: "BLW", versioned: true, pad: 0, sameRarity: true, withList: true },
   // Expedition: V räknas efter kortnummer (Alakazam 1 = V1, 33 = V2)
-  "expedition base set": { slug: "Expedition-Base-Set", code: "EX", versioned: true, pad: 0, withList: true },
+  "expedition base set": { slug: "Expedition-Base-Set", code: "EX", versioned: true, rankV: true, pad: 0, withList: true },
   "30th celebration": { slug: "30th-Celebration", code: "30C", versioned: true, vIfRarityDiffers: true },
 };
 
@@ -403,7 +405,7 @@ function cardmarketLinkBase(
         }
         version = `V${groups.indexOf(card.rarity ?? "") + 1}-`;
       }
-    } else if (sameName.length > 1) version = `V${sameName.indexOf(card.number) + 1}-`;
+    } else if (sameName.length > 1 && set.rankV) version = `V${sameName.indexOf(card.number) + 1}-`;
   }
 
   const num = String(card.number).padStart(set.pad ?? 3, "0");
