@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { MEMBER_SESSION_COOKIE, verifyMemberSession } from "@/lib/memberSession";
 import { calculateShippingForWeightSek } from "@/lib/shipping";
 import { isShopEnabled, isAdminUser } from "@/lib/shopStatus";
+import { notifyNewOrder } from "@/lib/orderEmails";
 
 interface CheckoutItem {
   kind?: "card" | "product";
@@ -147,6 +148,15 @@ export async function POST(req: NextRequest) {
       .eq("id", item.variantId);
   }
 
+  await notifyNewOrder(
+    order as any,
+    items.map((i) => ({
+      card_name: i.cardName,
+      variant: i.variant,
+      quantity: i.quantity,
+      unit_price_sek: i.unitPriceSek,
+    }))
+  );
   return NextResponse.json({ orderNumber });
 }
 
@@ -255,5 +265,12 @@ async function handleProductCheckout(
       .eq("id", id);
   }
 
+  await notifyNewOrder(
+    order as any,
+    Array.from(qtyById.entries()).map(([id, qty]) => {
+      const p = products.find((x: any) => x.id === id)!;
+      return { card_name: p.name, variant: "normal", quantity: qty, unit_price_sek: Number(p.price_sek) };
+    })
+  );
   return NextResponse.json({ orderNumber, totalSek: total });
 }

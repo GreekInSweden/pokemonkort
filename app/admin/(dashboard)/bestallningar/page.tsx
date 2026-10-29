@@ -121,9 +121,10 @@ export default async function BestallningarPage() {
                     <span className="text-paper font-semibold">Totalt {o.total_sek} kr</span>
                   </div>
 
-                  {o.status === "pending_payment" && (
+                  {(o.status === "pending_payment" || o.status === "paid") && (
                     <OrderActions
                       orderId={o.id}
+                      status={o.status}
                       items={o.items.map((i) => ({
                         cardVariantId: i.card_variant_id,
                         productId: i.product_id,
