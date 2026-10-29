@@ -13,28 +13,41 @@ interface OrderItemRef {
 export default function OrderActions({
   orderId,
   items,
+  status = "pending_payment",
 }: {
   orderId: string;
+  status?: "pending_payment" | "paid";
   items: OrderItemRef[];
 }) {
   const router = useRouter();
-  const [loading, setLoading] = useState<"paid" | "cancel" | null>(null);
+  const [loading, setLoading] = useState<"paid" | "shipped" | "cancel" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleMarkPaid() {
-    setLoading("paid");
+  async function setStatus(status: "paid" | "shipped", tracking?: string) {
+    setLoading(status);
     setError(null);
-    const supabase = createBrowserSupabase();
-    const { error: updateError } = await supabase
-      .from("orders")
-      .update({ status: "paid" })
-      .eq("id", orderId);
+    const res = await fetch("/api/admin/order-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId, status, tracking }),
+    });
     setLoading(null);
-    if (updateError) {
-      setError(updateError.message);
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      setError(j.error ?? "Kunde inte uppdatera ordern.");
       return;
     }
     router.refresh();
+  }
+
+  function handleMarkPaid() {
+    setStatus("paid");
+  }
+
+  function handleMarkShipped() {
+    const tracking = prompt("Spårningsnummer (valfritt, lämna tomt om inget):") ?? null;
+    if (tracking === null) return;
+    setStatus("shipped", tracking);
   }
 
   async function handleCancel() {
@@ -111,6 +124,7 @@ export default function OrderActions({
   return (
     <div>
       <div className="flex gap-2">
+        {status === "pending_payment" && (
         <button
           onClick={handleMarkPaid}
           disabled={loading !== null}
@@ -118,6 +132,15 @@ export default function OrderActions({
         >
           {loading === "paid" ? "Markerar…" : "Markera betald"}
         </button>
+        )}
+        <button
+          onClick={handleMarkShipped}
+          disabled={loading !== null}
+          className="focus-ring text-xs rounded-sm border border-gold text-gold px-3 py-1.5 disabled:opacity-50"
+        >
+          {loading === "shipped" ? "Markerar…" : "Markera skickad"}
+        </button>
+        {status === "pending_payment" && (
         <button
           onClick={handleCancel}
           disabled={loading !== null}
@@ -125,6 +148,7 @@ export default function OrderActions({
         >
           {loading === "cancel" ? "Återställer lager…" : "Avbryt & lägg tillbaka i lager"}
         </button>
+        )}
       </div>
       {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
     </div>
