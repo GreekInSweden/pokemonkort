@@ -46,7 +46,6 @@ export default function AdminNav({ lagerEnabled }: { lagerEnabled: boolean }) {
     {
       title: "Samling",
       links: [
-        { href: "/admin/masterset", label: "Master Set" },
         { href: "/admin/kortsok", label: "Kortsök" },
       ],
     },
