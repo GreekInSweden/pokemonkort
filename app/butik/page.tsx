@@ -28,7 +28,7 @@ export default async function ButikPage({
   let query = supabase
     .from("products")
     .select(
-      "id, name, category, set_name, description, price_sek, stock, weight_g, image_url, is_active, sort_order"
+      "*"
     )
     .eq("is_active", true)
     .gt("stock", 0)

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentMember } from "@/lib/currentMember";
 import MemberProfileForm from "@/components/MemberProfileForm";
 import MemberHistory from "@/components/MemberHistory";
+import EmailVerifyBanner from "@/components/EmailVerifyBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,7 @@ export default async function KontoPage() {
         </Link>
       </div>
 
+      <EmailVerifyBanner />
       <MemberProfileForm member={member} />
       <MemberHistory />
     </div>

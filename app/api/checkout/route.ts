@@ -4,6 +4,8 @@ import { MEMBER_SESSION_COOKIE, verifyMemberSession } from "@/lib/memberSession"
 import { calculateShippingForWeightSek } from "@/lib/shipping";
 import { isShopEnabled, isAdminUser } from "@/lib/shopStatus";
 import { notifyNewOrder } from "@/lib/orderEmails";
+import { getCurrentMember } from "@/lib/currentMember";
+import { startOfStockholmDay, normPhone, normAddress, normEmail } from "@/lib/dayLimit";
 
 interface CheckoutItem {
   kind?: "card" | "product";
@@ -185,7 +187,7 @@ async function handleProductCheckout(
 
   const { data: products, error: pErr } = await supabaseAdmin
     .from("products")
-    .select("id, name, category, price_sek, stock, weight_g, is_active")
+    .select("*")
     .in("id", Array.from(qtyById.keys()));
   if (pErr || !products) {
     return NextResponse.json({ error: "Kunde inte läsa produkterna." }, { status: 500 });
@@ -208,6 +210,80 @@ async function handleProductCheckout(
   }
   const shipping = calculateShippingForWeightSek(weight);
   const total = subtotal + shipping;
+
+  // Varor med gräns: kräver inloggning, komplett profil och bekräftad mejl,
+  // och max 1 per konto (och per samma mejl/telefon/adress) och dygn (svensk tid).
+  const limitedIds = Array.from(qtyById.keys()).filter(
+    (id) => (products.find((x: any) => x.id === id) as any)?.limit_one
+  );
+  if (limitedIds.length > 0) {
+    const member = await getCurrentMember();
+    if (!member) {
+      return NextResponse.json(
+        { error: "Den här varan kräver att du är inloggad. Logga in eller skapa ett konto först." },
+        { status: 401 }
+      );
+    }
+    if (
+      !member.name || !member.email || !member.phone?.trim() ||
+      !member.address?.trim() || !member.postalCode?.trim() || !member.city?.trim()
+    ) {
+      return NextResponse.json(
+        { error: "Fyll i namn, telefon och adress under Mitt konto innan du köper den här varan." },
+        { status: 403 }
+      );
+    }
+    const { data: ver, error: verErr } = await supabaseAdmin
+      .from("members")
+      .select("email_verified_at")
+      .eq("id", member.id)
+      .maybeSingle();
+    if (verErr || !ver?.email_verified_at) {
+      return NextResponse.json(
+        { error: "Bekräfta din e-postadress under Mitt konto innan du köper den här varan." },
+        { status: 403 }
+      );
+    }
+    for (const id of limitedIds) {
+      if ((qtyById.get(id) ?? 0) > 1) {
+        return NextResponse.json({ error: "Max 1 per konto av den här varan." }, { status: 400 });
+      }
+    }
+    const since = startOfStockholmDay().toISOString();
+    const { data: prev } = await supabaseAdmin
+      .from("order_items")
+      .select("product_id, orders!inner(member_id, email, phone, address, postal_code, status, created_at)")
+      .in("product_id", limitedIds)
+      .gte("orders.created_at", since)
+      .neq("orders.status", "cancelled");
+    const myPhone = normPhone(member.phone);
+    const myAddr = normAddress(member.address, member.postalCode);
+    const myMail = normEmail(member.email);
+    for (const row of (prev as any[]) ?? []) {
+      const o = Array.isArray(row.orders) ? row.orders[0] : row.orders;
+      if (!o) continue;
+      if (
+        o.member_id === member.id ||
+        normEmail(o.email) === myMail ||
+        (myPhone && normPhone(o.phone) === myPhone) ||
+        normAddress(o.address, o.postal_code) === myAddr
+      ) {
+        return NextResponse.json(
+          { error: "Du har redan beställt den här varan idag. Max 1 per konto. Försök igen imorgon." },
+          { status: 409 }
+        );
+      }
+    }
+    // Tvinga in profilens uppgifter så de inte kan ändras i kassan.
+    customer = {
+      name: member.name,
+      email: member.email,
+      phone: member.phone!,
+      address: member.address!,
+      postalCode: member.postalCode!,
+      city: member.city!,
+    };
+  }
 
   const orderNumber = generateOrderNumber();
   const sessionToken = req.cookies.get(MEMBER_SESSION_COOKIE)?.value;

@@ -10,7 +10,7 @@ export default async function AdminProdukterPage() {
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, name, category, set_name, description, price_sek, stock, weight_g, image_url, is_active, sort_order"
+      "*"
     )
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });

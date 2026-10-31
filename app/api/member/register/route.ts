@@ -7,6 +7,7 @@ import {
   memberSessionCookieOptions,
 } from "@/lib/memberSession";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { sendVerificationEmail } from "@/lib/emailVerify";
 
 export const dynamic = "force-dynamic";
 
@@ -134,6 +135,7 @@ async function handleRegister(req: NextRequest) {
     return NextResponse.json({ error: "Kunde inte skapa kontot." }, { status: 500 });
   }
 
+  await sendVerificationEmail(member.id, member.email, member.name); // best effort
   const token = await signMemberSession(member.id);
   const res = NextResponse.json({
     member: {
