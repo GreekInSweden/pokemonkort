@@ -99,6 +99,7 @@ export interface ProductRow {
   image_url: string | null;
   is_active: boolean;
   sort_order: number;
+  limit_one?: boolean;
 }
 
 export interface AuctionListing {

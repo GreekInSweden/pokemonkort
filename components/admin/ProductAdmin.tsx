@@ -398,6 +398,15 @@ function ProductRowEditor({
               disabled={busy}
             />
           </label>
+          <label className="flex items-center gap-2 text-xs text-paper pb-1.5">
+            <input
+              type="checkbox"
+              checked={!!product.limit_one}
+              onChange={(e) => onPatch({ limit_one: e.target.checked })}
+              disabled={busy}
+            />
+            Max 1 per konto och dag
+          </label>
           <button
             onClick={() => onPatch({ is_active: !product.is_active })}
             disabled={busy}

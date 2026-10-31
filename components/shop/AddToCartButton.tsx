@@ -10,7 +10,7 @@ export default function AddToCartButton({ product }: { product: ProductRow }) {
   const [added, setAdded] = useState(false);
 
   const inCart = items.find((i) => i.variantId === product.id)?.quantity ?? 0;
-  const remaining = product.stock - inCart;
+  const remaining = Math.min(product.stock - inCart, product.limit_one ? 1 - inCart : Infinity);
 
   if (product.stock <= 0) {
     return (
@@ -41,6 +41,7 @@ export default function AddToCartButton({ product }: { product: ProductRow }) {
   }
 
   return (
+    <div>
     <button
       onClick={handleAdd}
       disabled={remaining <= 0}
@@ -48,5 +49,9 @@ export default function AddToCartButton({ product }: { product: ProductRow }) {
     >
       {remaining <= 0 ? "Max i varukorgen" : added ? "Tillagd ✓" : "Lägg i varukorgen"}
     </button>
+    {product.limit_one && (
+      <div className="text-[11px] font-mono text-mute mt-1">Max 1 per konto</div>
+    )}
+    </div>
   );
 }
