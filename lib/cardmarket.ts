@@ -27,6 +27,7 @@ export interface CardmarketSet {
   // (Moltres 11 = V1, 130 = V2), medan 30 st Pikachu Rare saknar V.
   vIfRarityDiffers?: boolean;
   sameRarity?: boolean; // Black & White-eran: V bara bland kort med samma raritet
+  rankIfRarityDiffers?: boolean; // Sun & Moon-eran: V efter nummer när samma namn finns i olika raritet (GX, trainers, energier med full art/secret)
   rankV?: boolean; // V efter kortnummer bland kort med samma namn (bara verifierat i Mega-eran)
   withList?: boolean; // visa även "Alla utgåvor"-länk (äldre set)
   pad?: number; // antal siffror i kortnumret (standard 3; 0 = ingen nollfyllnad)
@@ -109,19 +110,19 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
   "fates collide": { slug: "Fates-Collide", code: "FCO", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
   "steam siege": { slug: "Steam-Siege", code: "STS", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
   "evolutions": { slug: "Evolutions", code: "EVO", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
-  "sun & moon": { slug: "Sun-Moon", code: "SUM", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "guardians rising": { slug: "Guardians-Rising", code: "GRI", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "burning shadows": { slug: "Burning-Shadows", code: "BUS", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "crimson invasion": { slug: "Crimson-Invasion", code: "CIN", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "ultra prism": { slug: "Ultra-Prism", code: "UPR", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "forbidden light": { slug: "Forbidden-Light", code: "FLI", versioned: true, withList: true }, // ej verifierad
-  "celestial storm": { slug: "Celestial-Storm", code: "CES", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "lost thunder": { slug: "Lost-Thunder", code: "LOT", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "team up": { slug: "Team-Up", code: "TEU", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "unbroken bonds": { slug: "Unbroken-Bonds", code: "UNB", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "unified minds": { slug: "Unified-Minds", code: "UNM", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "hidden fates": { slug: "Hidden-Fates", code: "HIF", versioned: true, pad: 0, withList: true }, // ej verifierad
-  "cosmic eclipse": { slug: "Cosmic-Eclipse", code: "CEC", versioned: true, pad: 0, withList: true }, // ej verifierad
+  "sun & moon": { slug: "Sun-Moon", code: "SUM", versioned: true, rankIfRarityDiffers: true, pad: 0, withList: true }, // ej verifierad
+  "guardians rising": { slug: "Guardians-Rising", code: "GRI", versioned: true, rankIfRarityDiffers: true, pad: 0, withList: true }, // ej verifierad
+  "burning shadows": { slug: "Burning-Shadows", code: "BUS", versioned: true, rankIfRarityDiffers: true, pad: 0, withList: true }, // ej verifierad
+  "crimson invasion": { slug: "Crimson-Invasion", code: "CIN", versioned: true, rankIfRarityDiffers: true, pad: 0, withList: true }, // ej verifierad
+  "ultra prism": { slug: "Ultra-Prism", code: "UPR", versioned: true, rankIfRarityDiffers: true, pad: 0, withList: true }, // ej verifierad
+  "forbidden light": { slug: "Forbidden-Light", code: "FLI", versioned: true, rankIfRarityDiffers: true, withList: true }, // ej verifierad
+  "celestial storm": { slug: "Celestial-Storm", code: "CES", versioned: true, rankIfRarityDiffers: true, pad: 0, withList: true }, // ej verifierad
+  "lost thunder": { slug: "Lost-Thunder", code: "LOT", versioned: true, rankIfRarityDiffers: true, pad: 0, withList: true }, // ej verifierad
+  "team up": { slug: "Team-Up", code: "TEU", versioned: true, rankIfRarityDiffers: true, pad: 0, withList: true }, // ej verifierad
+  "unbroken bonds": { slug: "Unbroken-Bonds", code: "UNB", versioned: true, rankIfRarityDiffers: true, pad: 0, withList: true }, // ej verifierad
+  "unified minds": { slug: "Unified-Minds", code: "UNM", versioned: true, rankIfRarityDiffers: true, pad: 0, withList: true }, // ej verifierad
+  "hidden fates": { slug: "Hidden-Fates", code: "HIF", versioned: true, rankIfRarityDiffers: true, pad: 0, withList: true }, // ej verifierad
+  "cosmic eclipse": { slug: "Cosmic-Eclipse", code: "CEC", versioned: true, rankIfRarityDiffers: true, pad: 0, withList: true }, // ej verifierad
   // Black & White: V bara bland kort med samma namn OCH raritet (Snivy 1/2, Zebstrika 42/43 -> V1;
   // Musharna 49 och Zekrom 47/114 (holo vs hemlig) -> ingen V)
   "black & white": { slug: "Black-White", code: "BLW", versioned: true, pad: 0, sameRarity: true, withList: true },
@@ -197,6 +198,18 @@ const V_OVERRIDES: Record<string, string> = {
   "dragon:100": "V1", // Charizard
   "stellar crown:1": "V1", // Venusaur ex
   "breakpoint:1": "V1", // Chikorita
+  // Verifierat av Christos (omgång 2):
+  "steam siege:26": "V1", // Volcanion-EX
+  "steam siege:107": "V2",
+  "steam siege:115": "V3",
+  "flashfire:11": "V1", // Charizard-EX
+  "furious fists:55": "V1", // M Lucario-EX
+  "furious fists:113": "V3",
+  "xy:97": "V1", // Xerneas-EX
+  "xy:146": "V2",
+  "guardians rising:14": "V1", // Oricorio
+  "majestic dawn:20": "V1", // Glaceon Lv46
+  "rising rivals:33": "V1", // Snorlax Lv37
 };
 // Kort vars Cardmarket-kod avviker (Energy Ark = N275 i Neo Discovery).
 const CODE_OVERRIDES: Record<string, string> = {
@@ -205,6 +218,8 @@ const CODE_OVERRIDES: Record<string, string> = {
 function vOverride(setName: string, number: number): string | undefined {
   return V_OVERRIDES[`${setName.trim().toLowerCase()}:${number}`];
 }
+
+const SPECIAL_CODES: Record<string, string> = { stormfront: "STF" };
 
 const SEARCH_ONLY = new Set<string>(["aquapolis:95"]);
 
@@ -367,11 +382,13 @@ function cardmarketLinkBase(
       (EX_ERA_SETS.has(k) ? "EX-" : "") + cardmarketNameSlug(setName);
     const listUrl = `${BASE}/Singles/${slug}?searchString=${encodeURIComponent(origName)}&${FILTERS}`;
     // Kod = setkod + originalets prefix och nummer (verifierat: Arceus/Bagon-Lv15-ARSH10).
-    const code = CARDMARKET_SETS[k]?.code ?? LEGACY_SETS[k]?.code;
+    // Specialkorten (SH3 m.fl.) i Stormfront har koden STF på Cardmarket (STFSH3),
+    // medan vanliga kort har SF (verifierat av Christos).
+    const code = SPECIAL_CODES[k] ?? CARDMARKET_SETS[k]?.code ?? LEGACY_SETS[k]?.code;
     const orig = originalNumberText(card);
     // Bara verifierat för D&P/Platinum (Arceus/Bagon-Lv15-ARSH10); övriga set
     // (t.ex. E-Card H1-kort) har annan kodning -> sök tills de verifierats.
-    if (code && orig && CARDMARKET_LEVELS[k]) {
+    if (code && orig) {
       return {
         url: `${BASE}/Singles/${slug}/${cardmarketNameSlug(card.name)}-${code}${orig}?${FILTERS}`,
         exact: true,
@@ -419,7 +436,18 @@ function cardmarketLinkBase(
     );
     const rarityDiffers =
       new Set(sameNameCards.map((c) => c.rarity ?? "")).size > 1;
-    const sameName = sameNameCards.map((c) => c.number).sort((a, b) => a - b);
+    // Kort med bokstavsändelse (55a) ligger i databasen som specialnummer; på
+    // Cardmarket kommer de direkt efter grundnumret -> sortera efter det.
+    const orderKey = (c: CardRef) => {
+      if (c.number < 500000) return c.number;
+      const m = c.image_url?.match(/\/(\d+)[a-z]_hires/);
+      return m ? Number(m[1]) + 0.5 : c.number;
+    };
+    const sameName = sameNameCards.map((c) => c.number).sort((a, b) => {
+      const ca = sameNameCards.find((c) => c.number === a)!;
+      const cb = sameNameCards.find((c) => c.number === b)!;
+      return orderKey(ca) - orderKey(cb);
+    });
     // Hittas kortet inte bland syskonen vet vi inte säkert -> sökning.
     if (!sameName.includes(card.number)) {
       return { url: searchUrl(`${card.name} ${set.code}`), exact: false };
@@ -436,7 +464,9 @@ function cardmarketLinkBase(
       }
     } else if (vOverride(setName, card.number)) {
       version = `${vOverride(setName, card.number)}-`;
-    } else if (sameName.length > 1 && set.rankV) version = `V${sameName.indexOf(card.number) + 1}-`;
+    } else if (set.rankIfRarityDiffers && rarityDiffers) {
+      version = `V${sameName.indexOf(card.number) + 1}-`;
+    } else if (sameName.length > 1 && (set.rankV || /\bLEGEND\b/.test(card.name))) version = `V${sameName.indexOf(card.number) + 1}-`;
   }
 
   const num = String(card.number).padStart(set.pad ?? 3, "0");
