@@ -134,6 +134,8 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
 // Set vars Cardmarket-slug inte är samma som vårt setnamn.
 const SET_SLUG_OVERRIDES: Record<string, string> = {
   base: "Base-Set",
+  // Promo-setet heter SVP Black Star Promos på Cardmarket (ej verifierat än).
+  "scarlet & violet black star promos": "SVP-Black-Star-Promos",
   // Classic Collection ligger under huvudsetet på Cardmarket, med kod efter
   // ursprungssetet (t.ex. Charizard-30CBS-4 = Base Set) -- därför sökning.
   "30th celebration: classic collection": "30th-Celebration",
@@ -210,6 +212,21 @@ const V_OVERRIDES: Record<string, string> = {
   "guardians rising:14": "V1", // Oricorio
   "majestic dawn:20": "V1", // Glaceon Lv46
   "rising rivals:33": "V1", // Snorlax Lv37
+  // Verifierat av Christos (omgång 3):
+  "call of legends:95": "V1",
+  "sun & moon:12": "V1",
+  "guardians rising:46": "V1",
+  "forbidden light:117": "V1",
+  "celestial storm:8": "V1",
+  "unified minds:87": "V1",
+  "primal clash:55": "V1",
+  "ancient origins:69": "V1",
+  "breakthrough:164": "V3",
+  "breakpoint:123": "V2",
+  "fates collide:125": "V3",
+  "dragons exalted:117": "V1",
+  "paldea evolved:259": "V3", // Chi-Yu ex (SIR)
+  "paradox rift:255": "V3", // Parasol Lady (SIR)
 };
 // Kort vars Cardmarket-kod avviker (Energy Ark = N275 i Neo Discovery).
 const CODE_OVERRIDES: Record<string, string> = {
@@ -221,7 +238,7 @@ function vOverride(setName: string, number: number): string | undefined {
 
 const SPECIAL_CODES: Record<string, string> = { stormfront: "STF" };
 
-const SEARCH_ONLY = new Set<string>(["aquapolis:95"]);
+const SEARCH_ONLY = new Set<string>(["aquapolis:95", "sun & moon:172"]);
 
 const BASE = "https://www.cardmarket.com/en/Pokemon/Products";
 const FILTERS = "language=1&minCondition=2"; // engelska, minst Near Mint
@@ -229,6 +246,9 @@ const FILTERS = "language=1&minCondition=2"; // engelska, minst Near Mint
 // "Lillie's Determination" -> "Lillies-Determination", "Poké Pad" -> "Poke-Pad"
 export function cardmarketNameSlug(name: string): string {
   return name
+    .replace(/\bGrassFirePsychicDarkness\b/gi, "GFPD") // Blend Energy GFPD
+    .replace(/\bWaterLightningFightingMetal\b/gi, "WLFM") // Blend Energy WLFM
+    .replace(/\bE4\b/g, "4") // "Alakazam E4 LV.X" -> Alakazam-4-LVX
     .replace(/\bLV\.?\s*(\d+)/gi, "Lv$1") // "Dialga LV.68" -> Dialga-Lv68
     .replace(/\s*δ/g, " Delta Species") // "Feraligatr δ" -> Feraligatr-Delta-Species
     .replace(/^M (?=[A-Z])/, "M") // "M Venusaur-EX" -> MVenusaur-EX (verifierat: Evolutions)
