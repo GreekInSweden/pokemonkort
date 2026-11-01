@@ -221,6 +221,7 @@ const V_OVERRIDES: Record<string, string> = {
   "unified minds:87": "V1",
   "primal clash:55": "V1",
   "ancient origins:69": "V1",
+  "breakthrough:158": "V2",
   "breakthrough:164": "V3",
   "breakpoint:123": "V2",
   "fates collide:125": "V3",
