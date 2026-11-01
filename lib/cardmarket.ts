@@ -105,6 +105,7 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
   "primal clash": { slug: "Primal-Clash", code: "PRC", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
   "roaring skies": { slug: "Roaring-Skies", code: "ROS", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
   "ancient origins": { slug: "Ancient-Origins", code: "AOR", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
+  "generations": { slug: "Generations", code: "GEN", versioned: true, pad: 0, withList: true }, // verifierat: Jolteon-EX-V1-GEN28
   "breakthrough": { slug: "BREAKthrough", code: "BKT", versioned: true, pad: 0, vIfRarityDiffers: true, withList: true }, // V per raritetsgrupp (verifierat: Mewtwo-EX/M Mewtwo-EX)
   "breakpoint": { slug: "BREAKpoint", code: "BKP", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
   "fates collide": { slug: "Fates-Collide", code: "FCO", versioned: true, pad: 0, sameRarity: true, withList: true }, // ej verifierad
@@ -223,7 +224,10 @@ const V_OVERRIDES: Record<string, string> = {
   "ancient origins:69": "V1",
   "breakthrough:158": "V2",
   "breakthrough:164": "V3",
+  "breakpoint:26": "V1",
   "breakpoint:123": "V2",
+  "breakpoint:114": "V3",
+  "generations:28": "V1", // Jolteon-EX
   "fates collide:125": "V3",
   "dragons exalted:117": "V1",
   "paldea evolved:259": "V3", // Chi-Yu ex (SIR)
