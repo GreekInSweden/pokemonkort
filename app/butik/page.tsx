@@ -1,3 +1,4 @@
+import SellerNotice from "@/components/SellerNotice";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { isShopEnabled, isAdminUser } from "@/lib/shopStatus";
@@ -52,6 +53,7 @@ export default async function ButikPage({
         Boosters, bundles, Elite Trainer Boxes och mer. Lägg i varukorgen,
         beställ och betala med Swish — vi skickar när betalningen kommit in.
       </p>
+      <SellerNotice className="mb-8 max-w-prose -mt-6" />
 
       <div className="flex flex-wrap gap-2 mb-8">
         <FilterChip href="/butik" label="Alla" selected={!active} />

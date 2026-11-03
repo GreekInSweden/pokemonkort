@@ -1,3 +1,5 @@
+import { SELLER_SHORT } from "@/lib/seller";
+
 // Regler som visas längst ner på /giveaway. Ändra texten här.
 export default function GiveawayRules() {
   return (
@@ -7,7 +9,7 @@ export default function GiveawayRules() {
       </h2>
       <ul className="space-y-3 text-sm text-paper/90 list-disc pl-5">
         <li>
-          <strong>Arrangör:</strong> Giveawayen arrangeras av Atlas Network Structure AB, som driver
+          <strong>Arrangör:</strong> Giveawayen arrangeras av {SELLER_SHORT}, som driver
           Kortmarknad.
         </li>
         <li>

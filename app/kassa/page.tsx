@@ -1,5 +1,6 @@
 "use client";
 
+import SellerNotice from "@/components/SellerNotice";
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -250,6 +251,7 @@ export default function KassaPage() {
           vi dig och betalningen återbetalas i sin helhet — du är aldrig
           skyldig att fullfölja köpet till fel pris.
         </p>
+        <SellerNotice className="text-center" />
       </form>
     </div>
   );

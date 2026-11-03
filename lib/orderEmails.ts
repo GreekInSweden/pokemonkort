@@ -1,3 +1,4 @@
+import { SELLER_NOTICE } from "@/lib/seller";
 import { sendEmail, SITE_URL } from "@/lib/email";
 
 export const ORDER_NOTIFY_EMAIL = process.env.ORDER_NOTIFY_EMAIL || "order@atlasnetwork.se";
@@ -49,8 +50,8 @@ export async function notifyNewOrder(order: MailOrder, items: MailItem[]) {
     await sendEmail({
       to: order.email,
       subject: `Orderbekräftelse ${order.order_number} - Kortmarknad`,
-      text: `Hej ${order.customer_name}!\n\nTack för din beställning (${order.order_number}).\n\n${lines.join("\n")}\n\nVaror: ${kr(order.subtotal_sek)}\nFrakt: ${kr(order.shipping_sek)}\nTotalt: ${kr(order.total_sek)}\n\n${payText}\nNär betalningen kommit in skickar vi en bekräftelse och packar din order.\n\nLeveransadress:\n${addressText(order)}\n\n${SITE_URL}`,
-      html: `<p>Hej ${esc(order.customer_name)}!</p><p>Tack för din beställning <strong>${esc(order.order_number)}</strong>.</p>${itemsHtml(items)}<p>Varor: ${kr(order.subtotal_sek)}<br>Frakt: ${kr(order.shipping_sek)}<br><strong>Totalt: ${kr(order.total_sek)}</strong></p><p><strong>${esc(payText)}</strong><br>När betalningen kommit in skickar vi en bekräftelse och packar din order.</p><p>Leveransadress:<br>${esc(addressText(order)).replace(/\n/g, "<br>")}</p><p><a href="${SITE_URL}">Kortmarknad</a></p>`,
+      text: `Hej ${order.customer_name}!\n\nTack för din beställning (${order.order_number}).\n\n${lines.join("\n")}\n\nVaror: ${kr(order.subtotal_sek)}\nFrakt: ${kr(order.shipping_sek)}\nTotalt: ${kr(order.total_sek)}\n\n${payText}\nNär betalningen kommit in skickar vi en bekräftelse och packar din order.\n\nLeveransadress:\n${addressText(order)}\n\n${SELLER_NOTICE}\n${SITE_URL}`,
+      html: `<p>Hej ${esc(order.customer_name)}!</p><p>Tack för din beställning <strong>${esc(order.order_number)}</strong>.</p>${itemsHtml(items)}<p>Varor: ${kr(order.subtotal_sek)}<br>Frakt: ${kr(order.shipping_sek)}<br><strong>Totalt: ${kr(order.total_sek)}</strong></p><p><strong>${esc(payText)}</strong><br>När betalningen kommit in skickar vi en bekräftelse och packar din order.</p><p>Leveransadress:<br>${esc(addressText(order)).replace(/\n/g, "<br>")}</p><p>${esc(SELLER_NOTICE)}</p><p><a href="${SITE_URL}">Kortmarknad</a></p>`,
     });
     await sendEmail({
       to: ORDER_NOTIFY_EMAIL,

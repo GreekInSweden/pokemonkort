@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SellerNotice from "@/components/SellerNotice";
 
 export default function OrderConfirmedPage({
   searchParams,
@@ -55,6 +56,8 @@ export default function OrderConfirmedPage({
         slutsålt kontaktar vi dig innan något skickas, och betalningen
         återbetalas i sin helhet om vi inte kommer överens om något annat.
       </p>
+
+      <SellerNotice className="mb-8" />
 
       <Link
         href="/butik"
