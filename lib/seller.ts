@@ -8,9 +8,12 @@ export const SELLER_NAME = SELLER_IS_COMPANY
   ? "Atlas Network Structure AB"
   : process.env.NEXT_PUBLIC_SELLER_NAME || "[fyll i ditt namn]";
 
+// Används i giveawayens regler. Utan namn i miljövariabeln visas "en privatperson".
 export const SELLER_SHORT = SELLER_IS_COMPANY
   ? "Atlas Network Structure AB"
-  : `${SELLER_NAME} (privatperson)`;
+  : process.env.NEXT_PUBLIC_SELLER_NAME
+    ? `${process.env.NEXT_PUBLIC_SELLER_NAME} (privatperson)`
+    : "en privatperson";
 
 // Text som visas i butik, kassa och orderbekräftelse.
 export const SELLER_NOTICE = SELLER_IS_COMPANY
