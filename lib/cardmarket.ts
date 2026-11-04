@@ -237,6 +237,11 @@ const V_OVERRIDES: Record<string, string> = {
 const CODE_OVERRIDES: Record<string, string> = {
   "neo discovery:75": "N275",
 };
+// Kort som INTE har -V- på Cardmarket trots flera kort med samma namn i setet.
+const NO_V = new Set<string>([
+  "expedition base set:131", // Squirtle (132 verifierat av Christos, 131 antaget lika)
+  "expedition base set:132",
+]);
 function vOverride(setName: string, number: number): string | undefined {
   return V_OVERRIDES[`${setName.trim().toLowerCase()}:${number}`];
 }
@@ -477,7 +482,9 @@ function cardmarketLinkBase(
     if (!sameName.includes(card.number)) {
       return { url: searchUrl(`${card.name} ${set.code}`), exact: false };
     }
-    if (set.vIfRarityDiffers) {
+    if (NO_V.has(`${setName.trim().toLowerCase()}:${card.number}`)) {
+      // ingen version
+    } else if (set.vIfRarityDiffers) {
       // V = raritetsgrupp i nummerordning (Pikachu ex 53/54 = V1, 149/150 = V2).
       if (rarityDiffers) {
         const groups: string[] = [];
