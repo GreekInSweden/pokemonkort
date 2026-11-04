@@ -65,11 +65,25 @@ export default function SiteHeader() {
   }, [member, pathname]);
 
   // Antal registrerade medlemmar -- visas där kassasumman satt förut.
+  // Hämtas om vid sidbyte och därefter var 30:e sekund, så siffran inte hänger
+  // efter när någon registrerar sig medan sidan är öppen.
   useEffect(() => {
-    fetch("/api/member-count")
-      .then((res) => res.json())
-      .then((data) => setMemberCount(typeof data.count === "number" ? data.count : null))
-      .catch(() => setMemberCount(null));
+    let stopped = false;
+    const load = () =>
+      fetch("/api/member-count", { cache: "no-store" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (!stopped) setMemberCount(typeof data.count === "number" ? data.count : null);
+        })
+        .catch(() => {});
+    load();
+    const t = setInterval(() => {
+      if (!document.hidden) load();
+    }, 30000);
+    return () => {
+      stopped = true;
+      clearInterval(t);
+    };
   }, [pathname]);
 
   // Butik-länken visas bara när butiken är påslagen i admin.
