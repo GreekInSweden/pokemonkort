@@ -128,7 +128,7 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
   // Musharna 49 och Zekrom 47/114 (holo vs hemlig) -> ingen V)
   "black & white": { slug: "Black-White", code: "BLW", versioned: true, pad: 0, sameRarity: true, withList: true },
   // Expedition: V räknas efter kortnummer (Alakazam 1 = V1, 33 = V2)
-  "expedition base set": { slug: "Expedition-Base-Set", code: "EX", versioned: true, rankV: true, pad: 0, withList: true },
+  "expedition base set": { slug: "Expedition-Base-Set", code: "EX", versioned: true, pad: 0, withList: true },
   "30th celebration": { slug: "30th-Celebration", code: "30C", versioned: true, vIfRarityDiffers: true },
 };
 
@@ -232,6 +232,8 @@ const V_OVERRIDES: Record<string, string> = {
   "dragons exalted:117": "V1",
   "paldea evolved:259": "V3", // Chi-Yu ex (SIR)
   "paradox rift:255": "V3", // Parasol Lady (SIR)
+  "twilight masquerade:181": "V2", // Hisuian Growlithe (IR)
+  "twilight masquerade:99": "V1", // Hisuian Growlithe (antaget, 181 är V2)
 };
 // Kort vars Cardmarket-kod avviker (Energy Ark = N275 i Neo Discovery).
 const CODE_OVERRIDES: Record<string, string> = {
