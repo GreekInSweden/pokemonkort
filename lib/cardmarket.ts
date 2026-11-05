@@ -43,20 +43,20 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
   "pitch black": { slug: "Pitch-Black", code: "PBL", versioned: true, rankV: true },
   "astral radiance": { slug: "Astral-Radiance", code: "ASR", versioned: true },
   "151": { slug: "151", code: "MEW", versioned: true },
-  "paldea evolved": { slug: "Paldea-Evolved", code: "PAL", versioned: true },
+  "paldea evolved": { slug: "Paldea-Evolved", code: "PAL", versioned: true, rankIfRarityDiffers: true },
   "obsidian flames": { slug: "Obsidian-Flames", code: "OBF", versioned: true },
-  "paradox rift": { slug: "Paradox-Rift", code: "PAR", versioned: true },
+  "paradox rift": { slug: "Paradox-Rift", code: "PAR", versioned: true, rankIfRarityDiffers: true },
   "paldean fates": { slug: "Paldean-Fates", code: "PAF", versioned: true },
   "temporal forces": { slug: "Temporal-Forces", code: "TEF", versioned: true },
-  "twilight masquerade": { slug: "Twilight-Masquerade", code: "TWM", versioned: true },
+  "twilight masquerade": { slug: "Twilight-Masquerade", code: "TWM", versioned: true, rankIfRarityDiffers: true },
   "shrouded fable": { slug: "Shrouded-Fable", code: "SFA", versioned: true },
   "stellar crown": { slug: "Stellar-Crown", code: "SCR", versioned: true },
   "surging sparks": { slug: "Surging-Sparks", code: "SSP", versioned: true },
   "prismatic evolutions": { slug: "Prismatic-Evolutions", code: "PRE", versioned: true },
-  "journey together": { slug: "Journey-Together", code: "JTG", versioned: true },
+  "journey together": { slug: "Journey-Together", code: "JTG", versioned: true, rankIfRarityDiffers: true },
   "destined rivals": { slug: "Destined-Rivals", code: "DRI", versioned: true },
-  "black bolt": { slug: "Black-Bolt", code: "BLK", versioned: true },
-  "white flare": { slug: "White-Flare", code: "WHT", versioned: true },
+  "black bolt": { slug: "Black-Bolt", code: "BLK", versioned: true, rankIfRarityDiffers: true },
+  "white flare": { slug: "White-Flare", code: "WHT", versioned: true, rankIfRarityDiffers: true },
   "scarlet & violet": { slug: "Scarlet-Violet", code: "SVI", versioned: true },
   "brilliant stars": { slug: "Brilliant-Stars", code: "BRS", versioned: true },
   "lost origin": { slug: "Lost-Origin", code: "LOR", versioned: true },
@@ -234,6 +234,10 @@ const V_OVERRIDES: Record<string, string> = {
   "paradox rift:255": "V3", // Parasol Lady (SIR)
   "twilight masquerade:181": "V2", // Hisuian Growlithe (IR)
   "twilight masquerade:99": "V1", // Hisuian Growlithe (antaget, 181 är V2)
+  "journey together:168": "V2", // Furret (IR)
+  "black bolt:171": "V2", // Victini (BWR), verifierat
+  "black bolt:12": "V1", // Victini (antaget)
+  "journey together:119": "V1", // Furret (antaget, 168 är V2)
 };
 // Kort vars Cardmarket-kod avviker (Energy Ark = N275 i Neo Discovery).
 const CODE_OVERRIDES: Record<string, string> = {
