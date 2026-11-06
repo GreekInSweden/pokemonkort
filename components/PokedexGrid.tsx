@@ -87,6 +87,58 @@ export default function PokedexGrid({
 
   return (
     <div>
+      {!readOnly && (
+        <div className="mb-6 rounded border border-line bg-ink/40 p-4 text-sm">
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={isPublic}
+              disabled={busy || (!hasUsername && !isPublic)}
+              onChange={togglePublic}
+              className="mt-1"
+            />
+            <span>
+              <span className="text-paper font-semibold">Dela min Pokédex</span>
+              <span className="block text-mute text-xs mt-1">
+                {hasUsername
+                  ? "Alla med länken ser vilka Pokémon du samlat (bara det, inga kort, priser eller kontaktuppgifter). Då kan andra hjälpa dig se vad du saknar."
+                  : "Du behöver ett användarnamn för att kunna dela. Lägg till det i din profil först."}
+              </span>
+            </span>
+          </label>
+          {isPublic && username && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <input
+                readOnly
+                value={`${typeof window !== "undefined" ? window.location.origin : ""}/pokedex/${encodeURIComponent(username)}`}
+                onFocus={(e) => e.target.select()}
+                aria-label="Länk till din publika Pokédex"
+                className="focus-ring flex-1 min-w-[12rem] bg-ink border border-line rounded-sm px-2 py-1.5 text-xs text-paper font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const url = `${window.location.origin}/pokedex/${encodeURIComponent(username)}`;
+                  navigator.clipboard.writeText(url).then(() => {
+                    setLinkCopied(true);
+                    setTimeout(() => setLinkCopied(false), 2000);
+                  });
+                }}
+                className="focus-ring text-xs rounded-sm bg-gold text-ink font-semibold px-3 py-1.5 shrink-0"
+              >
+                {linkCopied ? "Kopierad ✓" : "Kopiera länk"}
+              </button>
+              <a
+                href={`/pokedex/${encodeURIComponent(username)}`}
+                className="text-gold hover:underline text-xs shrink-0"
+              >
+                Öppna →
+              </a>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="mb-4">
         <div className="flex items-baseline justify-between text-sm mb-1">
           <span className="text-paper font-semibold">
@@ -217,48 +269,6 @@ export default function PokedexGrid({
         </div>
       )}
 
-      {!readOnly && (
-        <div className="mt-10 border-t border-line pt-6 text-sm">
-          <label className="flex items-start gap-3">
-            <input
-              type="checkbox"
-              checked={isPublic}
-              disabled={busy || (!hasUsername && !isPublic)}
-              onChange={togglePublic}
-              className="mt-1"
-            />
-            <span>
-              <span className="text-paper">Visa min Pokédex publikt</span>
-              <span className="block text-mute text-xs mt-1">
-                {hasUsername
-                  ? "Alla med länken ser vilka Pokémon du samlat (bara det, inga kort, priser eller kontaktuppgifter)."
-                  : "Du behöver ett användarnamn för att kunna dela. Lägg till det i din profil först."}
-              </span>
-              {isPublic && username && (
-                <a href={`/pokedex/${encodeURIComponent(username)}`} className="text-gold hover:underline text-xs">
-                  Din publika sida →
-                </a>
-              )}
-              {isPublic && username && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    const url = `${window.location.origin}/pokedex/${encodeURIComponent(username)}`;
-                    navigator.clipboard.writeText(url).then(() => {
-                      setLinkCopied(true);
-                      setTimeout(() => setLinkCopied(false), 2000);
-                    });
-                  }}
-                  className="ml-3 text-xs rounded-sm border border-line px-2 py-0.5 text-paper hover:border-gold"
-                >
-                  {linkCopied ? "Kopierad ✓" : "Kopiera länk"}
-                </button>
-              )}
-            </span>
-          </label>
-        </div>
-      )}
     </div>
   );
 }
