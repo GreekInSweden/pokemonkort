@@ -1042,3 +1042,8 @@ export const DEX: DexEntry[] = [
 export function dexSpriteUrl(n: number): string {
   return `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/${n}.png`;
 }
+
+// Reserv om jsDelivr inte har bilden (några enstaka Pokémon saknades där).
+export function dexSpriteFallbackUrl(n: number): string {
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${n}.png`;
+}
