@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { DEX, GENERATION_NAMES, dexSpriteUrl } from "@/lib/pokedex";
+import { DEX, GENERATION_NAMES, dexSpriteUrl, dexSpriteFallbackUrl } from "@/lib/pokedex";
 
 type View = "all" | "missing" | "owned";
 
@@ -25,6 +25,7 @@ export default function PokedexGrid({
   const [gen, setGen] = useState(0);
   const [view, setView] = useState<View>("all");
   const [query, setQuery] = useState("");
+  const [linkCopied, setLinkCopied] = useState(false);
   const [selected, setSelected] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -151,6 +152,12 @@ export default function PokedexGrid({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={dexSpriteUrl(d.n)}
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    if (img.dataset.fallback) return;
+                    img.dataset.fallback = "1";
+                    img.src = dexSpriteFallbackUrl(d.n);
+                  }}
                   alt=""
                   loading="lazy"
                   width={64}
@@ -231,6 +238,22 @@ export default function PokedexGrid({
                 <a href={`/pokedex/${encodeURIComponent(username)}`} className="text-gold hover:underline text-xs">
                   Din publika sida →
                 </a>
+              )}
+              {isPublic && username && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const url = `${window.location.origin}/pokedex/${encodeURIComponent(username)}`;
+                    navigator.clipboard.writeText(url).then(() => {
+                      setLinkCopied(true);
+                      setTimeout(() => setLinkCopied(false), 2000);
+                    });
+                  }}
+                  className="ml-3 text-xs rounded-sm border border-line px-2 py-0.5 text-paper hover:border-gold"
+                >
+                  {linkCopied ? "Kopierad ✓" : "Kopiera länk"}
+                </button>
               )}
             </span>
           </label>
