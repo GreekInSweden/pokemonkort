@@ -109,10 +109,15 @@ export default async function PortfolioPage({
     // member isn't a Supabase Auth user — so this has to go through the
     // service-role client, same as the /api/member/* routes, not the
     // anon-cookie client used for the public sets/cards above.
+    // Hämtar bara det valda setets rader. Tidigare hämtades ALLA medlemmens
+    // rader, och Supabase levererar högst 1000 åt gången -- med många
+    // ikryssade kort i flera set försvann nya markeringar efter omladdning.
     const { data: entriesData } = await supabaseAdmin
       .from("member_cards")
-      .select("card_id, variant, status, sellable, tradeable, parallel_tier_id")
-      .eq("member_id", member.id);
+      .select("card_id, variant, status, sellable, tradeable, parallel_tier_id, cards!inner(set_id)")
+      .eq("member_id", member.id)
+      .eq("cards.set_id", selectedSet.id)
+      .limit(5000);
     ownEntries = (entriesData as any[]) ?? [];
   }
 
