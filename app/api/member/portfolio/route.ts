@@ -20,12 +20,17 @@ export async function GET(req: NextRequest) {
 
   const setId = req.nextUrl.searchParams.get("setId");
 
-  const { data, error } = await supabaseAdmin
+  let query = supabaseAdmin
     .from("member_cards")
     .select(
-      "card_id, variant, status, quantity, sellable, tradeable, parallel_tier_id, cards(id, number, name, set_id)"
+      setId
+        ? "card_id, variant, status, quantity, sellable, tradeable, parallel_tier_id, cards!inner(id, number, name, set_id)"
+        : "card_id, variant, status, quantity, sellable, tradeable, parallel_tier_id, cards(id, number, name, set_id)"
     )
     .eq("member_id", member.id);
+  // Filtrera i databasen (Supabase levererar annars högst 1000 rader).
+  if (setId) query = query.eq("cards.set_id", setId);
+  const { data, error } = await query.limit(20000);
   if (error) {
     return NextResponse.json({ error: "Kunde inte hämta din portfölj." }, { status: 500 });
   }
