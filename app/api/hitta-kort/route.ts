@@ -31,10 +31,16 @@ export async function GET(req: Request) {
   const eraFilter = sp.get("era") ?? "";
   const rarityFilter = sp.get("rarity") ?? "";
 
+  // Sökord som kan ändras om hela frasen visar sig vara "kort + setnamn"
+  // (t.ex. "pikachu lost origin"), se längre ned.
+  let words = parsed.words;
+  let setFilter: string[] | null = null;
+
   // Gemensamma sökvillkor (namn, nummer, total).
   function applyBase(query: any) {
     query = query.eq("sets.product_line", "pokemon");
-    for (const w of parsed.words) {
+    if (setFilter) query = query.in("set_id", setFilter);
+    for (const w of words) {
       // Namn som Farfetch'd / N's Zorua skrivs ofta utan apostrof.
       if (w.length >= 3) {
         const alt = `${w.slice(0, -1)}'${w.slice(-1)}`;
@@ -46,6 +52,40 @@ export async function GET(req: Request) {
     if (parsed.number !== null) query = query.eq("number", parsed.number);
     if (parsed.total !== null) query = query.eq("sets.printed_total", parsed.total);
     return query;
+  }
+
+  // Hittas inget alls och frågan har flera ord kan en del av den vara ett
+  // setnamn ("pikachu lost origin"). Då söks namnorden bara inom de seten.
+  // Körs bara när den vanliga sökningen gav noll träffar, så inget som
+  // fungerade tidigare ändras.
+  {
+    const probe = await applyBase(
+      supabaseAdmin.from("cards").select("id, sets!inner(product_line)")
+    ).limit(1);
+    if (((probe.data as any[]) ?? []).length === 0 && parsed.words.length >= 2) {
+      const w = parsed.words;
+      let found: { ids: string[]; rest: string[] } | null = null;
+      // Längsta sammanhängande ordgrupp som matchar ett setnamn, minst ett namnord kvar.
+      for (let len = w.length - 1; len >= 1 && !found; len--) {
+        for (let i = 0; i + len <= w.length && !found; i++) {
+          const phrase = w.slice(i, i + len).join(" ");
+          if (len === 1 && phrase.length < 4) continue;
+          const rest = [...w.slice(0, i), ...w.slice(i + len)];
+          const { data: sr } = await supabaseAdmin
+            .from("sets")
+            .select("id")
+            .eq("product_line", "pokemon")
+            .ilike("name", `%${phrase.replace(/[\\%_]/g, "\\$&")}%`)
+            .limit(40);
+          const ids = ((sr as any[]) ?? []).map((s) => s.id as string);
+          if (ids.length > 0) found = { ids, rest };
+        }
+      }
+      if (found) {
+        setFilter = found.ids;
+        words = found.rest;
+      }
+    }
   }
 
   // Filtermenyer (eror/rariteter) räknas på ALLA träffar, inte bara de
@@ -79,7 +119,7 @@ export async function GET(req: Request) {
   if (error) {
     return NextResponse.json({ error: "Sökningen misslyckades." }, { status: 500 });
   }
-  const wanted = parsed.words.join(" ");
+  const wanted = words.join(" ");
   const rank = (r: any) => {
     const n = String(r.name).toLowerCase().replace(/[’'´`.]/g, "");
     return n === wanted ? 0 : n.startsWith(wanted) ? 1 : 2;
