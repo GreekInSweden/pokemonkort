@@ -4,7 +4,6 @@ import Link from "next/link";
 import "./globals.css";
 import { CartProvider } from "@/lib/CartContext";
 import SiteHeader from "@/components/SiteHeader";
-import { LAGER_ENABLED } from "@/lib/siteConfig";
 
 const display = Space_Grotesk({
   subsets: ["latin"],
@@ -46,7 +45,7 @@ export default function RootLayout({
                 och byte sinsemellan; auktioner sköts via Swish.
               </span>
               <Link
-                href={LAGER_ENABLED ? "/admin" : "/admin/masterset"}
+                href="/admin/bestallningar"
                 className="focus-ring hover:text-paper shrink-0 ml-4"
               >
                 Admin

@@ -35,7 +35,9 @@ export default function AdminNav({ lagerEnabled }: { lagerEnabled: boolean }) {
     {
       title: "Försäljning",
       links: [
-        ...(lagerEnabled ? [{ href: "/admin", label: "Lager" }] : []),
+        // Lager & bilder (set, antal och bilduppladdning) ska alltid gå att nå
+        // i admin, även när det publika lagret är avstängt.
+        { href: "/admin", label: lagerEnabled ? "Lager" : "Lager & bilder" },
         { href: "/admin/produkter", label: "Produkter" },
         { href: "/admin/bestallningar", label: "Beställningar" },
         { href: "/admin/paket", label: "Paket" },

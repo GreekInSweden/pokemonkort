@@ -12,7 +12,7 @@ export default function AdminLayout({
       <div className="border-b border-line sticky top-0 z-40 bg-ink">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link
-            href={LAGER_ENABLED ? "/admin" : "/admin/masterset"}
+            href="/admin/bestallningar"
             className="font-display font-semibold text-paper truncate mr-3"
           >
             Kortmarknad — Admin

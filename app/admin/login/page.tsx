@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
-import { LAGER_ENABLED } from "@/lib/siteConfig";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -29,7 +28,7 @@ export default function AdminLoginPage() {
       return;
     }
 
-    router.push(LAGER_ENABLED ? "/admin" : "/admin/masterset");
+    router.push("/admin/bestallningar");
     router.refresh();
   }
 
