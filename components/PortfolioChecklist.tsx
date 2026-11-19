@@ -126,17 +126,37 @@ export default function PortfolioChecklist({
     for (const c of cards) for (const v of c.card_variants) s.add(`${c.id}:${v.variant}:`);
     return s;
   }, [cards]);
-  // Kort man äger i minst en variant (Har). Bara kort+varianter som finns kvar
-  // räknas -- se validPrefixes nedan.
-  const ownedCardIds = useMemo(() => {
-    const ids = new Set<string>();
+  // Master Set: ett kort räknas som klart ("Har") först när ALLA dess tryck
+  // (Vanligt / Holo / Reverse Holo ...) är ikryssade. Har man bara ett av
+  // flera tryck är kortet fortfarande "Saknas" (delvis) tills resten finns.
+  // Bara kort+varianter som finns kvar räknas -- se validPrefixes ovan.
+  const { ownedCardIds, partialCardIds, haveVariantCount, totalVariantCount } = useMemo(() => {
+    const haveVariants = new Set<string>(); // "kortId:variant"
     for (const k of Array.from(entries)) {
       if (!k.endsWith(":have")) continue;
       const parts = k.split(":");
-      if (validPrefixes.has(`${parts[0]}:${parts[1]}:`)) ids.add(parts[0]);
+      if (validPrefixes.has(`${parts[0]}:${parts[1]}:`)) haveVariants.add(`${parts[0]}:${parts[1]}`);
     }
-    return ids;
-  }, [entries, validPrefixes]);
+    const complete = new Set<string>();
+    const partial = new Set<string>();
+    let total = 0;
+    let have = 0;
+    for (const c of cards) {
+      const n = c.card_variants.length;
+      if (n === 0) continue;
+      const h = c.card_variants.filter((v) => haveVariants.has(`${c.id}:${v.variant}`)).length;
+      total += n;
+      have += h;
+      if (h === n) complete.add(c.id);
+      else if (h > 0) partial.add(c.id);
+    }
+    return {
+      ownedCardIds: complete,
+      partialCardIds: partial,
+      haveVariantCount: have,
+      totalVariantCount: total,
+    };
+  }, [entries, cards, validPrefixes]);
 
   const filteredCards = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -345,11 +365,19 @@ export default function PortfolioChecklist({
       <div className="mb-4">
         <div className="flex items-baseline justify-between text-xs mb-1">
           <span className="text-paper">
-            {ownedCardIds.size} av {cards.length} kort
+            {ownedCardIds.size} av {cards.length} kort kompletta
+            {partialCardIds.size > 0 && (
+              <span className="text-mute"> · {partialCardIds.size} delvis</span>
+            )}
+            {totalVariantCount !== cards.length && (
+              <span className="text-mute">
+                {" "}· {haveVariantCount} av {totalVariantCount} tryck
+              </span>
+            )}
           </span>
           <span className="text-gold font-mono">
-            {cards.length > 0
-              ? Math.floor((ownedCardIds.size / cards.length) * 100)
+            {totalVariantCount > 0
+              ? Math.floor((haveVariantCount / totalVariantCount) * 100)
               : 0}
             %
           </span>
@@ -358,14 +386,14 @@ export default function PortfolioChecklist({
           className="h-2 rounded-full bg-line overflow-hidden"
           role="progressbar"
           aria-valuemin={0}
-          aria-valuemax={cards.length}
-          aria-valuenow={ownedCardIds.size}
+          aria-valuemax={totalVariantCount}
+          aria-valuenow={haveVariantCount}
           aria-label="Andel kort du har i setet"
         >
           <div
             className="h-full bg-gold transition-all"
             style={{
-              width: `${cards.length > 0 ? (ownedCardIds.size / cards.length) * 100 : 0}%`,
+              width: `${totalVariantCount > 0 ? (haveVariantCount / totalVariantCount) * 100 : 0}%`,
             }}
           />
         </div>
@@ -374,7 +402,7 @@ export default function PortfolioChecklist({
             [
               ["all", `Alla (${cards.length})`],
               ["missing", `Saknas (${cards.length - ownedCardIds.size})`],
-              ["owned", `Har (${ownedCardIds.size})`],
+              ["owned", `Har alla tryck (${ownedCardIds.size})`],
             ] as const
           ).map(([v, label]) => (
             <button
