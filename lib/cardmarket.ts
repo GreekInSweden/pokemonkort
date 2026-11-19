@@ -64,7 +64,7 @@ export const CARDMARKET_SETS: Record<string, CardmarketSet> = {
   "crown zenith": { slug: "Crown-Zenith", code: "CRZ", versioned: true },
   "evolving skies": { slug: "Evolving-Skies", code: "EVS", versioned: true, pad: 0 },
   "chilling reign": { slug: "Chilling-Reign", code: "CRE", versioned: true, pad: 0 },
-  "battle styles": { slug: "Battle-Styles", code: "BST", versioned: true, pad: 0 },
+  "battle styles": { slug: "Battle-Styles", code: "BST", versioned: true, rankV: true, pad: 0 },
   "vivid voltage": { slug: "Vivid-Voltage", code: "VIV", versioned: true, pad: 0 },
   "darkness ablaze": { slug: "Darkness-Ablaze", code: "DAA", versioned: true, pad: 0 },
   "rebel clash": { slug: "Rebel-Clash", code: "RCL", versioned: true, pad: 0 },
