@@ -15,7 +15,7 @@ interface NavGroup {
 }
 
 // Adminmenyn: bred rad på stor skärm, hopfälld meny med rubriker på mobil
-// och surfplatta (annars rymdes de 11 länkarna inte).
+// och surfplatta (annars rymdes de 12 länkarna inte).
 export default function AdminNav({ lagerEnabled }: { lagerEnabled: boolean }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -49,6 +49,7 @@ export default function AdminNav({ lagerEnabled }: { lagerEnabled: boolean }) {
       title: "Samling",
       links: [
         { href: "/admin/kortsok", label: "Kortsök" },
+        { href: "/admin/statistik", label: "Statistik" },
       ],
     },
     {
