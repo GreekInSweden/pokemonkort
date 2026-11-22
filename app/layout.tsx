@@ -4,6 +4,7 @@ import Link from "next/link";
 import "./globals.css";
 import { CartProvider } from "@/lib/CartContext";
 import SiteHeader from "@/components/SiteHeader";
+import PresencePing from "@/components/PresencePing";
 
 const display = Space_Grotesk({
   subsets: ["latin"],
@@ -36,6 +37,7 @@ export default function RootLayout({
     <html lang="sv" className={`${display.variable} ${body.variable} ${mono.variable}`}>
       <body className="font-body min-h-screen flex flex-col">
         <CartProvider>
+          <PresencePing />
           <SiteHeader />
           <main className="flex-1">{children}</main>
           <footer className="border-t border-line py-8 mt-16">
